@@ -1,1 +1,40 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"indrive-entregas-villazon","appId":"1:479253739993:android:21c03a01b7c1a74c9481c8","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"indrive-entregas-villazon","configurations":{"android":"1:479253739993:android:21c03a01b7c1a74c9481c8","ios":"1:479253739993:ios:28698111d0cf52509481c8","web":"1:479253739993:web:2e3bd9a5efddceca9481c8"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "indrive-entregas-villazon",
+          "appId": "1:479253739993:android:21c03a01b7c1a74c9481c8",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "indrive-entregas-villazon",
+          "configurations": {
+            "android": "1:479253739993:android:21c03a01b7c1a74c9481c8",
+            "ios": "1:479253739993:ios:28698111d0cf52509481c8",
+            "web": "1:479253739993:web:2e3bd9a5efddceca9481c8"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": [
+    {
+      "bucket": "indrive-entregas-villazon.firebasestorage.app",
+      "rules": "storage.rules"
+    }
+  ],
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "predeploy": [
+      "npm --prefix \"$RESOURCE_DIR\" run build"
+    ]
+  }
+}

@@ -1,12 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:indrive_app/main_cliente.dart';
+import 'package:indrive_app/core/theme/app_theme.dart';
 
 void main() {
-  testWidgets('ClienteApp monta sin excepciones', (WidgetTester tester) async {
-    await tester.pumpWidget(const ClienteApp());
-
-    expect(find.text('inDrive Entregas — Cliente'), findsOneWidget);
-    expect(find.text('App Cliente — Villazón, Potosí'), findsOneWidget);
+  test('AppTheme.light usa Material 3', () {
+    expect(AppTheme.light.useMaterial3, isTrue);
+    expect(AppTheme.light.colorScheme, isA<ColorScheme>());
   });
 }

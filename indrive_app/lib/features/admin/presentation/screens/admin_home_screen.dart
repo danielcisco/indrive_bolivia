@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/session_status_view.dart';
+
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
 
@@ -8,7 +10,9 @@ class AdminHomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('inDrive Entregas — Panel Admin')),
       body: const Center(
-        child: Text('Panel de Administración — Villazón, Potosí'),
+        child: SessionStatusView(
+          appLabel: 'Panel de Administración — Villazón, Potosí',
+        ),
       ),
     );
   }

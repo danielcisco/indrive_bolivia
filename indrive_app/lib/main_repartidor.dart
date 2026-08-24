@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'features/repartidor/presentation/screens/repartidor_home_screen.dart';
+import 'features/repartidor/presentation/screens/repartidor_login_screen.dart';
+import 'shared/widgets/auth_gate.dart';
 
 Future<void> main() async {
   await bootstrapApp();
@@ -17,7 +19,10 @@ class RepartidorApp extends StatelessWidget {
     return MaterialApp(
       title: 'inDrive Entregas — Repartidor',
       theme: AppTheme.light,
-      home: const RepartidorHomeScreen(),
+      home: AuthGate(
+        loginBuilder: (_) => const RepartidorLoginScreen(),
+        homeBuilder: (_) => const RepartidorHomeScreen(),
+      ),
     );
   }
 }

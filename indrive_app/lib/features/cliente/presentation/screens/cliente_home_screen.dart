@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/session_status_view.dart';
+
 class ClienteHomeScreen extends StatelessWidget {
   const ClienteHomeScreen({super.key});
 
@@ -8,7 +10,7 @@ class ClienteHomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('inDrive Entregas — Cliente')),
       body: const Center(
-        child: Text('App Cliente — Villazón, Potosí'),
+        child: SessionStatusView(appLabel: 'App Cliente — Villazón, Potosí'),
       ),
     );
   }

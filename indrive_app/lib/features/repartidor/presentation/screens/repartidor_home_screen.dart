@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/session_status_view.dart';
+
 class RepartidorHomeScreen extends StatelessWidget {
   const RepartidorHomeScreen({super.key});
 
@@ -8,7 +10,9 @@ class RepartidorHomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('inDrive Entregas — Repartidor')),
       body: const Center(
-        child: Text('App Repartidor — Villazón, Potosí'),
+        child: SessionStatusView(
+          appLabel: 'App Repartidor — Villazón, Potosí',
+        ),
       ),
     );
   }

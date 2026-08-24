@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/presentation/screens/admin_home_screen.dart';
+import 'features/admin/presentation/screens/admin_login_screen.dart';
+import 'shared/widgets/auth_gate.dart';
 
 Future<void> main() async {
   await bootstrapApp();
@@ -17,7 +19,10 @@ class AdminApp extends StatelessWidget {
     return MaterialApp(
       title: 'inDrive Entregas — Panel Admin',
       theme: AppTheme.light,
-      home: const AdminHomeScreen(),
+      home: AuthGate(
+        loginBuilder: (_) => const AdminLoginScreen(),
+        homeBuilder: (_) => const AdminHomeScreen(),
+      ),
     );
   }
 }
