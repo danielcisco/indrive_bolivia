@@ -28,6 +28,69 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function isVerifiedRepartidor() {
+      return isSignedIn() &&
+        request.auth.token.role == 'repartidor' &&
+        request.auth.token.isVerified == true;
+    }
+
+    function envioCamposFijosSinCambio() {
+      return request.resource.data.clienteId == resource.data.clienteId &&
+        request.resource.data.descripcion == resource.data.descripcion &&
+        request.resource.data.origen == resource.data.origen &&
+        request.resource.data.origenGeohash == resource.data.origenGeohash &&
+        request.resource.data.destino == resource.data.destino &&
+        request.resource.data.montoOfertadoInicialCentavos ==
+          resource.data.montoOfertadoInicialCentavos;
+    }
+
+    // expiraEn lo fija la Cloud Function setEnvioExpiration via Admin SDK,
+    // que no pasa por estas reglas. El cliente nunca lo escribe.
+    match /envios/{envioId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn() &&
+        request.auth.uid == request.resource.data.clienteId &&
+        request.resource.data.status == 'pendiente_ofertas' &&
+        request.resource.data.repartidorAsignadoId == null &&
+        request.resource.data.montoOfertadoInicialCentavos is int &&
+        request.resource.data.montoOfertadoInicialCentavos > 0 &&
+        !("expiraEn" in request.resource.data);
+
+      // El cliente dueño puede cancelar mientras siga pendiente.
+      allow update: if isSignedIn() &&
+        resource.data.clienteId == request.auth.uid &&
+        resource.data.status == 'pendiente_ofertas' &&
+        request.resource.data.status == 'cancelado' &&
+        request.resource.data.repartidorAsignadoId == resource.data.repartidorAsignadoId &&
+        envioCamposFijosSinCambio();
+
+      // Un repartidor verificado toma un envío pendiente. La transacción
+      // atómica del cliente (EnviosRepository.aceptarEnvioDirecto) más esta
+      // misma precondición evaluada sobre los datos leídos en la
+      // transacción es lo que previene la doble asignación.
+      allow update: if isVerifiedRepartidor() &&
+        resource.data.status == 'pendiente_ofertas' &&
+        resource.data.repartidorAsignadoId == null &&
+        request.resource.data.status == 'asignado' &&
+        request.resource.data.repartidorAsignadoId == request.auth.uid &&
+        envioCamposFijosSinCambio();
+
+      allow delete: if false;
+
+      match /ofertas/{ofertaId} {
+        allow read: if isSignedIn();
+
+        allow create: if isVerifiedRepartidor() &&
+          request.auth.uid == request.resource.data.repartidorId &&
+          request.resource.data.status == 'pendiente' &&
+          request.resource.data.montoOfertadoCentavos is int &&
+          request.resource.data.montoOfertadoCentavos > 0;
+
+        allow update, delete: if false;
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

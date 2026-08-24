@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { setGlobalOptions } from "firebase-functions/v2";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 
 admin.initializeApp();
@@ -68,3 +69,33 @@ export const assignInitialRole = onCall(async (request) => {
 
   return { role, isVerified };
 });
+
+const SUBASTA_VENTANA_MINUTOS = 10;
+
+/**
+ * Fija `expiraEn` de un envio recien creado, server-side.
+ *
+ * El SDK cliente de Firestore solo puede pedir "la hora actual del
+ * servidor" (serverTimestamp()), no "hora del servidor + N minutos" -
+ * sumar un offset requiere el reloj del servidor. Por eso el vencimiento
+ * de la subasta se calcula aqui, nunca con DateTime.now() del cliente
+ * (regla no negociable de CLAUDE.md).
+ */
+export const setEnvioExpiration = onDocumentCreated(
+  { document: "envios/{envioId}", region: "southamerica-east1" },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const data = snapshot.data();
+    if (data.expiraEn) return;
+
+    const createdAt = data.createdAt as admin.firestore.Timestamp | undefined;
+    const base = createdAt ?? admin.firestore.Timestamp.now();
+    const expiraEn = admin.firestore.Timestamp.fromMillis(
+      base.toMillis() + SUBASTA_VENTANA_MINUTOS * 60_000
+    );
+
+    await snapshot.ref.update({ expiraEn });
+  }
+);
