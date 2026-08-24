@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Cliente",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_cliente.dart"
+    },
+    {
+      "name": "Repartidor",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_repartidor.dart"
+    },
+    {
+      "name": "Admin (Web)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_admin.dart",
+      "deviceId": "chrome"
+    }
+  ]
+}

@@ -56,7 +56,6 @@ class DefaultFirebaseOptions {
     projectId: 'indrive-entregas-villazon',
     storageBucket: 'indrive-entregas-villazon.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDJGkNM-c3dPHGvQ7bDK3NRPKxtKwoP5Yg',
     appId: '1:479253739993:ios:28698111d0cf52509481c8',
@@ -65,7 +64,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'indrive-entregas-villazon.firebasestorage.app',
     iosBundleId: 'com.example.indriveApp',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyDJGkNM-c3dPHGvQ7bDK3NRPKxtKwoP5Yg',
     appId: '1:479253739993:ios:28698111d0cf52509481c8',
