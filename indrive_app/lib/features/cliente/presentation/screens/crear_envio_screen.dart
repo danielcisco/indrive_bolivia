@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
 
 import '../../../../core/location/current_location.dart';
 import '../../../../shared/domain/value_objects/money.dart';
+import '../../../../shared/widgets/map_picker_screen.dart';
 import '../providers/crear_envio_controller.dart';
 
 class CrearEnvioScreen extends ConsumerStatefulWidget {
@@ -17,53 +19,76 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descripcionController = TextEditingController();
   final _montoController = TextEditingController();
-  final _destinoLatController = TextEditingController();
-  final _destinoLngController = TextEditingController();
 
   GeoPoint? _origen;
-  bool _obteniendoUbicacion = false;
+  GeoPoint? _destino;
   String? _errorUbicacion;
 
   @override
   void dispose() {
     _descripcionController.dispose();
     _montoController.dispose();
-    _destinoLatController.dispose();
-    _destinoLngController.dispose();
     super.dispose();
   }
 
-  Future<void> _usarUbicacionActual() async {
-    setState(() {
-      _obteniendoUbicacion = true;
-      _errorUbicacion = null;
-    });
+  /// Intenta centrar el picker en el GPS actual; si falla (permiso
+  /// denegado, GPS apagado), el picker igual abre centrado en Villazón —
+  /// una lectura fallida no debe bloquear elegir la ubicación a mano.
+  Future<LatLng?> _posicionInicialPara({GeoPoint? preferida}) async {
+    if (preferida != null) {
+      return LatLng(preferida.latitude, preferida.longitude);
+    }
     try {
       final posicion = await obtenerUbicacionActual();
-      if (!mounted) return;
-      setState(() {
-        _origen = GeoPoint(posicion.latitude, posicion.longitude);
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _errorUbicacion = error.toString());
-    } finally {
-      if (mounted) setState(() => _obteniendoUbicacion = false);
+      return LatLng(posicion.latitude, posicion.longitude);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _elegirOrigen() async {
+    setState(() => _errorUbicacion = null);
+    final inicial = await _posicionInicialPara();
+    if (!mounted) return;
+    final resultado = await Navigator.of(context).push<GeoPoint>(
+      MaterialPageRoute(
+        builder: (_) =>
+            MapPickerScreen(title: 'Elegir origen', posicionInicial: inicial),
+      ),
+    );
+    if (resultado != null && mounted) {
+      setState(() => _origen = resultado);
+    }
+  }
+
+  Future<void> _elegirDestino() async {
+    setState(() => _errorUbicacion = null);
+    final inicial = await _posicionInicialPara(preferida: _origen);
+    if (!mounted) return;
+    final resultado = await Navigator.of(context).push<GeoPoint>(
+      MaterialPageRoute(
+        builder: (_) => MapPickerScreen(
+          title: 'Elegir destino',
+          posicionInicial: inicial,
+        ),
+      ),
+    );
+    if (resultado != null && mounted) {
+      setState(() => _destino = resultado);
     }
   }
 
   Future<void> _enviar() async {
     final origen = _origen;
+    final destino = _destino;
     if (!_formKey.currentState!.validate()) return;
-    if (origen == null) {
-      setState(() => _errorUbicacion = 'Primero obtén tu ubicación de origen.');
+    if (origen == null || destino == null) {
+      setState(
+        () => _errorUbicacion = 'Elige el origen y el destino en el mapa.',
+      );
       return;
     }
 
-    final destino = GeoPoint(
-      double.parse(_destinoLatController.text),
-      double.parse(_destinoLngController.text),
-    );
     final monto = Money.parseBobString(_montoController.text);
 
     await ref
@@ -80,6 +105,12 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
     if (!estado.hasError) {
       Navigator.of(context).pop();
     }
+  }
+
+  String _formatearPunto(GeoPoint? punto) {
+    if (punto == null) return 'sin definir';
+    return '${punto.latitude.toStringAsFixed(5)}, '
+        '${punto.longitude.toStringAsFixed(5)}';
   }
 
   @override
@@ -132,18 +163,20 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              Text(
-                _origen == null
-                    ? 'Origen: sin definir'
-                    : 'Origen: ${_origen!.latitude.toStringAsFixed(5)}, '
-                          '${_origen!.longitude.toStringAsFixed(5)}',
-              ),
+              Text('Origen: ${_formatearPunto(_origen)}'),
               const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: _obteniendoUbicacion ? null : _usarUbicacionActual,
-                child: Text(
-                  _obteniendoUbicacion ? 'Obteniendo...' : 'Usar mi ubicación actual',
-                ),
+              OutlinedButton.icon(
+                onPressed: _elegirOrigen,
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Elegir origen en el mapa'),
+              ),
+              const SizedBox(height: 16),
+              Text('Destino: ${_formatearPunto(_destino)}'),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _elegirDestino,
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Elegir destino en el mapa'),
               ),
               if (_errorUbicacion != null)
                 Padding(
@@ -153,35 +186,6 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                     style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ),
-              const SizedBox(height: 24),
-              const Text(
-                'Destino (temporal: coordenadas manuales — el selector '
-                'de mapa llega en Fase 4)',
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _destinoLatController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
-                ),
-                decoration: const InputDecoration(labelText: 'Latitud destino'),
-                validator: (value) =>
-                    double.tryParse(value ?? '') == null ? 'Inválido' : null,
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _destinoLngController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Longitud destino',
-                ),
-                validator: (value) =>
-                    double.tryParse(value ?? '') == null ? 'Inválido' : null,
-              ),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: estado.isLoading ? null : _enviar,

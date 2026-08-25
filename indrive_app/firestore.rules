@@ -34,6 +34,10 @@ service cloud.firestore {
         request.auth.token.isVerified == true;
     }
 
+    function isCliente() {
+      return isSignedIn() && request.auth.token.role == 'cliente';
+    }
+
     function envioCamposFijosSinCambio() {
       return request.resource.data.clienteId == resource.data.clienteId &&
         request.resource.data.descripcion == resource.data.descripcion &&
@@ -49,7 +53,7 @@ service cloud.firestore {
     match /envios/{envioId} {
       allow read: if isSignedIn();
 
-      allow create: if isSignedIn() &&
+      allow create: if isCliente() &&
         request.auth.uid == request.resource.data.clienteId &&
         request.resource.data.status == 'pendiente_ofertas' &&
         request.resource.data.repartidorAsignadoId == null &&

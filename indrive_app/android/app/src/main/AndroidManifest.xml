@@ -8,6 +8,11 @@
         android:label="indrive_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Selector de mapa (Sprint 4.1a). El valor real vive en
+             android/local.properties (MAPS_API_KEY), nunca en este archivo. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

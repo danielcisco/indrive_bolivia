@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/value_objects/money.dart';
+import '../../../../shared/widgets/envio_map_preview.dart';
 
 /// Detalle de un envío desde el punto de vista del Repartidor: dos
 /// acciones que ya existían en `EnviosRepository` desde Sprint 2.1 sin
@@ -88,7 +89,7 @@ class _EnvioRepartidorDetalleScreenState
           if (envio == null) {
             return const Center(child: Text('Este envío ya no existe.'));
           }
-          return Padding(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,6 +102,8 @@ class _EnvioRepartidorDetalleScreenState
                 Text(
                   'Oferta inicial: ${envio.montoOfertadoInicial.format()}',
                 ),
+                const SizedBox(height: 12),
+                EnvioMapPreview(envio: envio),
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: _procesando ? null : _aceptarDirecto,

@@ -21,6 +21,7 @@ class ClienteApp extends StatelessWidget {
       title: 'inDrive Entregas — Cliente',
       theme: AppTheme.light,
       home: AuthGate(
+        expectedRole: 'cliente',
         loginBuilder: (_) => const ClienteLoginScreen(),
         homeBuilder: (_) => const ClienteHomeScreen(),
       ),
