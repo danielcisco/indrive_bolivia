@@ -70,6 +70,62 @@ export const assignInitialRole = onCall(async (request) => {
   return { role, isVerified };
 });
 
+/**
+ * Aprueba el KYC de un usuario (normalmente un repartidor), fijando
+ * `isVerified: true` en su Custom Claim y en su documento de Firestore.
+ *
+ * Mismo patron de seguridad que assignInitialRole: el cliente nunca puede
+ * escribir isVerified por su cuenta (ni las Firestore Rules ni las Auth
+ * Rules se lo permiten), asi que esta es la unica via. Solo un admin
+ * autenticado puede invocarla. Es idempotente: si el usuario ya esta
+ * verificado, no vuelve a escribir.
+ *
+ * Sustituye en produccion al script manual scripts/setVerifiedClaim.ts
+ * (que se mantiene como utilidad de desarrollo/debug).
+ */
+export const approveKyc = onCall(async (request) => {
+  const callerRole = request.auth?.token?.role;
+  if (callerRole !== "admin") {
+    throw new HttpsError(
+      "permission-denied",
+      "Solo un administrador puede aprobar KYC."
+    );
+  }
+
+  const uid = request.data?.uid;
+  if (typeof uid !== "string" || uid.length === 0) {
+    throw new HttpsError("invalid-argument", "uid es requerido.");
+  }
+
+  const targetUser = await admin.auth().getUser(uid);
+  const role = targetUser.customClaims?.role;
+  if (!role) {
+    throw new HttpsError(
+      "failed-precondition",
+      `El usuario ${uid} todavia no tiene un rol asignado.`
+    );
+  }
+
+  if (targetUser.customClaims?.isVerified === true) {
+    return { uid, role, isVerified: true };
+  }
+
+  await admin.auth().setCustomUserClaims(uid, { role, isVerified: true });
+  await admin
+    .firestore()
+    .collection("users")
+    .doc(uid)
+    .set(
+      {
+        isVerified: true,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+  return { uid, role, isVerified: true };
+});
+
 const SUBASTA_VENTANA_MINUTOS = 10;
 
 /**

@@ -93,6 +93,23 @@ class EnviosRepository {
         .map((snapshot) => snapshot.exists ? Envio.fromFirestore(snapshot) : null);
   }
 
+  /// Envíos actualmente `en_curso`, en tiempo real y acotado por
+  /// `.limit()` — alimenta el mapa en vivo del panel Admin (Sprint 5.1).
+  ///
+  /// Es un stream sobre una colección filtrada, no sobre un único
+  /// documento como [streamEnvio] — se justifica igual: está acotado por
+  /// `status` (solo entregas activas, un número chico en la operación real
+  /// de Villazón) y por `.limit()`, así que no es el "stream masivo sobre
+  /// toda la colección" que CLAUDE.md prohíbe.
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamEnviosEnCurso({
+    int limit = 100,
+  }) {
+    return _envios
+        .where('status', isEqualTo: EnvioStatus.enCurso.toFirestore())
+        .limit(limit)
+        .snapshots();
+  }
+
   /// Envíos abiertos a ofertas, paginado (nunca una query sin cota).
   Future<QuerySnapshot<Map<String, dynamic>>> listarEnviosPendientes({
     int limit = 20,

@@ -74,3 +74,14 @@ final envioStreamProvider = StreamProvider.family<Envio?, String>((
 ) {
   return ref.watch(enviosRepositoryProvider).streamEnvio(envioId);
 });
+
+/// Envíos `en_curso` en tiempo real para el mapa en vivo del panel Admin
+/// (Sprint 5.1). Ver `EnviosRepository.streamEnviosEnCurso` para el porqué
+/// este stream acotado no viola la regla de "no streams masivos".
+final enviosEnCursoStreamProvider =
+    StreamProvider<List<Envio>>((ref) {
+      return ref
+          .watch(enviosRepositoryProvider)
+          .streamEnviosEnCurso()
+          .map((snapshot) => snapshot.docs.map(Envio.fromFirestore).toList());
+    });

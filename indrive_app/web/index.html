@@ -31,6 +31,16 @@
 
   <title>indrive_app</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Mapa en vivo del panel Admin (Sprint 5.1). La key de abajo NO sirve
+       para nada sensible por sí sola: Maps JavaScript API se protege
+       restringiendo por HTTP referrer en Google Cloud Console (mismo
+       proyecto Firebase), no por secreto — a diferencia de la key de
+       Android en android/local.properties (MAPS_API_KEY), que está
+       restringida por paquete + SHA-1 y no sirve para un origen web.
+       Reemplazar YOUR_GOOGLE_MAPS_WEB_API_KEY antes de compilar el panel
+       Admin. -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB8Fi0biXPRq5BPO8uBSRYUHBtTPlr2HEc"></script>
 </head>
 <body>
   <!--
