@@ -15,9 +15,16 @@ const String kOfertasChannelId = 'ofertas_alta_prioridad';
 /// notificación en foreground (en background/terminada la muestra el SO
 /// solo porque el mensaje trae `android.notification.channel_id`).
 ///
-/// Fuera de alcance aquí: la pantalla completa estilo "llamada entrante"
-/// (FullScreenIntent) — queda como tarea de seguimiento explícita, no a
-/// medio construir.
+/// La notificación en foreground usa `fullScreenIntent` + `category: call`
+/// (pendiente técnico post Sprint 5.1) para intentar mostrarse por encima
+/// de la pantalla de bloqueo, estilo "llamada entrante" — desde Android 14
+/// esto requiere que el usuario otorgue el permiso especial a mano en
+/// Ajustes (no hay diálogo de runtime), no es algo que la app pueda forzar.
+/// Al tocarla, la app pasa a primer plano con el comportamiento estándar
+/// del SO (aterriza donde ya estaba el árbol de widgets); no se conectó un
+/// handler de navegación propio a `RadarScreen` porque `core/` no debe
+/// depender de `features/` — si se necesita, hay que resolverlo inyectando
+/// el callback desde `main_repartidor.dart` vía override del provider.
 class FcmService {
   FcmService({
     FirebaseMessaging? messaging,
@@ -88,6 +95,8 @@ class FcmService {
           'Ofertas cercanas',
           importance: Importance.high,
           priority: Priority.high,
+          category: AndroidNotificationCategory.call,
+          fullScreenIntent: true,
         ),
       ),
     );

@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Notificaciones push de alta prioridad, requerido desde Android 13 (Sprint 3.2). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Pantalla completa estilo "llamada entrante" para ofertas nuevas.
+         Desde Android 14 este permiso no se otorga solo con declararlo: el
+         usuario tiene que concederlo a mano en Ajustes (no hay diálogo de
+         runtime estándar) — no es algo automatizable desde la app. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Tracking GPS mientras el repartidor tiene un viaje en curso (Sprint 4.1b). -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
