@@ -4,32 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import 'mis_envios_controller.dart';
-
-/// Pide permiso de ubicación si hace falta y devuelve una lectura GPS
-/// puntual. Sin throttling ni streaming continuo — eso es para el
-/// seguimiento en vivo del repartidor en Fase 4, no para fijar el origen
-/// de un pedido.
-Future<Position> obtenerUbicacionActual() async {
-  var permiso = await Geolocator.checkPermission();
-  if (permiso == LocationPermission.denied) {
-    permiso = await Geolocator.requestPermission();
-  }
-  if (permiso == LocationPermission.denied ||
-      permiso == LocationPermission.deniedForever) {
-    throw StateError(
-      'Permiso de ubicación denegado. Actívalo en Ajustes para continuar.',
-    );
-  }
-  if (!await Geolocator.isLocationServiceEnabled()) {
-    throw StateError('El GPS está desactivado en el dispositivo.');
-  }
-  return Geolocator.getCurrentPosition();
-}
 
 /// Publica un envío nuevo. Firestore por sí mismo cachea escrituras
 /// offline, pero no da control sobre reintentos/backoff ni un ID

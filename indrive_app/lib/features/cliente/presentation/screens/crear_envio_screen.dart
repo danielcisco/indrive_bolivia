@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/location/current_location.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import '../providers/crear_envio_controller.dart';
 

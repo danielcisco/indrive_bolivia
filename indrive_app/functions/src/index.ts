@@ -99,3 +99,70 @@ export const setEnvioExpiration = onDocumentCreated(
     await snapshot.ref.update({ expiraEn });
   }
 );
+
+const NOTIFICATION_GEOHASH_PRECISION = 5;
+const MAX_REPARTIDORES_A_NOTIFICAR = 100;
+
+/**
+ * Notifica por FCM de alta prioridad a los repartidores cuyo `ultimaGeohash`
+ * (fijado por el cliente al abrir la pantalla de Radar) cae cerca del
+ * origen de un envio recien creado.
+ *
+ * No hay tracking en segundo plano: `ultimaGeohash` es una foto puntual de
+ * la ultima vez que el repartidor abrio el Radar, no una posicion en vivo
+ * (eso es Fase 4). Por eso el radio de coincidencia aqui es mas ancho
+ * (precision 5, ~5km) que el punto de partida del sondeo adaptativo del
+ * cliente (precision 6) - mejor notificar de mas que dejar a alguien
+ * cercano sin aviso por una foto de ubicacion ya desactualizada.
+ */
+export const notifyNearbyRepartidores = onDocumentCreated(
+  { document: "envios/{envioId}", region: "southamerica-east1" },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const data = snapshot.data();
+    const origenGeohash = data.origenGeohash as string | undefined;
+    if (!origenGeohash) return;
+
+    const prefix = origenGeohash.substring(0, NOTIFICATION_GEOHASH_PRECISION);
+
+    const usersSnapshot = await admin
+      .firestore()
+      .collection("users")
+      .where("role", "==", "repartidor")
+      .where("ultimaGeohash", ">=", prefix)
+      .where("ultimaGeohash", "<", `${prefix}~`)
+      .limit(MAX_REPARTIDORES_A_NOTIFICAR)
+      .get();
+
+    const tokens = usersSnapshot.docs
+      .map((doc) => doc.data().fcmToken as string | undefined)
+      .filter((token): token is string => Boolean(token));
+
+    if (tokens.length === 0) return;
+
+    const descripcion =
+      (data.descripcion as string | undefined) ?? "Nuevo envío";
+    const montoCentavos =
+      (data.montoOfertadoInicialCentavos as number | undefined) ?? 0;
+    const montoBob = (montoCentavos / 100).toFixed(2);
+
+    await admin.messaging().sendEachForMulticast({
+      tokens,
+      notification: {
+        title: "Nuevo envío cerca de ti",
+        body: `${descripcion} · Bs. ${montoBob}`,
+      },
+      data: {
+        envioId: event.params.envioId,
+      },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "ofertas_alta_prioridad",
+        },
+      },
+    });
+  }
+);

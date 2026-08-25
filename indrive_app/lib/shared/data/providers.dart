@@ -1,13 +1,31 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/notifications/fcm_service.dart';
 import '../../core/offline/offline_action_queue.dart';
 import '../domain/entities/envio.dart';
 import '../domain/value_objects/money.dart';
 import 'envios_repository.dart';
+import 'users_repository.dart';
 
 final enviosRepositoryProvider = Provider<EnviosRepository>((ref) {
   return EnviosRepository();
+});
+
+final usersRepositoryProvider = Provider<UsersRepository>((ref) {
+  return UsersRepository();
+});
+
+/// Instancia única del servicio de notificaciones — se inicializa apenas
+/// algo lo lee por primera vez (`RepartidorApp` lo hace en su build), igual
+/// que `offlineActionQueueProvider` arranca su propio ciclo de vida solo.
+final fcmServiceProvider = Provider<FcmService>((ref) {
+  final service = FcmService();
+  unawaited(service.initialize());
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 /// Instancia única de la cola offline para toda la app: registra el

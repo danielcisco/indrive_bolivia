@@ -95,6 +95,27 @@ class EnviosRepository {
     return query.get();
   }
 
+  /// Envíos pendientes cuyo `origenGeohash` cae dentro del rango de
+  /// [prefix] (radar del Repartidor) — paginado. `RadarController` decide
+  /// qué tan largo hacer `prefix` (sondeo adaptativo: celda más chica o
+  /// más grande según cuántos resultados haya).
+  Future<QuerySnapshot<Map<String, dynamic>>> buscarEnviosCercanos(
+    String prefix, {
+    int limit = 20,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) {
+    var query = _envios
+        .where('status', isEqualTo: EnvioStatus.pendienteOfertas.toFirestore())
+        .where('origenGeohash', isGreaterThanOrEqualTo: prefix)
+        .where('origenGeohash', isLessThan: '$prefix~')
+        .orderBy('origenGeohash')
+        .limit(limit);
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+    return query.get();
+  }
+
   /// Envíos del cliente [clienteId], paginado.
   Future<QuerySnapshot<Map<String, dynamic>>> listarEnviosDeCliente(
     String clienteId, {

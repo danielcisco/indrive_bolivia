@@ -64,6 +64,12 @@ dependencies:
   # lectura — el streaming continuo con throttling es Fase 4).
   geolocator: ^13.0.2
 
+  # Núcleo de notificaciones FCM de alta prioridad (Sprint 3.2). El
+  # FullScreenIntent tipo "llamada entrante" queda como tarea de
+  # seguimiento aparte.
+  firebase_messaging: ^15.1.5
+  flutter_local_notifications: ^18.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
