@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/notifications/fcm_service.dart';
 import '../../core/offline/offline_action_queue.dart';
+import '../domain/entities/calificacion.dart';
 import '../domain/entities/envio.dart';
 import '../domain/value_objects/money.dart';
 import 'envios_repository.dart';
@@ -85,3 +87,15 @@ final enviosEnCursoStreamProvider =
           .streamEnviosEnCurso()
           .map((snapshot) => snapshot.docs.map(Envio.fromFirestore).toList());
     });
+
+/// Si el usuario autenticado ya calificó [envioId] — null si todavía no
+/// (Sprint 6.1). Sirve tanto para Cliente como para Repartidor: cada uno
+/// consulta con su propio uid, que es el mismo para ambos porque
+/// `obtenerCalificacionDe` busca por el uid de quien está logueado.
+final miCalificacionProvider = FutureProvider.family<Calificacion?, String>((
+  ref,
+  envioId,
+) {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+  return ref.watch(enviosRepositoryProvider).obtenerCalificacionDe(envioId, uid);
+});

@@ -6,6 +6,7 @@ import '../../../../core/tracking/battery_optimization.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
+import 'confirmar_entrega_screen.dart';
 
 /// Pantalla de una entrega activa: "Iniciar viaje" arranca el Foreground
 /// Service de tracking (con el onboarding de batería antes, si hace
@@ -70,20 +71,15 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
     }
   }
 
-  Future<void> _marcarEntregado() async {
-    setState(() {
-      _procesando = true;
-      _error = null;
-    });
-    try {
-      await ref.read(enviosRepositoryProvider).marcarEntregado(widget.envioId);
-      detenerTracking();
-      if (mounted) Navigator.of(context).pop();
-    } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
-    } finally {
-      if (mounted) setState(() => _procesando = false);
-    }
+  /// El registro del método de pago + comprobante (Sprint 6.1) vive en
+  /// `ConfirmarEntregaScreen`, no acá — ese paso reemplaza la llamada
+  /// directa a `marcarEntregado` que había antes.
+  void _irAConfirmarEntrega() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ConfirmarEntregaScreen(envioId: widget.envioId),
+      ),
+    );
   }
 
   @override
@@ -120,10 +116,8 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
                   )
                 else if (envio.status == EnvioStatus.enCurso)
                   FilledButton(
-                    onPressed: _procesando ? null : _marcarEntregado,
-                    child: Text(
-                      _procesando ? 'Marcando...' : 'Marcar como entregado',
-                    ),
+                    onPressed: _irAConfirmarEntrega,
+                    child: const Text('Marcar como entregado'),
                   ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),

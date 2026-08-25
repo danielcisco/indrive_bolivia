@@ -23,6 +23,21 @@ service firebase.storage {
         request.resource.contentType.matches('image/.*');
     }
 
+    // Comprobante de pago QR (Sprint 6.1): el "dueño" depende de un envío
+    // en Firestore, no de un uid fijo como /kyc/ — de ahí el firestore.get()
+    // cruzado entre Storage y Firestore (soportado en Rules v2).
+    match /comprobantes/{envioId}/{allPaths=**} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        firestore.get(/databases/(default)/documents/envios/$(envioId)).data.repartidorAsignadoId == request.auth.uid ||
+        firestore.get(/databases/(default)/documents/envios/$(envioId)).data.clienteId == request.auth.uid
+      );
+      allow write: if isSignedIn() &&
+        firestore.get(/databases/(default)/documents/envios/$(envioId)).data.repartidorAsignadoId == request.auth.uid &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

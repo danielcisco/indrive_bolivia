@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:uuid/uuid.dart';
 
+import '../domain/entities/calificacion.dart';
 import '../domain/entities/envio.dart';
 import '../domain/entities/oferta.dart';
 import '../domain/value_objects/money.dart';
@@ -11,11 +16,13 @@ import '../domain/value_objects/money.dart';
 const Duration ofertaGraceTolerance = Duration(minutes: 2);
 
 class EnviosRepository {
-  EnviosRepository({FirebaseFirestore? firestore})
+  EnviosRepository({FirebaseFirestore? firestore, FirebaseStorage? storage})
     : _firestore = firestore ?? FirebaseFirestore.instance,
+      _storage = storage ?? FirebaseStorage.instance,
       _geoHasher = GeoHasher();
 
   final FirebaseFirestore _firestore;
+  final FirebaseStorage _storage;
   final GeoHasher _geoHasher;
 
   CollectionReference<Map<String, dynamic>> get _envios =>
@@ -303,11 +310,91 @@ class EnviosRepository {
   }
 
   /// El repartidor asignado marca la entrega como completada — detiene el
-  /// tracking.
-  Future<void> marcarEntregado(String envioId) {
+  /// tracking. El método de pago y el comprobante (si es QR) se fijan en
+  /// esta misma escritura (Sprint 6.1): las Rules exigen que viajen juntos
+  /// con la transición a `entregado`, no en un update aparte.
+  Future<void> marcarEntregado(
+    String envioId, {
+    required MetodoPago metodoPago,
+    String? comprobanteUrl,
+  }) {
     return _envios.doc(envioId).update({
       'status': EnvioStatus.entregado.toFirestore(),
+      'metodoPago': metodoPago.toFirestore(),
+      'comprobanteUrl': ?comprobanteUrl,
     });
+  }
+
+  /// Sube la foto del comprobante QR a Storage y devuelve su URL de
+  /// descarga. La compresión en cliente (regla no negociable de
+  /// CLAUDE.md) la hace `image_picker` al capturar la foto, no este
+  /// método — ver `ConfirmarEntregaScreen`.
+  Future<String> subirComprobante({
+    required String envioId,
+    required File archivo,
+  }) async {
+    final ref = _storage.ref('comprobantes/$envioId/${const Uuid().v4()}.jpg');
+    await ref.putFile(archivo);
+    return ref.getDownloadURL();
+  }
+
+  /// Un Admin marca como verificado el comprobante QR de un envío ya
+  /// entregado — único campo que el rol admin puede tocar sobre `envios`
+  /// (ver `firestore.rules`).
+  Future<void> verificarPago(String envioId) {
+    return _envios.doc(envioId).update({'pagoVerificado': true});
+  }
+
+  /// Envíos entregados con pago QR todavía sin verificar, paginado —
+  /// alimenta `PagosPendientesScreen` del panel Admin (Sprint 6.1).
+  Future<QuerySnapshot<Map<String, dynamic>>> listarPagosQrPendientes({
+    int limit = 20,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) {
+    var query = _envios
+        .where('status', isEqualTo: EnvioStatus.entregado.toFirestore())
+        .where('metodoPago', isEqualTo: MetodoPago.qr.toFirestore())
+        .where('pagoVerificado', isEqualTo: false)
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+    return query.get();
+  }
+
+  CollectionReference<Map<String, dynamic>> _calificaciones(String envioId) =>
+      _envios.doc(envioId).collection('calificaciones');
+
+  /// Fetch puntual: existe si [autorId] ya calificó este envío — se usa
+  /// para ocultar el botón "Calificar" una vez hecho.
+  Future<Calificacion?> obtenerCalificacionDe(
+    String envioId,
+    String autorId,
+  ) async {
+    final snapshot = await _calificaciones(envioId).doc(autorId).get();
+    if (!snapshot.exists) return null;
+    return Calificacion.fromFirestore(snapshot, envioId: envioId);
+  }
+
+  /// Crea la calificación con el UID del autor como ID de documento —
+  /// previene una segunda calificación del mismo usuario (ver
+  /// `Calificacion`).
+  Future<void> crearCalificacion({
+    required String envioId,
+    required String autorId,
+    required String paraId,
+    required int estrellas,
+    String? comentario,
+  }) {
+    return _calificaciones(envioId).doc(autorId).set(
+      Calificacion.createData(
+        autorId: autorId,
+        paraId: paraId,
+        estrellas: estrellas,
+        comentario: comentario,
+      ),
+    );
   }
 
   /// Escrito desde el Foreground Service en cada lectura GPS válida

@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/entities/oferta.dart';
+import '../../../../shared/widgets/calificacion_dialog.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
 import '../providers/mis_envios_controller.dart';
 import '../providers/ofertas_controller.dart';
@@ -43,6 +45,28 @@ class EnvioDetalleScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _calificar(
+    BuildContext context,
+    WidgetRef ref,
+    String repartidorId,
+  ) async {
+    final resultado = await mostrarCalificacionDialog(
+      context,
+      tituloParaQuien: 'el repartidor',
+    );
+    if (resultado == null) return;
+    await ref
+        .read(enviosRepositoryProvider)
+        .crearCalificacion(
+          envioId: envioId,
+          autorId: FirebaseAuth.instance.currentUser!.uid,
+          paraId: repartidorId,
+          estrellas: resultado.estrellas,
+          comentario: resultado.comentario,
+        );
+    ref.invalidate(miCalificacionProvider(envioId));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Stream (no fetch puntual): mientras el envío está en_curso, la
@@ -78,6 +102,39 @@ class EnvioDetalleScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     EnvioMapPreview(envio: envio),
+                    if (envio.status == EnvioStatus.entregado) ...[
+                      const SizedBox(height: 12),
+                      Text(switch (envio.metodoPago) {
+                        null => 'Método de pago no registrado.',
+                        MetodoPago.efectivo => 'Pago: efectivo.',
+                        MetodoPago.qr when envio.pagoVerificado =>
+                          'Pago QR verificado ✓',
+                        MetodoPago.qr => 'Pago QR: verificación pendiente.',
+                      }),
+                      const SizedBox(height: 8),
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final calificacionAsync = ref.watch(
+                            miCalificacionProvider(envioId),
+                          );
+                          final repartidorId = envio.repartidorAsignadoId;
+                          if (repartidorId == null) {
+                            return const SizedBox.shrink();
+                          }
+                          return calificacionAsync.when(
+                            loading: () => const SizedBox.shrink(),
+                            error: (error, _) => const SizedBox.shrink(),
+                            data: (calificacion) => calificacion != null
+                                ? const Text('Ya calificaste este envío.')
+                                : OutlinedButton(
+                                    onPressed: () =>
+                                        _calificar(context, ref, repartidorId),
+                                    child: const Text('Calificar al repartidor'),
+                                  ),
+                          );
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),

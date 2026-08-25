@@ -38,6 +38,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.role == 'cliente';
     }
 
+    // Sprint 6.1: el repartidor fija metodoPago (y comprobanteUrl si es QR)
+    // en la misma escritura que entregado. pagoVerificado no puede venir
+    // en esta escritura — solo un Admin lo fija despues (ver mas abajo).
+    function pagoValidoAlEntregar() {
+      return request.resource.data.metodoPago in ['efectivo', 'qr'] &&
+        !("pagoVerificado" in request.resource.data) &&
+        (request.resource.data.metodoPago == 'efectivo' ||
+          request.resource.data.comprobanteUrl is string);
+    }
+
     function envioCamposFijosSinCambio() {
       return request.resource.data.clienteId == resource.data.clienteId &&
         request.resource.data.descripcion == resource.data.descripcion &&
@@ -98,11 +108,28 @@ service cloud.firestore {
 
       // El repartidor asignado avanza el viaje: asignado→en_curso ("Iniciar
       // viaje", arranca el Foreground Service) o en_curso→entregado
-      // ("Marcar como entregado", lo detiene). Ningún otro campo cambia.
+      // ("Marcar como entregado", lo detiene, y fija metodoPago/
+      // comprobanteUrl — Sprint 6.1). Ningún otro campo cambia.
       allow update: if isSignedIn() &&
         resource.data.repartidorAsignadoId == request.auth.uid &&
         ((resource.data.status == 'asignado' && request.resource.data.status == 'en_curso') ||
-          (resource.data.status == 'en_curso' && request.resource.data.status == 'entregado')) &&
+          (resource.data.status == 'en_curso' && request.resource.data.status == 'entregado' &&
+            pagoValidoAlEntregar())) &&
+        request.resource.data.repartidorAsignadoId == resource.data.repartidorAsignadoId &&
+        request.resource.data.ofertaAceptadaId == resource.data.ofertaAceptadaId &&
+        envioCamposFijosSinCambio();
+
+      // Un Admin marca como verificado el comprobante QR de un envío ya
+      // entregado (Sprint 6.1) — único campo de envios que el rol admin
+      // puede escribir. Sin flujo de "rechazar", mismo criterio que la
+      // aprobación KYC del Sprint 5.1 (solo aprobar, sin ampliar alcance).
+      allow update: if isAdmin() &&
+        resource.data.status == 'entregado' &&
+        resource.data.metodoPago == 'qr' &&
+        request.resource.data.pagoVerificado == true &&
+        request.resource.data.status == resource.data.status &&
+        request.resource.data.metodoPago == resource.data.metodoPago &&
+        request.resource.data.comprobanteUrl == resource.data.comprobanteUrl &&
         request.resource.data.repartidorAsignadoId == resource.data.repartidorAsignadoId &&
         request.resource.data.ofertaAceptadaId == resource.data.ofertaAceptadaId &&
         envioCamposFijosSinCambio();
@@ -140,6 +167,33 @@ service cloud.firestore {
           request.resource.data.repartidorId == resource.data.repartidorId &&
           request.resource.data.montoOfertadoCentavos == resource.data.montoOfertadoCentavos;
 
+        allow delete: if false;
+      }
+
+      // Calificación cruzada (Sprint 6.1). El ID del documento es el uid
+      // del autor: una segunda escritura del mismo usuario es "update", no
+      // "create", y no hay regla de allow update — eso previene una
+      // segunda calificación sin necesitar una transacción.
+      match /calificaciones/{autorId} {
+        allow read: if isSignedIn();
+
+        allow create: if isSignedIn() &&
+          autorId == request.auth.uid &&
+          request.resource.data.autorId == request.auth.uid &&
+          request.resource.data.estrellas is int &&
+          request.resource.data.estrellas >= 1 &&
+          request.resource.data.estrellas <= 5 &&
+          get(/databases/$(database)/documents/envios/$(envioId)).data.status == 'entregado' &&
+          (
+            (get(/databases/$(database)/documents/envios/$(envioId)).data.clienteId == request.auth.uid &&
+              request.resource.data.paraId ==
+                get(/databases/$(database)/documents/envios/$(envioId)).data.repartidorAsignadoId) ||
+            (get(/databases/$(database)/documents/envios/$(envioId)).data.repartidorAsignadoId == request.auth.uid &&
+              request.resource.data.paraId ==
+                get(/databases/$(database)/documents/envios/$(envioId)).data.clienteId)
+          );
+
+        allow update: if false;
         allow delete: if false;
       }
     }

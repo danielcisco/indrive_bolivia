@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/session_status_view.dart';
 import 'kyc_pending_screen.dart';
 import 'live_map_screen.dart';
+import 'pagos_pendientes_screen.dart';
 
 /// Shell del panel Admin (Sprint 5.1): navegación entre Mapa en vivo y
 /// Verificación KYC. `SessionStatusView` (rol/verificación + cerrar
@@ -18,8 +19,12 @@ class AdminHomeScreen extends StatefulWidget {
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _destinoSeleccionado = 0;
 
-  static const _pantallas = [LiveMapScreen(), KycPendingScreen()];
-  static const _titulos = ['Mapa en vivo', 'Verificación KYC'];
+  static const _pantallas = [
+    LiveMapScreen(),
+    KycPendingScreen(),
+    PagosPendientesScreen(),
+  ];
+  static const _titulos = ['Mapa en vivo', 'Verificación KYC', 'Pagos QR'];
 
   void _abrirSesion(BuildContext context) {
     showDialog<void>(
@@ -70,6 +75,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 icon: Icon(Icons.verified_user_outlined),
                 selectedIcon: Icon(Icons.verified_user),
                 label: Text('KYC'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.qr_code_outlined),
+                selectedIcon: Icon(Icons.qr_code),
+                label: Text('Pagos'),
               ),
             ],
           ),

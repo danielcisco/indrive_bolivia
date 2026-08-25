@@ -77,6 +77,11 @@ dependencies:
   flutter_background_service: ^5.1.0
   permission_handler: ^11.3.1
 
+  # Foto del comprobante QR al confirmar entrega (Sprint 6.1). imageQuality
+  # + maxWidth en el propio picker cubren la compresión en cliente exigida
+  # por CLAUDE.md, sin necesitar un paquete de compresión aparte.
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

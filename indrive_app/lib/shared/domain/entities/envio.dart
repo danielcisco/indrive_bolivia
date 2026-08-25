@@ -27,6 +27,22 @@ enum EnvioStatus {
   };
 }
 
+enum MetodoPago {
+  efectivo,
+  qr;
+
+  static MetodoPago fromFirestore(String value) => switch (value) {
+    'efectivo' => MetodoPago.efectivo,
+    'qr' => MetodoPago.qr,
+    _ => throw ArgumentError('MetodoPago desconocido: $value'),
+  };
+
+  String toFirestore() => switch (this) {
+    MetodoPago.efectivo => 'efectivo',
+    MetodoPago.qr => 'qr',
+  };
+}
+
 /// Entidad de dominio para un envío/subasta.
 ///
 /// El mapeo a/desde Firestore vive en la propia entidad (no hay un DTO
@@ -48,6 +64,9 @@ class Envio {
     required this.expiraEn,
     required this.repartidorPosicionActual,
     required this.repartidorPosicionActualizada,
+    required this.metodoPago,
+    required this.comprobanteUrl,
+    required this.pagoVerificado,
   });
 
   factory Envio.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -70,6 +89,11 @@ class Envio {
       repartidorPosicionActual: data['repartidorPosicionActual'] as GeoPoint?,
       repartidorPosicionActualizada:
           data['repartidorPosicionActualizada'] as Timestamp?,
+      metodoPago: data['metodoPago'] != null
+          ? MetodoPago.fromFirestore(data['metodoPago'] as String)
+          : null,
+      comprobanteUrl: data['comprobanteUrl'] as String?,
+      pagoVerificado: data['pagoVerificado'] as bool? ?? false,
     );
   }
 
@@ -100,6 +124,17 @@ class Envio {
   /// `en_curso` (Sprint 4.1b) — null antes de que arranque el viaje.
   final GeoPoint? repartidorPosicionActual;
   final Timestamp? repartidorPosicionActualizada;
+
+  /// Fijados por el repartidor junto con la transición a `entregado`
+  /// (Sprint 6.1) — null hasta ese momento.
+  final MetodoPago? metodoPago;
+
+  /// Solo presente si [metodoPago] es [MetodoPago.qr].
+  final String? comprobanteUrl;
+
+  /// Solo lo escribe un Admin, revisando [comprobanteUrl] — un pago en
+  /// efectivo no pasa por esta verificación (no tiene sentido para él).
+  final bool pagoVerificado;
 
   /// Datos para `collection('envios').add(...)` al crear. No incluye
   /// `expiraEn` (lo fija la Cloud Function) ni `repartidorAsignadoId`
