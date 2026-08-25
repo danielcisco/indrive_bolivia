@@ -31,6 +31,14 @@
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "ultimaGeohash", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "envios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "repartidorAsignadoId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

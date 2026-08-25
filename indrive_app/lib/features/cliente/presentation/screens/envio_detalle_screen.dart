@@ -27,7 +27,6 @@ class EnvioDetalleScreen extends ConsumerWidget {
             ofertaId: ofertaId,
             repartidorId: repartidorId,
           );
-      ref.invalidate(envioProvider(envioId));
       ref.invalidate(ofertasControllerProvider(envioId));
       ref.invalidate(misEnviosControllerProvider);
       if (context.mounted) {
@@ -46,7 +45,10 @@ class EnvioDetalleScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final envioAsync = ref.watch(envioProvider(envioId));
+    // Stream (no fetch puntual): mientras el envío está en_curso, la
+    // posición del repartidor cambia y esta pantalla debe reflejarlo sin
+    // que el usuario tenga que refrescar manualmente.
+    final envioAsync = ref.watch(envioStreamProvider(envioId));
     final ofertasAsync = ref.watch(ofertasControllerProvider(envioId));
 
     return Scaffold(

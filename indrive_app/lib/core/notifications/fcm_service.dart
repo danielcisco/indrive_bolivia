@@ -36,6 +36,15 @@ class FcmService {
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
 
   Future<void> initialize() async {
+    // Requerido antes de crear canales o mostrar notificaciones — Sprint
+    // 3.2 se saltó este paso porque la prueba de push quedó pendiente y
+    // nunca lo delató. `background_location_service.dart` (Sprint 4.1b)
+    // depende de que esto ya haya corrido.
+    await _localNotifications.initialize(
+      const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      ),
+    );
     await _crearCanalAltaPrioridad();
     await _messaging.requestPermission();
 

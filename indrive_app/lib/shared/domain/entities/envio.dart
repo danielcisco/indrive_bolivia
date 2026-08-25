@@ -46,6 +46,8 @@ class Envio {
     required this.ofertaAceptadaId,
     required this.createdAt,
     required this.expiraEn,
+    required this.repartidorPosicionActual,
+    required this.repartidorPosicionActualizada,
   });
 
   factory Envio.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -65,6 +67,9 @@ class Envio {
       ofertaAceptadaId: data['ofertaAceptadaId'] as String?,
       createdAt: data['createdAt'] as Timestamp?,
       expiraEn: data['expiraEn'] as Timestamp?,
+      repartidorPosicionActual: data['repartidorPosicionActual'] as GeoPoint?,
+      repartidorPosicionActualizada:
+          data['repartidorPosicionActualizada'] as Timestamp?,
     );
   }
 
@@ -90,6 +95,11 @@ class Envio {
   /// cliente nunca escribe este campo (regla no negociable: nunca
   /// `DateTime.now()` del cliente para vencimientos).
   final Timestamp? expiraEn;
+
+  /// Última posición reportada por el repartidor mientras el envío está
+  /// `en_curso` (Sprint 4.1b) — null antes de que arranque el viaje.
+  final GeoPoint? repartidorPosicionActual;
+  final Timestamp? repartidorPosicionActualizada;
 
   /// Datos para `collection('envios').add(...)` al crear. No incluye
   /// `expiraEn` (lo fija la Cloud Function) ni `repartidorAsignadoId`

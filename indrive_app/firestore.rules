@@ -96,6 +96,29 @@ service cloud.firestore {
           get(/databases/$(database)/documents/envios/$(envioId)/ofertas/$(request.resource.data.ofertaAceptadaId)).data.repartidorId &&
         envioCamposFijosSinCambio();
 
+      // El repartidor asignado avanza el viaje: asignado→en_curso ("Iniciar
+      // viaje", arranca el Foreground Service) o en_curso→entregado
+      // ("Marcar como entregado", lo detiene). Ningún otro campo cambia.
+      allow update: if isSignedIn() &&
+        resource.data.repartidorAsignadoId == request.auth.uid &&
+        ((resource.data.status == 'asignado' && request.resource.data.status == 'en_curso') ||
+          (resource.data.status == 'en_curso' && request.resource.data.status == 'entregado')) &&
+        request.resource.data.repartidorAsignadoId == resource.data.repartidorAsignadoId &&
+        request.resource.data.ofertaAceptadaId == resource.data.ofertaAceptadaId &&
+        envioCamposFijosSinCambio();
+
+      // El repartidor asignado actualiza su posición en vivo mientras el
+      // viaje está en curso (Sprint 4.1b) — no cambia status ni ningún
+      // otro campo.
+      allow update: if isSignedIn() &&
+        resource.data.repartidorAsignadoId == request.auth.uid &&
+        resource.data.status == 'en_curso' &&
+        request.resource.data.status == resource.data.status &&
+        request.resource.data.repartidorPosicionActual is latlng &&
+        request.resource.data.repartidorAsignadoId == resource.data.repartidorAsignadoId &&
+        request.resource.data.ofertaAceptadaId == resource.data.ofertaAceptadaId &&
+        envioCamposFijosSinCambio();
+
       allow delete: if false;
 
       match /ofertas/{ofertaId} {

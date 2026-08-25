@@ -3,9 +3,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../domain/entities/envio.dart';
 
-/// Mapa pequeño y no interactivo (modo "lite") con los 2 puntos de un
-/// envío, en vez de mostrar coordenadas crudas. Sin tracking en vivo
-/// todavía — eso es Sprint 4.1b.
+/// Mapa pequeño y no interactivo (modo "lite") con los puntos de un envío
+/// — origen y destino siempre, y la posición en vivo del repartidor cuando
+/// está disponible (envío `en_curso`, Sprint 4.1b). Al usarse junto con
+/// `envioStreamProvider`, cada actualización de posición reconstruye este
+/// widget con el marcador en su lugar nuevo — no hay animación suave (el
+/// modo lite renderiza una instantánea), pero se actualiza solo, sin que
+/// el usuario tenga que refrescar.
 class EnvioMapPreview extends StatelessWidget {
   const EnvioMapPreview({super.key, required this.envio});
 
@@ -15,6 +19,7 @@ class EnvioMapPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final origen = LatLng(envio.origen.latitude, envio.origen.longitude);
     final destino = LatLng(envio.destino.latitude, envio.destino.longitude);
+    final posicionRepartidor = envio.repartidorPosicionActual;
     final centro = LatLng(
       (origen.latitude + destino.latitude) / 2,
       (origen.longitude + destino.longitude) / 2,
@@ -42,6 +47,18 @@ class EnvioMapPreview extends StatelessWidget {
               position: destino,
               infoWindow: const InfoWindow(title: 'Destino'),
             ),
+            if (posicionRepartidor != null)
+              Marker(
+                markerId: const MarkerId('repartidor'),
+                position: LatLng(
+                  posicionRepartidor.latitude,
+                  posicionRepartidor.longitude,
+                ),
+                infoWindow: const InfoWindow(title: 'Repartidor'),
+                icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueAzure,
+                ),
+              ),
           },
         ),
       ),

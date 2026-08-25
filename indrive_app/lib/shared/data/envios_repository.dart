@@ -72,12 +72,25 @@ class EnviosRepository {
     );
   }
 
-  /// Fetch puntual de un envío por id (no es un stream: Sprint 3.1 no
-  /// requiere tiempo real, eso llega con FCM en Fase 3.2/4.1).
+  /// Fetch puntual de un envío por id (no es un stream: no siempre hace
+  /// falta tiempo real, ver [streamEnvio] para cuando sí).
   Future<Envio?> obtenerEnvio(String id) async {
     final snapshot = await _envios.doc(id).get();
     if (!snapshot.exists) return null;
     return Envio.fromFirestore(snapshot);
+  }
+
+  /// Listener en tiempo real de un único documento — usado mientras un
+  /// envío está `en_curso` para reflejar la posición del repartidor sin
+  /// que el Cliente tenga que refrescar. Un stream sobre un solo documento
+  /// es barato y es exactamente el caso que sí amerita tiempo real, a
+  /// diferencia de escuchar colecciones enteras ("streams masivos", que
+  /// CLAUDE.md sí prohíbe).
+  Stream<Envio?> streamEnvio(String id) {
+    return _envios
+        .doc(id)
+        .snapshots()
+        .map((snapshot) => snapshot.exists ? Envio.fromFirestore(snapshot) : null);
   }
 
   /// Envíos abiertos a ofertas, paginado (nunca una query sin cota).
@@ -241,6 +254,55 @@ class EnviosRepository {
       transaction.update(ofertaRef, {
         'status': OfertaStatus.aceptada.toFirestore(),
       });
+    });
+  }
+
+  /// Entregas activas del repartidor [repartidorId] (asignadas o en curso),
+  /// paginado. El filtro de estado se hace en el llamador para no necesitar
+  /// un índice con `whereIn` — el volumen esperado por repartidor es chico.
+  Future<QuerySnapshot<Map<String, dynamic>>> listarEntregasDeRepartidor(
+    String repartidorId, {
+    int limit = 20,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) {
+    var query = _envios
+        .where('repartidorAsignadoId', isEqualTo: repartidorId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+    return query.get();
+  }
+
+  /// El repartidor asignado arranca el viaje — dispara el Foreground
+  /// Service de tracking (ver `lib/core/tracking/`). No hace falta pasar
+  /// el uid del repartidor: la Firestore Rule valida que quien escribe sea
+  /// `repartidorAsignadoId`, el cliente no necesita repetirlo.
+  Future<void> iniciarViaje(String envioId) {
+    return _envios.doc(envioId).update({
+      'status': EnvioStatus.enCurso.toFirestore(),
+    });
+  }
+
+  /// El repartidor asignado marca la entrega como completada — detiene el
+  /// tracking.
+  Future<void> marcarEntregado(String envioId) {
+    return _envios.doc(envioId).update({
+      'status': EnvioStatus.entregado.toFirestore(),
+    });
+  }
+
+  /// Escrito desde el Foreground Service en cada lectura GPS válida
+  /// (filtrada por precisión, ya throttleada por distancia por
+  /// `distanceFilter` — ver `background_location_service.dart`).
+  Future<void> actualizarPosicionRepartidor({
+    required String envioId,
+    required GeoPoint posicion,
+  }) {
+    return _envios.doc(envioId).update({
+      'repartidorPosicionActual': posicion,
+      'repartidorPosicionActualizada': FieldValue.serverTimestamp(),
     });
   }
 }

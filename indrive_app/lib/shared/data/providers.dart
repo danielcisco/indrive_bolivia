@@ -59,8 +59,18 @@ final offlineActionQueueProvider = Provider<OfflineActionQueue>((ref) {
   return queue;
 });
 
-/// Fetch puntual de un envío por id (no es un stream: Sprint 3.1 no
-/// requiere tiempo real todavía, eso llega con FCM en Fase 3.2/4.1).
+/// Fetch puntual de un envío por id.
 final envioProvider = FutureProvider.family<Envio?, String>((ref, envioId) {
   return ref.watch(enviosRepositoryProvider).obtenerEnvio(envioId);
+});
+
+/// Listener en tiempo real de un envío — usado mientras está `en_curso`
+/// para reflejar la posición del repartidor sin refrescar manualmente
+/// (Sprint 4.1b). Ver `EnviosRepository.streamEnvio` para el porqué esto
+/// no viola la regla de "no streams masivos".
+final envioStreamProvider = StreamProvider.family<Envio?, String>((
+  ref,
+  envioId,
+) {
+  return ref.watch(enviosRepositoryProvider).streamEnvio(envioId);
 });
