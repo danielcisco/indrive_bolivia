@@ -7,6 +7,44 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:479253739993:android:616b526cfe10cd8e9481c8",
+        "android_client_info": {
+          "package_name": "bo.villazon.indriveentregas.cliente"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMxxtEW9KjPsCARxdf1QHvShKaUUXJu3U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479253739993:android:9384c5b465a8178f9481c8",
+        "android_client_info": {
+          "package_name": "bo.villazon.indriveentregas.repartidor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMxxtEW9KjPsCARxdf1QHvShKaUUXJu3U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:479253739993:android:21c03a01b7c1a74c9481c8",
         "android_client_info": {
           "package_name": "com.example.indrive_app"

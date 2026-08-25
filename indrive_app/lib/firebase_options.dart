@@ -21,7 +21,12 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return android;
+        throw UnsupportedError(
+          'Android tiene FirebaseOptions distintos por flavor (Cliente y '
+          'Repartidor no pueden compartir applicationId) — usar '
+          'androidCliente o androidRepartidor explícitamente, nunca '
+          'currentPlatform en Android.',
+        );
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
@@ -49,9 +54,23 @@ class DefaultFirebaseOptions {
     storageBucket: 'indrive-entregas-villazon.firebasestorage.app',
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
+  /// App Cliente Android — `bo.villazon.indriveentregas.cliente`. Distinta
+  /// de [androidRepartidor] porque cada flavor necesita su propio
+  /// `applicationId` registrado en Firebase (antes compartían
+  /// "com.example.indrive_app" y no podían instalarse juntas en el mismo
+  /// dispositivo — pendiente técnico post Sprint 5.1).
+  static const FirebaseOptions androidCliente = FirebaseOptions(
     apiKey: 'AIzaSyCMxxtEW9KjPsCARxdf1QHvShKaUUXJu3U',
-    appId: '1:479253739993:android:21c03a01b7c1a74c9481c8',
+    appId: '1:479253739993:android:616b526cfe10cd8e9481c8',
+    messagingSenderId: '479253739993',
+    projectId: 'indrive-entregas-villazon',
+    storageBucket: 'indrive-entregas-villazon.firebasestorage.app',
+  );
+
+  /// App Repartidor Android — `bo.villazon.indriveentregas.repartidor`.
+  static const FirebaseOptions androidRepartidor = FirebaseOptions(
+    apiKey: 'AIzaSyCMxxtEW9KjPsCARxdf1QHvShKaUUXJu3U',
+    appId: '1:479253739993:android:9384c5b465a8178f9481c8',
     messagingSenderId: '479253739993',
     projectId: 'indrive-entregas-villazon',
     storageBucket: 'indrive-entregas-villazon.firebasestorage.app',

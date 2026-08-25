@@ -5,10 +5,11 @@ import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'features/cliente/presentation/screens/cliente_home_screen.dart';
 import 'features/cliente/presentation/screens/cliente_login_screen.dart';
+import 'firebase_options.dart';
 import 'shared/widgets/auth_gate.dart';
 
 Future<void> main() async {
-  await bootstrapApp();
+  await bootstrapApp(options: DefaultFirebaseOptions.androidCliente);
   runApp(const ProviderScope(child: ClienteApp()));
 }
 

@@ -34,15 +34,29 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.indrive_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // Sin applicationId por defecto: cada flavor (abajo) fija el suyo.
+        // Cliente y Repartidor son apps Android reales que antes compartían
+        // "com.example.indrive_app" y por eso no podían instalarse juntas en
+        // el mismo dispositivo (pendiente técnico post Sprint 5.1). Admin
+        // nunca compila a Android (es Flutter Web puro), así que no
+        // necesita flavor propio.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+    }
+
+    flavorDimensions += "app"
+    productFlavors {
+        create("cliente") {
+            dimension = "app"
+            applicationId = "bo.villazon.indriveentregas.cliente"
+        }
+        create("repartidor") {
+            dimension = "app"
+            applicationId = "bo.villazon.indriveentregas.repartidor"
+        }
     }
 
     buildTypes {

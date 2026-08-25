@@ -6,11 +6,12 @@ import 'core/theme/app_theme.dart';
 import 'core/tracking/background_location_service.dart';
 import 'features/repartidor/presentation/screens/repartidor_home_screen.dart';
 import 'features/repartidor/presentation/screens/repartidor_login_screen.dart';
+import 'firebase_options.dart';
 import 'shared/data/providers.dart';
 import 'shared/widgets/auth_gate.dart';
 
 Future<void> main() async {
-  await bootstrapApp();
+  await bootstrapApp(options: DefaultFirebaseOptions.androidRepartidor);
   await initializeBackgroundLocationService();
   runApp(const ProviderScope(child: RepartidorApp()));
 }
