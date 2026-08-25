@@ -1,0 +1,142 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../shared/data/providers.dart';
+import '../../../../shared/domain/entities/envio.dart';
+import '../../../../shared/domain/entities/oferta.dart';
+import '../providers/mis_envios_controller.dart';
+import '../providers/ofertas_controller.dart';
+
+class EnvioDetalleScreen extends ConsumerWidget {
+  const EnvioDetalleScreen({super.key, required this.envioId});
+
+  final String envioId;
+
+  Future<void> _aceptarOferta(
+    BuildContext context,
+    WidgetRef ref,
+    String ofertaId,
+    String repartidorId,
+  ) async {
+    try {
+      await ref
+          .read(enviosRepositoryProvider)
+          .aceptarOferta(
+            envioId: envioId,
+            ofertaId: ofertaId,
+            repartidorId: repartidorId,
+          );
+      ref.invalidate(envioProvider(envioId));
+      ref.invalidate(ofertasControllerProvider(envioId));
+      ref.invalidate(misEnviosControllerProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Propuesta aceptada.')));
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('No se pudo aceptar: $error')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final envioAsync = ref.watch(envioProvider(envioId));
+    final ofertasAsync = ref.watch(ofertasControllerProvider(envioId));
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detalle del envío')),
+      body: envioAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('Error: $error')),
+        data: (envio) {
+          if (envio == null) {
+            return const Center(child: Text('Este envío ya no existe.'));
+          }
+          final puedeElegir = envio.status == EnvioStatus.pendienteOfertas;
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      envio.descripcion,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text('Estado: ${envio.status.name}'),
+                    Text(
+                      'Monto inicial: ${envio.montoOfertadoInicial.format()}',
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ofertasAsync.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Center(child: Text('Error: $error')),
+                  data: (data) {
+                    if (data.ofertas.isEmpty) {
+                      return const Center(
+                        child: Text('Todavía no hay propuestas.'),
+                      );
+                    }
+                    return ListView.builder(
+                      itemCount: data.ofertas.length + (data.hasMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= data.ofertas.length) {
+                          return Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Center(
+                              child: data.isLoadingMore
+                                  ? const CircularProgressIndicator()
+                                  : OutlinedButton(
+                                      onPressed: () => ref
+                                          .read(
+                                            ofertasControllerProvider(
+                                              envioId,
+                                            ).notifier,
+                                          )
+                                          .cargarMas(),
+                                      child: const Text('Cargar más'),
+                                    ),
+                            ),
+                          );
+                        }
+                        final oferta = data.ofertas[index];
+                        final esAceptable =
+                            puedeElegir &&
+                            oferta.status == OfertaStatus.pendiente;
+                        return ListTile(
+                          title: Text(oferta.monto.format()),
+                          subtitle: Text('Estado: ${oferta.status.name}'),
+                          trailing: esAceptable
+                              ? FilledButton(
+                                  onPressed: () => _aceptarOferta(
+                                    context,
+                                    ref,
+                                    oferta.id,
+                                    oferta.repartidorId,
+                                  ),
+                                  child: const Text('Aceptar'),
+                                )
+                              : null,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}

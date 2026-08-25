@@ -57,6 +57,13 @@ dependencies:
   # query por radio geográfico llega en Fase 4.
   dart_geohash: ^2.1.0
 
+  # Gestor de estado (Sprint 3.1).
+  flutter_riverpod: ^2.6.1
+
+  # Ubicación GPS puntual para autocompletar el origen del envío (una sola
+  # lectura — el streaming continuo con throttling es Fase 4).
+  geolocator: ^13.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

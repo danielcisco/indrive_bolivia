@@ -53,6 +53,7 @@ service cloud.firestore {
         request.auth.uid == request.resource.data.clienteId &&
         request.resource.data.status == 'pendiente_ofertas' &&
         request.resource.data.repartidorAsignadoId == null &&
+        request.resource.data.ofertaAceptadaId == null &&
         request.resource.data.montoOfertadoInicialCentavos is int &&
         request.resource.data.montoOfertadoInicialCentavos > 0 &&
         !("expiraEn" in request.resource.data);
@@ -63,6 +64,7 @@ service cloud.firestore {
         resource.data.status == 'pendiente_ofertas' &&
         request.resource.data.status == 'cancelado' &&
         request.resource.data.repartidorAsignadoId == resource.data.repartidorAsignadoId &&
+        request.resource.data.ofertaAceptadaId == resource.data.ofertaAceptadaId &&
         envioCamposFijosSinCambio();
 
       // Un repartidor verificado toma un envío pendiente. La transacción
@@ -74,6 +76,20 @@ service cloud.firestore {
         resource.data.repartidorAsignadoId == null &&
         request.resource.data.status == 'asignado' &&
         request.resource.data.repartidorAsignadoId == request.auth.uid &&
+        request.resource.data.ofertaAceptadaId == resource.data.ofertaAceptadaId &&
+        envioCamposFijosSinCambio();
+
+      // El cliente dueño elige una propuesta específica. Se valida con
+      // get() que el repartidor asignado es realmente el dueño de esa
+      // oferta — evita que el cliente asigne un repartidor arbitrario.
+      allow update: if isSignedIn() &&
+        resource.data.clienteId == request.auth.uid &&
+        resource.data.status == 'pendiente_ofertas' &&
+        resource.data.repartidorAsignadoId == null &&
+        request.resource.data.status == 'asignado' &&
+        request.resource.data.ofertaAceptadaId != null &&
+        request.resource.data.repartidorAsignadoId ==
+          get(/databases/$(database)/documents/envios/$(envioId)/ofertas/$(request.resource.data.ofertaAceptadaId)).data.repartidorId &&
         envioCamposFijosSinCambio();
 
       allow delete: if false;
@@ -87,7 +103,17 @@ service cloud.firestore {
           request.resource.data.montoOfertadoCentavos is int &&
           request.resource.data.montoOfertadoCentavos > 0;
 
-        allow update, delete: if false;
+        // Solo el cliente dueño del envío padre puede marcar su propuesta
+        // como aceptada (parte de EnviosRepository.aceptarOferta), sin
+        // tocar monto ni repartidor.
+        allow update: if isSignedIn() &&
+          get(/databases/$(database)/documents/envios/$(envioId)).data.clienteId == request.auth.uid &&
+          resource.data.status == 'pendiente' &&
+          request.resource.data.status == 'aceptada' &&
+          request.resource.data.repartidorId == resource.data.repartidorId &&
+          request.resource.data.montoOfertadoCentavos == resource.data.montoOfertadoCentavos;
+
+        allow delete: if false;
       }
     }
 

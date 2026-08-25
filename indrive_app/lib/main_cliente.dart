@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
@@ -8,7 +9,7 @@ import 'shared/widgets/auth_gate.dart';
 
 Future<void> main() async {
   await bootstrapApp();
-  runApp(const ClienteApp());
+  runApp(const ProviderScope(child: ClienteApp()));
 }
 
 class ClienteApp extends StatelessWidget {

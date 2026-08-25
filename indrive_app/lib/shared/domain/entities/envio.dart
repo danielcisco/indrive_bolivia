@@ -43,6 +43,7 @@ class Envio {
     required this.destino,
     required this.montoOfertadoInicial,
     required this.repartidorAsignadoId,
+    required this.ofertaAceptadaId,
     required this.createdAt,
     required this.expiraEn,
   });
@@ -61,6 +62,7 @@ class Envio {
         data['montoOfertadoInicialCentavos'] as int,
       ),
       repartidorAsignadoId: data['repartidorAsignadoId'] as String?,
+      ofertaAceptadaId: data['ofertaAceptadaId'] as String?,
       createdAt: data['createdAt'] as Timestamp?,
       expiraEn: data['expiraEn'] as Timestamp?,
     );
@@ -75,6 +77,11 @@ class Envio {
   final GeoPoint destino;
   final Money montoOfertadoInicial;
   final String? repartidorAsignadoId;
+
+  /// Se fija junto con [repartidorAsignadoId] cuando el cliente elige una
+  /// propuesta específica (`EnviosRepository.aceptarOferta`) — queda null
+  /// si en cambio un repartidor tomó el envío directo.
+  final String? ofertaAceptadaId;
 
   /// Null hasta que el servidor confirma el `serverTimestamp()` del create.
   final Timestamp? createdAt;
@@ -103,6 +110,7 @@ class Envio {
     'destino': destino,
     'montoOfertadoInicialCentavos': montoOfertadoInicial.centavos,
     'repartidorAsignadoId': null,
+    'ofertaAceptadaId': null,
     'createdAt': FieldValue.serverTimestamp(),
   };
 }

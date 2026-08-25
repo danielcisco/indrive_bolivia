@@ -10,6 +10,27 @@ class Money implements Comparable<Money> {
 
   factory Money.zero() => const Money.centavos(0);
 
+  /// Parsea un monto en bolivianos escrito por el usuario (ej. "15.5",
+  /// "15,50") a centavos, sin pasar nunca por `double` — evita el riesgo
+  /// de imprecisión de punto flotante incluso en la conversión del input.
+  factory Money.parseBobString(String input) {
+    final normalized = input.trim().replaceAll(',', '.');
+    if (normalized.isEmpty) {
+      throw const FormatException('Monto vacío');
+    }
+    final parts = normalized.split('.');
+    if (parts.length > 2) {
+      throw FormatException('Formato de monto inválido: $input');
+    }
+    final integerPart = parts.first.isEmpty ? '0' : parts.first;
+    final fractionPart = (parts.length == 2 ? parts[1] : '').padRight(2, '0');
+    if (fractionPart.length > 2) {
+      throw FormatException('Máximo 2 decimales: $input');
+    }
+    final centavos = int.parse(integerPart) * 100 + int.parse(fractionPart);
+    return Money.centavos(centavos);
+  }
+
   final int centavos;
 
   double get bob => centavos / 100;
