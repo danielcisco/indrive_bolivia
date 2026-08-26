@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/data/providers.dart';
+import '../../../../shared/widgets/mis_calificaciones_screen.dart';
 import '../../../../shared/widgets/session_status_view.dart';
 import 'mis_entregas_screen.dart';
 import 'radar_screen.dart';
@@ -13,6 +14,7 @@ class RepartidorHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final estadoKyc = ref.watch(miEstadoKycProvider);
+    final rating = ref.watch(miRatingProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('inDrive Entregas — Repartidor')),
@@ -49,7 +51,25 @@ class RepartidorHomeScreen extends ConsumerWidget {
                 );
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            rating.when(
+              loading: () => const SizedBox.shrink(),
+              error: (error, _) => const SizedBox.shrink(),
+              data: (r) => Text(
+                r.total == 0
+                    ? 'Sin calificaciones todavía'
+                    : '⭐ ${r.promedio.toStringAsFixed(1)} · ${r.total} calificaciones',
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MisCalificacionesScreen(),
+                ),
+              ),
+              child: const Text('Mis calificaciones'),
+            ),
+            const SizedBox(height: 8),
             FilledButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const RadarScreen()),

@@ -89,4 +89,36 @@ class UsersRepository {
     final snapshot = await _users.doc(uid).get();
     return snapshot.data()?['cedulaUrl'] as String?;
   }
+
+  /// Promedio de calificaciones (0-5, `0` = todavía sin ninguna) — lo
+  /// mantiene la Cloud Function `actualizarRatingPromedio`, nunca se
+  /// calcula acá recorriendo calificaciones (sprint extra, Grupo B).
+  Future<({double promedio, int total})> obtenerMiRating(String uid) async {
+    final snapshot = await _users.doc(uid).get();
+    final data = snapshot.data();
+    return (
+      promedio: (data?['ratingPromedio'] as num?)?.toDouble() ?? 0,
+      total: data?['totalCalificaciones'] as int? ?? 0,
+    );
+  }
+
+  /// Calificaciones recibidas por [uid], sin importar de qué envío
+  /// vinieron — collection group query sobre la subcolección
+  /// `calificaciones` (vive en `envios/{envioId}/calificaciones/{autorId}`,
+  /// ver `Calificacion`), paginada.
+  Future<QuerySnapshot<Map<String, dynamic>>> obtenerMisCalificaciones(
+    String uid, {
+    int limit = 20,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) {
+    var query = _firestore
+        .collectionGroup('calificaciones')
+        .where('paraId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+    return query.get();
+  }
 }

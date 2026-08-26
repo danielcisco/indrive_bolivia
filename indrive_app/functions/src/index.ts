@@ -222,3 +222,48 @@ export const notifyNearbyRepartidores = onDocumentCreated(
     });
   }
 );
+
+/**
+ * Mantiene el promedio de calificaciones de un usuario (Sprint extra,
+ * Grupo B) cada vez que se crea una calificacion nueva.
+ *
+ * Recorrer todas las calificaciones de alguien para calcular su promedio
+ * cada vez que hay que mostrarlo no escala (regla no negociable: nunca
+ * queries sin cota). En cambio, users/{uid} guarda totalCalificaciones y
+ * sumaEstrellas -mantenidos aqui dentro de una transaccion- y de ahi se
+ * deriva ratingPromedio. Las calificaciones nunca se editan ni se borran
+ * (ver firestore.rules), asi que un trigger de creacion alcanza - no hace
+ * falta manejar updates ni deletes.
+ */
+export const actualizarRatingPromedio = onDocumentCreated(
+  { document: "envios/{envioId}/calificaciones/{autorId}" },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const data = snapshot.data();
+    const paraId = data.paraId as string | undefined;
+    const estrellas = data.estrellas as number | undefined;
+    if (!paraId || typeof estrellas !== "number") return;
+
+    const userRef = admin.firestore().collection("users").doc(paraId);
+    await admin.firestore().runTransaction(async (transaction) => {
+      const userSnap = await transaction.get(userRef);
+      const totalPrevio = (userSnap.data()?.totalCalificaciones as number) ?? 0;
+      const sumaPrevia = (userSnap.data()?.sumaEstrellas as number) ?? 0;
+
+      const total = totalPrevio + 1;
+      const suma = sumaPrevia + estrellas;
+
+      transaction.set(
+        userRef,
+        {
+          totalCalificaciones: total,
+          sumaEstrellas: suma,
+          ratingPromedio: suma / total,
+        },
+        { merge: true }
+      );
+    });
+  }
+);
