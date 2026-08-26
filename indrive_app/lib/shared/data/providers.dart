@@ -99,3 +99,17 @@ final miCalificacionProvider = FutureProvider.family<Calificacion?, String>((
   final uid = FirebaseAuth.instance.currentUser!.uid;
   return ref.watch(enviosRepositoryProvider).obtenerCalificacionDe(envioId, uid);
 });
+
+/// Combina el claim `isVerified` del ID token con `cedulaUrl` de
+/// Firestore (diferido de KYC, seguimiento del Sprint 5.1) — decide si
+/// `RepartidorHomeScreen` muestra el aviso de subir la foto de la Cédula.
+final miEstadoKycProvider =
+    FutureProvider<({bool isVerified, String? cedulaUrl})>((ref) async {
+      final user = FirebaseAuth.instance.currentUser!;
+      final token = await user.getIdTokenResult();
+      final isVerified = token.claims?['isVerified'] as bool? ?? false;
+      final cedulaUrl = await ref
+          .watch(usersRepositoryProvider)
+          .obtenerCedulaUrl(user.uid);
+      return (isVerified: isVerified, cedulaUrl: cedulaUrl);
+    });

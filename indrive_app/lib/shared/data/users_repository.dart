@@ -1,15 +1,24 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:uuid/uuid.dart';
 
 class UsersRepository {
-  UsersRepository({FirebaseFirestore? firestore, FirebaseFunctions? functions})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
-      _functions =
-          functions ??
-          FirebaseFunctions.instanceFor(region: 'southamerica-east1');
+  UsersRepository({
+    FirebaseFirestore? firestore,
+    FirebaseFunctions? functions,
+    FirebaseStorage? storage,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _functions =
+           functions ??
+           FirebaseFunctions.instanceFor(region: 'southamerica-east1'),
+       _storage = storage ?? FirebaseStorage.instance;
 
   final FirebaseFirestore _firestore;
   final FirebaseFunctions _functions;
+  final FirebaseStorage _storage;
 
   CollectionReference<Map<String, dynamic>> get _users =>
       _firestore.collection('users');
@@ -48,5 +57,36 @@ class UsersRepository {
   /// invocar esta función (validado server-side).
   Future<void> aprobarKyc(String uid) async {
     await _functions.httpsCallable('approveKyc').call({'uid': uid});
+  }
+
+  /// Sube la foto de la Cédula a `kyc/{uid}/` (regla ya existente desde
+  /// antes de este sprint de seguimiento: dueño lee/escribe, admin lee) y
+  /// devuelve su URL de descarga. contentType explícito por el mismo
+  /// motivo que `EnviosRepository.subirComprobante`: sin esto la
+  /// inferencia automática puede no reconocer el archivo de la cámara
+  /// como imagen y la regla de Storage lo rechaza sin explicar por qué.
+  Future<String> subirFotoCedula({
+    required String uid,
+    required File archivo,
+  }) async {
+    final ref = _storage.ref('kyc/$uid/${const Uuid().v4()}.jpg');
+    await ref.putFile(archivo, SettableMetadata(contentType: 'image/jpeg'));
+    return ref.getDownloadURL();
+  }
+
+  /// Guarda la URL ya subida en el documento del usuario. Sin cambios de
+  /// Rules: la regla de `users/{uid}` ya permite al dueño escribir campos
+  /// nuevos (solo `role`/`isVerified` son inmutables para él).
+  Future<void> guardarCedulaUrl(String uid, String url) {
+    return _users.doc(uid).set({
+      'cedulaUrl': url,
+    }, SetOptions(merge: true));
+  }
+
+  /// Fetch puntual — decide si `RepartidorHomeScreen` todavía tiene que
+  /// mostrar el aviso de "subí tu Cédula".
+  Future<String?> obtenerCedulaUrl(String uid) async {
+    final snapshot = await _users.doc(uid).get();
+    return snapshot.data()?['cedulaUrl'] as String?;
   }
 }

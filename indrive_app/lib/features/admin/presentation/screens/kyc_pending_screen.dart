@@ -66,26 +66,57 @@ class KycPendingScreen extends ConsumerWidget {
               }
               final repartidor = data.repartidores[index];
               final aprobando = data.aprobando.contains(repartidor.uid);
-              return ListTile(
-                title: Text(repartidor.phoneNumber ?? repartidor.uid),
-                subtitle: Text(
-                  repartidor.createdAt != null
-                      ? 'Registrado: ${repartidor.createdAt!.toDate()}'
-                      : 'Fecha de registro no disponible',
+              final cedulaUrl = repartidor.cedulaUrl;
+              return Card(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-                trailing: FilledButton(
-                  onPressed: aprobando
-                      ? null
-                      : () => ref
-                          .read(kycPendingControllerProvider.notifier)
-                          .aprobar(repartidor.uid),
-                  child: aprobando
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(repartidor.phoneNumber ?? repartidor.uid),
+                      Text(
+                        repartidor.createdAt != null
+                            ? 'Registrado: ${repartidor.createdAt!.toDate()}'
+                            : 'Fecha de registro no disponible',
+                      ),
+                      const SizedBox(height: 8),
+                      if (cedulaUrl != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            cedulaUrl,
+                            height: 220,
+                            fit: BoxFit.contain,
+                          ),
                         )
-                      : const Text('Aprobar'),
+                      else
+                        const Text('Todavía no subió la foto de su Cédula.'),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          onPressed: aprobando
+                              ? null
+                              : () => ref
+                                  .read(kycPendingControllerProvider.notifier)
+                                  .aprobar(repartidor.uid),
+                          child: aprobando
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Aprobar'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

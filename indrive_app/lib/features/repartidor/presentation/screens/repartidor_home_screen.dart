@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/data/providers.dart';
 import '../../../../shared/widgets/session_status_view.dart';
 import 'mis_entregas_screen.dart';
 import 'radar_screen.dart';
+import 'subir_cedula_screen.dart';
 
-class RepartidorHomeScreen extends StatelessWidget {
+class RepartidorHomeScreen extends ConsumerWidget {
   const RepartidorHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final estadoKyc = ref.watch(miEstadoKycProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('inDrive Entregas — Repartidor')),
       body: Center(
@@ -17,6 +22,32 @@ class RepartidorHomeScreen extends StatelessWidget {
           children: [
             const SessionStatusView(
               appLabel: 'App Repartidor — Villazón, Potosí',
+            ),
+            // Diferido de KYC (seguimiento del Sprint 5.1): aviso solo
+            // mientras no está verificado y todavía no subió ninguna
+            // foto — una vez subida desaparece, aunque el admin todavía
+            // no la haya revisado.
+            estadoKyc.when(
+              loading: () => const SizedBox.shrink(),
+              error: (error, _) => const SizedBox.shrink(),
+              data: (estado) {
+                if (estado.isVerified || estado.cedulaUrl != null) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: FilledButton.tonal(
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const SubirCedulaScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Subir foto de tu Cédula'),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
             FilledButton(

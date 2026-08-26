@@ -9,6 +9,7 @@ class RepartidorKycPendiente {
     required this.uid,
     required this.phoneNumber,
     required this.createdAt,
+    required this.cedulaUrl,
   });
 
   factory RepartidorKycPendiente.fromFirestore(
@@ -19,10 +20,15 @@ class RepartidorKycPendiente {
       uid: doc.id,
       phoneNumber: data['phoneNumber'] as String?,
       createdAt: data['createdAt'] as Timestamp?,
+      cedulaUrl: data['cedulaUrl'] as String?,
     );
   }
 
   final String uid;
   final String? phoneNumber;
   final Timestamp? createdAt;
+
+  /// Foto subida por el repartidor (diferido de KYC, seguimiento del
+  /// Sprint 5.1) — null si todavía no subió nada.
+  final String? cedulaUrl;
 }
