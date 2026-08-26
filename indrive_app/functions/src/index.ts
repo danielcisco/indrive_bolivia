@@ -1,7 +1,11 @@
 import * as admin from "firebase-admin";
 import { setGlobalOptions } from "firebase-functions/v2";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+} from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 
 admin.initializeApp();
 
@@ -313,5 +317,133 @@ export const actualizarRatingPromedio = onDocumentCreated(
         { merge: true }
       );
     });
+  }
+);
+
+/**
+ * Notificaciones del ciclo de vida del envio para el Cliente (sprint
+ * extra, Grupo D). Helper compartido por las 3 funciones de abajo -
+ * evita triplicar la lectura de users/{uid}.fcmToken.
+ */
+async function enviarNotificacionAUsuario(
+  uid: string,
+  title: string,
+  body: string,
+  envioId: string
+): Promise<void> {
+  const userSnap = await admin.firestore().collection("users").doc(uid).get();
+  const token = userSnap.data()?.fcmToken as string | undefined;
+  if (!token) return;
+
+  await admin.messaging().send({
+    token,
+    notification: { title, body },
+    data: { envioId },
+    android: {
+      priority: "high",
+      notification: {
+        channelId: "actualizaciones_envio",
+      },
+    },
+  });
+}
+
+/**
+ * Avisa al Cliente cuando un repartidor toma su envio directo (sin
+ * negociar) - distinto de que el propio Cliente haya elegido una oferta
+ * (esa es una accion suya, no hace falta avisarle de si misma).
+ */
+export const notificarAceptacionDirecta = onDocumentUpdated(
+  "envios/{envioId}",
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+
+    const fueAceptacionDirecta =
+      before.status === "pendiente_ofertas" &&
+      after.status === "asignado" &&
+      after.ofertaAceptadaId == null;
+    if (!fueAceptacionDirecta) return;
+
+    const clienteId = after.clienteId as string | undefined;
+    const descripcion = (after.descripcion as string | undefined) ?? "tu envío";
+    if (!clienteId) return;
+
+    await enviarNotificacionAUsuario(
+      clienteId,
+      "¡Tu envío fue aceptado!",
+      `Un repartidor aceptó "${descripcion}" directamente.`,
+      event.params.envioId
+    );
+  }
+);
+
+/**
+ * Avisa al Cliente cuando recibe una contraoferta nueva.
+ */
+export const notificarNuevaContraoferta = onDocumentCreated(
+  "envios/{envioId}/ofertas/{ofertaId}",
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const envioSnap = await admin
+      .firestore()
+      .collection("envios")
+      .doc(event.params.envioId)
+      .get();
+    const envioData = envioSnap.data();
+    const clienteId = envioData?.clienteId as string | undefined;
+    if (!clienteId) return;
+
+    const monto = snapshot.data().montoOfertadoCentavos as number | undefined;
+    const montoBob = ((monto ?? 0) / 100).toFixed(2);
+
+    await enviarNotificacionAUsuario(
+      clienteId,
+      "Recibiste una contraoferta",
+      `Un repartidor te ofreció Bs. ${montoBob} por tu envío.`,
+      event.params.envioId
+    );
+  }
+);
+
+const MAX_ENVIOS_A_EXPIRAR_POR_CORRIDA = 100;
+
+/**
+ * Barrido programado (primer onSchedule del proyecto): cierra los
+ * envios cuya ventana de subasta ya paso sin que nadie los tomara. Los
+ * pasa a "expirado" -distinto de "cancelado", que es una decision del
+ * Cliente- y avisa. Corre cada 5 minutos; la ventana de subasta son 10,
+ * asi que el peor caso es ~5 min de demora. Paginado con .limit() -
+ * nunca una query sin cota, ni siquiera en un cron.
+ */
+export const expirarEnviosVencidos = onSchedule(
+  "every 5 minutes",
+  async () => {
+    const ahora = admin.firestore.Timestamp.now();
+    const snapshot = await admin
+      .firestore()
+      .collection("envios")
+      .where("status", "==", "pendiente_ofertas")
+      .where("expiraEn", "<", ahora)
+      .limit(MAX_ENVIOS_A_EXPIRAR_POR_CORRIDA)
+      .get();
+
+    for (const doc of snapshot.docs) {
+      await doc.ref.update({ status: "expirado" });
+      const clienteId = doc.data().clienteId as string | undefined;
+      const descripcion =
+        (doc.data().descripcion as string | undefined) ?? "tu envío";
+      if (clienteId) {
+        await enviarNotificacionAUsuario(
+          clienteId,
+          "Se venció el tiempo de tu envío",
+          `Nadie tomó "${descripcion}" a tiempo. Podés volver a publicarlo.`,
+          doc.id
+        );
+      }
+    }
   }
 );

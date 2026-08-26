@@ -7,7 +7,11 @@ enum EnvioStatus {
   asignado,
   enCurso,
   entregado,
-  cancelado;
+  cancelado,
+  // Sprint extra, Grupo D: distinto de `cancelado` a propósito — nadie lo
+  // tomó a tiempo, el Cliente no decidió nada. Lo fija el barrido
+  // programado `expirarEnviosVencidos`, nunca el cliente.
+  expirado;
 
   static EnvioStatus fromFirestore(String value) => switch (value) {
     'pendiente_ofertas' => EnvioStatus.pendienteOfertas,
@@ -15,6 +19,7 @@ enum EnvioStatus {
     'en_curso' => EnvioStatus.enCurso,
     'entregado' => EnvioStatus.entregado,
     'cancelado' => EnvioStatus.cancelado,
+    'expirado' => EnvioStatus.expirado,
     _ => throw ArgumentError('EnvioStatus desconocido: $value'),
   };
 
@@ -24,6 +29,7 @@ enum EnvioStatus {
     EnvioStatus.enCurso => 'en_curso',
     EnvioStatus.entregado => 'entregado',
     EnvioStatus.cancelado => 'cancelado',
+    EnvioStatus.expirado => 'expirado',
   };
 }
 

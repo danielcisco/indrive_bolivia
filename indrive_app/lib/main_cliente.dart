@@ -6,6 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'features/cliente/presentation/screens/cliente_home_screen.dart';
 import 'features/cliente/presentation/screens/cliente_login_screen.dart';
 import 'firebase_options.dart';
+import 'shared/data/providers.dart';
 import 'shared/widgets/auth_gate.dart';
 
 Future<void> main() async {
@@ -13,11 +14,15 @@ Future<void> main() async {
   runApp(const ProviderScope(child: ClienteApp()));
 }
 
-class ClienteApp extends StatelessWidget {
+class ClienteApp extends ConsumerWidget {
   const ClienteApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Arranca FCM por primera vez del lado Cliente (sprint extra, Grupo
+    // D) — mismo patrón que ya usa RepartidorApp.
+    ref.watch(fcmServiceProvider);
+
     return MaterialApp(
       title: 'inDrive Entregas — Cliente',
       theme: AppTheme.light,
