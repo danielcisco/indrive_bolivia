@@ -224,6 +224,54 @@ export const notifyNearbyRepartidores = onDocumentCreated(
 );
 
 /**
+ * Suspende o reactiva una cuenta (Sprint extra, Grupo C) - solo un admin
+ * puede invocarla. "Suspender" usa el mecanismo real de Firebase Auth
+ * (updateUser + revokeRefreshTokens), no un flag cosmetico: la cuenta
+ * deja de poder loguearse de verdad, y una sesion ya abierta pierde su
+ * validez en el proximo refresh en vez de seguir viva hasta que expire
+ * sola. El espejo en Firestore (users/{uid}.isActive) es solo para que
+ * el panel Admin pueda mostrar el estado sin llamar al Admin SDK en cada
+ * lectura.
+ */
+export const establecerEstadoCuenta = onCall(async (request) => {
+  const callerRole = request.auth?.token?.role;
+  if (callerRole !== "admin") {
+    throw new HttpsError(
+      "permission-denied",
+      "Solo un administrador puede suspender o reactivar cuentas."
+    );
+  }
+
+  const uid = request.data?.uid;
+  const activar = request.data?.activar;
+  if (typeof uid !== "string" || typeof activar !== "boolean") {
+    throw new HttpsError(
+      "invalid-argument",
+      "uid y activar son requeridos."
+    );
+  }
+
+  await admin.auth().updateUser(uid, { disabled: !activar });
+  if (!activar) {
+    await admin.auth().revokeRefreshTokens(uid);
+  }
+
+  await admin
+    .firestore()
+    .collection("users")
+    .doc(uid)
+    .set(
+      {
+        isActive: activar,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+  return { uid, isActive: activar };
+});
+
+/**
  * Mantiene el promedio de calificaciones de un usuario (Sprint extra,
  * Grupo B) cada vez que se crea una calificacion nueva.
  *

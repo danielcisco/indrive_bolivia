@@ -16,7 +16,13 @@ service cloud.firestore {
 
     // role e isVerified solo los escribe la Cloud Function (Admin SDK),
     // que no pasa por estas reglas. El cliente puede crear su doc inicial
-    // pero nunca fijar esos dos campos por su cuenta.
+    // pero nunca fijar esos dos campos por su cuenta. isActive (Sprint
+    // extra, Grupo C) es igual de inmutable para el dueño -si no,
+    // cualquiera podria reactivarse a si mismo escribiendo directo a
+    // Firestore-, pero puede no existir todavia en cuentas que nunca se
+    // suspendieron, por eso usa .get(key, default) en vez de acceso
+    // directo (un acceso directo a una clave ausente rompe la regla para
+    // *todas* las demas escrituras del dueño, no solo esta).
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow create: if isOwner(uid) &&
@@ -24,7 +30,8 @@ service cloud.firestore {
         !("isVerified" in request.resource.data);
       allow update: if isOwner(uid) &&
         request.resource.data.role == resource.data.role &&
-        request.resource.data.isVerified == resource.data.isVerified;
+        request.resource.data.isVerified == resource.data.isVerified &&
+        request.resource.data.get('isActive', true) == resource.data.get('isActive', true);
       allow delete: if false;
     }
 

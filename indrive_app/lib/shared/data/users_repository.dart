@@ -102,6 +102,29 @@ class UsersRepository {
     );
   }
 
+  /// Todos los usuarios (Cliente + Repartidor mezclados), paginado —
+  /// alimenta `GestionUsuariosScreen` del panel Admin (sprint extra,
+  /// Grupo C).
+  Future<QuerySnapshot<Map<String, dynamic>>> listarUsuarios({
+    int limit = 20,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) {
+    var query = _users.orderBy('createdAt', descending: true).limit(limit);
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+    return query.get();
+  }
+
+  /// Suspende (`activar: false`) o reactiva (`activar: true`) una cuenta
+  /// vía la Cloud Function `establecerEstadoCuenta` — el cliente nunca
+  /// puede tocar `isActive` directamente (ver `firestore.rules`).
+  Future<void> establecerEstadoCuenta(String uid, {required bool activar}) {
+    return _functions
+        .httpsCallable('establecerEstadoCuenta')
+        .call({'uid': uid, 'activar': activar});
+  }
+
   /// Calificaciones recibidas por [uid], sin importar de qué envío
   /// vinieron — collection group query sobre la subcolección
   /// `calificaciones` (vive en `envios/{envioId}/calificaciones/{autorId}`,

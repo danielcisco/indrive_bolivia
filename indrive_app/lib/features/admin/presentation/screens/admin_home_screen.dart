@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/session_status_view.dart';
+import 'gestion_usuarios_screen.dart';
 import 'kyc_pending_screen.dart';
 import 'live_map_screen.dart';
 import 'pagos_pendientes_screen.dart';
@@ -23,8 +24,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     LiveMapScreen(),
     KycPendingScreen(),
     PagosPendientesScreen(),
+    GestionUsuariosScreen(),
   ];
-  static const _titulos = ['Mapa en vivo', 'Verificación KYC', 'Pagos QR'];
+  static const _titulos = [
+    'Mapa en vivo',
+    'Verificación KYC',
+    'Pagos QR',
+    'Usuarios',
+  ];
 
   void _abrirSesion(BuildContext context) {
     showDialog<void>(
@@ -80,6 +87,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 icon: Icon(Icons.qr_code_outlined),
                 selectedIcon: Icon(Icons.qr_code),
                 label: Text('Pagos'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.people_outline),
+                selectedIcon: Icon(Icons.people),
+                label: Text('Usuarios'),
               ),
             ],
           ),
