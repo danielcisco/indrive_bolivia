@@ -6,6 +6,7 @@ import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/entities/oferta.dart';
 import '../../../../shared/widgets/calificacion_dialog.dart';
+import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
 import '../providers/mis_envios_controller.dart';
 import '../providers/ofertas_controller.dart';
@@ -41,6 +42,45 @@ class EnvioDetalleScreen extends ConsumerWidget {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('No se pudo aceptar: $error')));
+      }
+    }
+  }
+
+  Future<void> _cancelarEnvio(BuildContext context, WidgetRef ref) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Cancelar este envío?'),
+        content: const Text(
+          'Los repartidores ya no van a poder aceptarlo ni mandar '
+          'contraofertas. Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sí, cancelar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+    try {
+      await ref.read(enviosRepositoryProvider).cancelarEnvio(envioId);
+      ref.invalidate(misEnviosControllerProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Envío cancelado.')));
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('No se pudo cancelar: $error')));
       }
     }
   }
@@ -100,6 +140,15 @@ class EnvioDetalleScreen extends ConsumerWidget {
                     Text(
                       'Monto inicial: ${envio.montoOfertadoInicial.format()}',
                     ),
+                    if (envio.status == EnvioStatus.pendienteOfertas) ...[
+                      const SizedBox(height: 8),
+                      CountdownTimer(expiraEn: envio.expiraEn),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: () => _cancelarEnvio(context, ref),
+                        child: const Text('Cancelar envío'),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     EnvioMapPreview(envio: envio),
                     if (envio.status == EnvioStatus.entregado) ...[

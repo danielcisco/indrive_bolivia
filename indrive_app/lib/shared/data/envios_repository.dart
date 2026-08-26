@@ -208,6 +208,16 @@ class EnviosRepository {
         .add(Oferta.createData(repartidorId: repartidorId, monto: monto));
   }
 
+  /// El cliente dueño cancela mientras el envío siga sin asignar. Sin
+  /// transacción: a diferencia de aceptar un envío, acá no hay una
+  /// condición de carrera real que prevenir (nadie más escribe `status`
+  /// al mismo tiempo que el propio dueño cancelando el suyo).
+  Future<void> cancelarEnvio(String envioId) {
+    return _envios.doc(envioId).update({
+      'status': EnvioStatus.cancelado.toFirestore(),
+    });
+  }
+
   /// Un repartidor toma directamente un envío pendiente. Transacción
   /// atómica: lee el estado actual y solo escribe si sigue sin asignar —
   /// previene la doble asignación exigida por CLAUDE.md sin necesitar una

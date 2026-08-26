@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/value_objects/money.dart';
+import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
 
 /// Detalle de un envío desde el punto de vista del Repartidor: dos
@@ -30,6 +31,30 @@ class _EnvioRepartidorDetalleScreenState
   void dispose() {
     _montoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _confirmarYAceptarDirecto() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Aceptar este envío?'),
+        content: const Text(
+          'Te vas a comprometer a hacer esta entrega. No se puede '
+          'deshacer una vez confirmado.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sí, aceptar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar == true) await _aceptarDirecto();
   }
 
   Future<void> _aceptarDirecto() async {
@@ -102,11 +127,13 @@ class _EnvioRepartidorDetalleScreenState
                 Text(
                   'Oferta inicial: ${envio.montoOfertadoInicial.format()}',
                 ),
+                const SizedBox(height: 8),
+                CountdownTimer(expiraEn: envio.expiraEn),
                 const SizedBox(height: 12),
                 EnvioMapPreview(envio: envio),
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _procesando ? null : _aceptarDirecto,
+                  onPressed: _procesando ? null : _confirmarYAceptarDirecto,
                   child: const Text('Aceptar directo'),
                 ),
                 const SizedBox(height: 24),
