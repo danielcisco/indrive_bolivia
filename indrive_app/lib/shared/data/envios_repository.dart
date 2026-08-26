@@ -329,12 +329,27 @@ class EnviosRepository {
   /// descarga. La compresión en cliente (regla no negociable de
   /// CLAUDE.md) la hace `image_picker` al capturar la foto, no este
   /// método — ver `ConfirmarEntregaScreen`.
+  ///
+  /// El path incluye el uid del repartidor (no solo el envioId) para que
+  /// la regla de Storage pueda validar el dueño comparando directo contra
+  /// `request.auth.uid` (mismo patrón que `/kyc/{uid}/`), sin depender de
+  /// un `firestore.get()` cruzado en la escritura.
   Future<String> subirComprobante({
     required String envioId,
+    required String repartidorId,
     required File archivo,
   }) async {
-    final ref = _storage.ref('comprobantes/$envioId/${const Uuid().v4()}.jpg');
-    await ref.putFile(archivo);
+    final ref = _storage.ref(
+      'comprobantes/$envioId/$repartidorId/${const Uuid().v4()}.jpg',
+    );
+    // contentType explícito: sin esto, la inferencia automática de
+    // putFile() puede no reconocer el archivo temporal de la cámara como
+    // imagen, y la regla de Storage (`contentType.matches('image/.*')`)
+    // lo rechaza con un "unauthorized" que no explica el motivo real.
+    await ref.putFile(
+      archivo,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
     return ref.getDownloadURL();
   }
 

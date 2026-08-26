@@ -41,7 +41,11 @@ class OfertasState {
 /// Lista paginada de propuestas de un envío. Mismo patrón que
 /// [MisEnviosController] — reutilizado, no reimplementado.
 class OfertasController extends FamilyAsyncNotifier<OfertasState, String> {
-  late final String _envioId;
+  // No "final": Riverpod puede volver a llamar build() sobre la misma
+  // instancia (hot reload, o un re-watch de dependencias) — con "final"
+  // una segunda asignación revienta con LateInitializationError aunque el
+  // valor sea idéntico.
+  late String _envioId;
 
   @override
   Future<OfertasState> build(String arg) {

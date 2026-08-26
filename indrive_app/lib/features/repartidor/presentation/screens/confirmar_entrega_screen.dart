@@ -54,6 +54,7 @@ class _ConfirmarEntregaScreenState
       if (_metodoPago == MetodoPago.qr) {
         comprobanteUrl = await repository.subirComprobante(
           envioId: widget.envioId,
+          repartidorId: FirebaseAuth.instance.currentUser!.uid,
           archivo: File(_foto!.path),
         );
       }
