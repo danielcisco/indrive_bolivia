@@ -20,6 +20,8 @@ class AdminApp extends StatelessWidget {
     return MaterialApp(
       title: 'inDrive Entregas — Panel Admin',
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       home: AuthGate(
         expectedRole: 'admin',
         loginBuilder: (_) => const AdminLoginScreen(),

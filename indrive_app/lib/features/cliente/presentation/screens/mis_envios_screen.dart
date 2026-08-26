@@ -36,7 +36,16 @@ class MisEnviosScreen extends ConsumerWidget {
                 children: const [
                   Padding(
                     padding: EdgeInsets.all(32),
-                    child: Center(child: Text('Todavía no tienes envíos.')),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.local_shipping_outlined, size: 48),
+                          SizedBox(height: 8),
+                          Text('Todavía no tienes envíos.'),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

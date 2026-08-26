@@ -26,6 +26,8 @@ class ClienteApp extends ConsumerWidget {
     return MaterialApp(
       title: 'inDrive Entregas — Cliente',
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       home: AuthGate(
         expectedRole: 'cliente',
         loginBuilder: (_) => const ClienteLoginScreen(),

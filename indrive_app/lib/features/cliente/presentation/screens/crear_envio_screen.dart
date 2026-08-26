@@ -187,9 +187,15 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                   ),
                 ),
               const SizedBox(height: 24),
-              FilledButton(
-                onPressed: estado.isLoading ? null : _enviar,
-                child: Text(estado.isLoading ? 'Enviando...' : 'Publicar envío'),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: estado.isLoading ? null : _enviar,
+                  icon: const Icon(Icons.send_outlined),
+                  label: Text(
+                    estado.isLoading ? 'Enviando...' : 'Publicar envío',
+                  ),
+                ),
               ),
             ],
           ),

@@ -29,6 +29,8 @@ class RepartidorApp extends ConsumerWidget {
     return MaterialApp(
       title: 'inDrive Entregas — Repartidor',
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       home: AuthGate(
         expectedRole: 'repartidor',
         loginBuilder: (_) => const RepartidorLoginScreen(),

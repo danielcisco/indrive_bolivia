@@ -32,20 +32,25 @@ class ClienteHomeScreen extends ConsumerWidget {
                     : '⭐ ${r.promedio.toStringAsFixed(1)} · ${r.total} calificaciones',
               ),
             ),
-            TextButton(
+            TextButton.icon(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const MisCalificacionesScreen(),
                 ),
               ),
-              child: const Text('Mis calificaciones'),
+              icon: const Icon(Icons.star_outline),
+              label: const Text('Mis calificaciones'),
             ),
             const SizedBox(height: 8),
-            FilledButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MisEnviosScreen()),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MisEnviosScreen()),
+                ),
+                icon: const Icon(Icons.local_shipping_outlined),
+                label: const Text('Mis envíos'),
               ),
-              child: const Text('Mis envíos'),
             ),
           ],
         ),

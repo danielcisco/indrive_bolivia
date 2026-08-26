@@ -38,15 +38,19 @@ class RepartidorHomeScreen extends ConsumerWidget {
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: 16),
-                  child: FilledButton.tonal(
-                    onPressed: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SubirCedulaScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text('Subir foto de tu Cédula'),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonalIcon(
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SubirCedulaScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.badge_outlined),
+                      label: const Text('Subir foto de tu Cédula'),
+                    ),
                   ),
                 );
               },
@@ -61,27 +65,36 @@ class RepartidorHomeScreen extends ConsumerWidget {
                     : '⭐ ${r.promedio.toStringAsFixed(1)} · ${r.total} calificaciones',
               ),
             ),
-            TextButton(
+            TextButton.icon(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const MisCalificacionesScreen(),
                 ),
               ),
-              child: const Text('Mis calificaciones'),
+              icon: const Icon(Icons.star_outline),
+              label: const Text('Mis calificaciones'),
             ),
             const SizedBox(height: 8),
-            FilledButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const RadarScreen()),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const RadarScreen()),
+                ),
+                icon: const Icon(Icons.radar),
+                label: const Text('Radar de ofertas'),
               ),
-              child: const Text('Radar de ofertas'),
             ),
             const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MisEntregasScreen()),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MisEntregasScreen()),
+                ),
+                icon: const Icon(Icons.local_shipping_outlined),
+                label: const Text('Mis entregas'),
               ),
-              child: const Text('Mis entregas'),
             ),
           ],
         ),

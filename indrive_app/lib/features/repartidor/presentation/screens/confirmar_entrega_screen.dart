@@ -143,9 +143,15 @@ class _ConfirmarEntregaScreenState
               ),
             ],
             const SizedBox(height: 24),
-            FilledButton(
-              onPressed: (_procesando || faltaFoto) ? null : _confirmar,
-              child: Text(_procesando ? 'Confirmando...' : 'Confirmar entrega'),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: (_procesando || faltaFoto) ? null : _confirmar,
+                icon: const Icon(Icons.check_circle_outline),
+                label: Text(
+                  _procesando ? 'Confirmando...' : 'Confirmar entrega',
+                ),
+              ),
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),

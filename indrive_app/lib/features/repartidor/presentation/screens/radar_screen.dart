@@ -37,7 +37,14 @@ class RadarScreen extends ConsumerWidget {
                   Padding(
                     padding: EdgeInsets.all(32),
                     child: Center(
-                      child: Text('No hay envíos cerca por ahora.'),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.radar, size: 48),
+                          SizedBox(height: 8),
+                          Text('No hay envíos cerca por ahora.'),
+                        ],
+                      ),
                     ),
                   ),
                 ],

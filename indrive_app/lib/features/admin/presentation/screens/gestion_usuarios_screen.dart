@@ -27,7 +27,16 @@ class GestionUsuariosScreen extends ConsumerWidget {
               children: const [
                 Padding(
                   padding: EdgeInsets.all(32),
-                  child: Center(child: Text('No hay usuarios todavía.')),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.people_outline, size: 48),
+                        SizedBox(height: 8),
+                        Text('No hay usuarios todavía.'),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

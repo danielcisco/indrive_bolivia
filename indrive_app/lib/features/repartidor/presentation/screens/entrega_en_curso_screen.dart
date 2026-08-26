@@ -110,14 +110,24 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
                 EnvioMapPreview(envio: envio),
                 const SizedBox(height: 24),
                 if (envio.status == EnvioStatus.asignado)
-                  FilledButton(
-                    onPressed: _procesando ? null : _iniciarViaje,
-                    child: Text(_procesando ? 'Iniciando...' : 'Iniciar viaje'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _procesando ? null : _iniciarViaje,
+                      icon: const Icon(Icons.play_arrow_outlined),
+                      label: Text(
+                        _procesando ? 'Iniciando...' : 'Iniciar viaje',
+                      ),
+                    ),
                   )
                 else if (envio.status == EnvioStatus.enCurso)
-                  FilledButton(
-                    onPressed: _irAConfirmarEntrega,
-                    child: const Text('Marcar como entregado'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _irAConfirmarEntrega,
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Marcar como entregado'),
+                    ),
                   ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),

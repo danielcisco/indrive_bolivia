@@ -95,19 +95,25 @@ class _UsuarioDetalleScreenState extends ConsumerState<UsuarioDetalleScreen> {
             if (usuario.createdAt != null)
               Text('Registrado: ${usuario.createdAt!.toDate()}'),
             const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _procesando ? null : _cambiarEstado,
-              style: _isActive
-                  ? FilledButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                    )
-                  : null,
-              child: Text(
-                _procesando
-                    ? 'Procesando...'
-                    : _isActive
-                    ? 'Suspender cuenta'
-                    : 'Reactivar cuenta',
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _procesando ? null : _cambiarEstado,
+                style: _isActive
+                    ? FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      )
+                    : null,
+                icon: Icon(
+                  _isActive ? Icons.block_outlined : Icons.check_circle_outline,
+                ),
+                label: Text(
+                  _procesando
+                      ? 'Procesando...'
+                      : _isActive
+                      ? 'Suspender cuenta'
+                      : 'Reactivar cuenta',
+                ),
               ),
             ),
             if (_error != null) ...[

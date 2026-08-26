@@ -82,9 +82,13 @@ class _SubirCedulaScreenState extends ConsumerState<SubirCedulaScreen> {
               label: Text(_foto == null ? 'Tomar foto' : 'Repetir foto'),
             ),
             const SizedBox(height: 24),
-            FilledButton(
-              onPressed: (_procesando || _foto == null) ? null : _confirmar,
-              child: Text(_procesando ? 'Subiendo...' : 'Subir'),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: (_procesando || _foto == null) ? null : _confirmar,
+                icon: const Icon(Icons.cloud_upload_outlined),
+                label: Text(_procesando ? 'Subiendo...' : 'Subir'),
+              ),
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),

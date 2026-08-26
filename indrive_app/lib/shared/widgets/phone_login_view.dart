@@ -94,9 +94,13 @@ class _PhoneLoginViewState extends State<PhoneLoginView> {
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _isSubmitting ? null : _sendCode,
-              child: const Text('Enviar código'),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _isSubmitting ? null : _sendCode,
+                icon: const Icon(Icons.sms_outlined),
+                label: Text(_isSubmitting ? 'Enviando...' : 'Enviar código'),
+              ),
             ),
           ] else ...[
             TextField(
@@ -105,9 +109,13 @@ class _PhoneLoginViewState extends State<PhoneLoginView> {
               decoration: const InputDecoration(labelText: 'Código SMS'),
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _isSubmitting ? null : _confirmCode,
-              child: const Text('Confirmar'),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _isSubmitting ? null : _confirmCode,
+                icon: const Icon(Icons.check_outlined),
+                label: Text(_isSubmitting ? 'Confirmando...' : 'Confirmar'),
+              ),
             ),
           ],
           if (_errorMessage != null) ...[

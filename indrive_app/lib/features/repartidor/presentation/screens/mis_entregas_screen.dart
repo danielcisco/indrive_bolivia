@@ -28,7 +28,14 @@ class MisEntregasScreen extends ConsumerWidget {
                   Padding(
                     padding: EdgeInsets.all(32),
                     child: Center(
-                      child: Text('No tienes entregas activas por ahora.'),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.local_shipping_outlined, size: 48),
+                          SizedBox(height: 8),
+                          Text('No tienes entregas activas por ahora.'),
+                        ],
+                      ),
                     ),
                   ),
                 ],

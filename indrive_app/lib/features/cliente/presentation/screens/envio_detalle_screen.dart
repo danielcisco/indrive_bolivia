@@ -144,9 +144,10 @@ class EnvioDetalleScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       CountdownTimer(expiraEn: envio.expiraEn),
                       const SizedBox(height: 8),
-                      OutlinedButton(
+                      OutlinedButton.icon(
                         onPressed: () => _cancelarEnvio(context, ref),
-                        child: const Text('Cancelar envío'),
+                        icon: const Icon(Icons.cancel_outlined),
+                        label: const Text('Cancelar envío'),
                       ),
                     ],
                     const SizedBox(height: 12),
@@ -175,10 +176,11 @@ class EnvioDetalleScreen extends ConsumerWidget {
                             error: (error, _) => const SizedBox.shrink(),
                             data: (calificacion) => calificacion != null
                                 ? const Text('Ya calificaste este envío.')
-                                : OutlinedButton(
+                                : OutlinedButton.icon(
                                     onPressed: () =>
                                         _calificar(context, ref, repartidorId),
-                                    child: const Text('Calificar al repartidor'),
+                                    icon: const Icon(Icons.star_outline),
+                                    label: const Text('Calificar al repartidor'),
                                   ),
                           );
                         },
@@ -195,7 +197,14 @@ class EnvioDetalleScreen extends ConsumerWidget {
                   data: (data) {
                     if (data.ofertas.isEmpty) {
                       return const Center(
-                        child: Text('Todavía no hay propuestas.'),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.inbox_outlined, size: 48),
+                            SizedBox(height: 8),
+                            Text('Todavía no hay propuestas.'),
+                          ],
+                        ),
                       );
                     }
                     return ListView.builder(

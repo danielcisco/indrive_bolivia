@@ -22,7 +22,14 @@ class MisCalificacionesScreen extends ConsumerWidget {
         data: (data) {
           if (data.calificaciones.isEmpty) {
             return const Center(
-              child: Text('Todavía no recibiste ninguna calificación.'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.star_outline, size: 48),
+                  SizedBox(height: 8),
+                  Text('Todavía no recibiste ninguna calificación.'),
+                ],
+              ),
             );
           }
           return ListView.builder(

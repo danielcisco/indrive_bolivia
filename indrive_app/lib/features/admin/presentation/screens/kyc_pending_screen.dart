@@ -36,7 +36,14 @@ class KycPendingScreen extends ConsumerWidget {
                 Padding(
                   padding: EdgeInsets.all(32),
                   child: Center(
-                    child: Text('No hay repartidores con KYC pendiente.'),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.verified_user_outlined, size: 48),
+                        SizedBox(height: 8),
+                        Text('No hay repartidores con KYC pendiente.'),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -98,13 +105,13 @@ class KycPendingScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
-                        child: FilledButton(
+                        child: FilledButton.icon(
                           onPressed: aprobando
                               ? null
                               : () => ref
                                   .read(kycPendingControllerProvider.notifier)
                                   .aprobar(repartidor.uid),
-                          child: aprobando
+                          icon: aprobando
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
@@ -112,7 +119,8 @@ class KycPendingScreen extends ConsumerWidget {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text('Aprobar'),
+                              : const Icon(Icons.check_outlined),
+                          label: Text(aprobando ? 'Aprobando...' : 'Aprobar'),
                         ),
                       ),
                     ],

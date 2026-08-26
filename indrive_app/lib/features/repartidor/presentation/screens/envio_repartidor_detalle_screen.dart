@@ -132,9 +132,13 @@ class _EnvioRepartidorDetalleScreenState
                 const SizedBox(height: 12),
                 EnvioMapPreview(envio: envio),
                 const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _procesando ? null : _confirmarYAceptarDirecto,
-                  child: const Text('Aceptar directo'),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _procesando ? null : _confirmarYAceptarDirecto,
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Aceptar directo'),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Text('O envía una contraoferta:'),
@@ -147,11 +151,15 @@ class _EnvioRepartidorDetalleScreenState
                   decoration: const InputDecoration(labelText: 'Tu monto (Bs.)'),
                 ),
                 const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: _procesando
-                      ? null
-                      : () => _enviarContraoferta(envio),
-                  child: const Text('Enviar contraoferta'),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _procesando
+                        ? null
+                        : () => _enviarContraoferta(envio),
+                    icon: const Icon(Icons.reply_outlined),
+                    label: const Text('Enviar contraoferta'),
+                  ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),

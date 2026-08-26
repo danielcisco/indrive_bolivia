@@ -36,7 +36,14 @@ class PagosPendientesScreen extends ConsumerWidget {
                 Padding(
                   padding: EdgeInsets.all(32),
                   child: Center(
-                    child: Text('No hay pagos QR pendientes de verificar.'),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.qr_code_outlined, size: 48),
+                        SizedBox(height: 8),
+                        Text('No hay pagos QR pendientes de verificar.'),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -95,7 +102,7 @@ class PagosPendientesScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
-                        child: FilledButton(
+                        child: FilledButton.icon(
                           onPressed: verificando
                               ? null
                               : () => ref
@@ -103,7 +110,7 @@ class PagosPendientesScreen extends ConsumerWidget {
                                     pagosPendientesControllerProvider.notifier,
                                   )
                                   .verificar(envio.id),
-                          child: verificando
+                          icon: verificando
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
@@ -111,7 +118,12 @@ class PagosPendientesScreen extends ConsumerWidget {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text('Marcar como verificado'),
+                              : const Icon(Icons.verified_outlined),
+                          label: Text(
+                            verificando
+                                ? 'Verificando...'
+                                : 'Marcar como verificado',
+                          ),
                         ),
                       ),
                     ],

@@ -63,9 +63,13 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               decoration: const InputDecoration(labelText: 'Contraseña'),
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _isSubmitting ? null : _signIn,
-              child: const Text('Ingresar'),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _isSubmitting ? null : _signIn,
+                icon: const Icon(Icons.login),
+                label: Text(_isSubmitting ? 'Ingresando...' : 'Ingresar'),
+              ),
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
