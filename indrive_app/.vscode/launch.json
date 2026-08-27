@@ -6,13 +6,15 @@
       "request": "launch",
       "type": "dart",
       "program": "lib/main_cliente.dart",
+      "args": ["--flavor", "cliente"],
       "toolArgs": ["--dart-define-from-file=dart_define.local.json"]
     },
     {
       "name": "Repartidor",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main_repartidor.dart"
+      "program": "lib/main_repartidor.dart",
+      "args": ["--flavor", "repartidor"]
     },
     {
       "name": "Admin (Web)",
