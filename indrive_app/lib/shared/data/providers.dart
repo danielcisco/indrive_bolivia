@@ -84,6 +84,17 @@ final envioProvider = FutureProvider.family<Envio?, String>((ref, envioId) {
   return ref.watch(enviosRepositoryProvider).obtenerEnvio(envioId);
 });
 
+/// Código de entrega del envío [envioId] (Sprint 8.2) — solo resuelve un
+/// valor si quien está autenticado es el cliente dueño (la regla de
+/// Firestore rechaza la lectura para cualquier otro, incluido el
+/// repartidor asignado).
+final codigoEntregaProvider = FutureProvider.family<String?, String>((
+  ref,
+  envioId,
+) {
+  return ref.watch(enviosRepositoryProvider).obtenerCodigoEntrega(envioId);
+});
+
 /// Listener en tiempo real de un envío — usado mientras está `en_curso`
 /// para reflejar la posición del repartidor sin refrescar manualmente
 /// (Sprint 4.1b). Ver `EnviosRepository.streamEnvio` para el porqué esto

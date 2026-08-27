@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
@@ -58,6 +59,14 @@ class EnviosRepository {
   /// por la cola offline (`OfflineActionQueue`), que pasa el UUIDv4 de la
   /// acción como `id`. Al usar `.set()` en vez de `.add()`, reintentar tras
   /// un fallo de red sobreescribe el mismo documento en vez de duplicarlo.
+  ///
+  /// El código de entrega (4 dígitos) se genera acá y se escribe en el
+  /// mismo batch, en `envios/{id}/privado/entrega` — no en el documento
+  /// `envios/{id}` en sí, porque ese documento tiene `allow read: if
+  /// isSignedIn()` (cualquier usuario autenticado, no solo las partes):
+  /// guardar el código ahí lo dejaría legible por cualquiera con la app,
+  /// anulando el propósito del OTP. El subdocumento aparte tiene su propia
+  /// regla de lectura, restringida al cliente dueño.
   Future<void> crearEnvioConId(
     String id, {
     required String clienteId,
@@ -73,7 +82,10 @@ class EnviosRepository {
       origen.latitude,
       precision: 9,
     );
-    return _envios.doc(id).set(
+    final codigoEntrega = (1000 + Random().nextInt(9000)).toString();
+    final batch = _firestore.batch();
+    batch.set(
+      _envios.doc(id),
       Envio.createData(
         clienteId: clienteId,
         descripcion: descripcion,
@@ -85,6 +97,24 @@ class EnviosRepository {
         fotoPaqueteUrl: fotoPaqueteUrl,
       ),
     );
+    batch.set(_envios.doc(id).collection('privado').doc('entrega'), {
+      'codigoEntrega': codigoEntrega,
+      'clienteId': clienteId,
+    });
+    return batch.commit();
+  }
+
+  /// El código de entrega de [envioId] — solo lo puede leer el cliente
+  /// dueño (ver `firestore.rules`), por eso esta pantalla es la única que
+  /// lo consulta. Null si el envío es de antes de este sprint (no tiene el
+  /// subdocumento).
+  Future<String?> obtenerCodigoEntrega(String envioId) async {
+    final snapshot = await _envios
+        .doc(envioId)
+        .collection('privado')
+        .doc('entrega')
+        .get();
+    return snapshot.data()?['codigoEntrega'] as String?;
   }
 
   /// Sube la foto del paquete (opcional, sprint de paridad con el flujo
@@ -357,14 +387,21 @@ class EnviosRepository {
   /// tracking. El método de pago y el comprobante (si es QR) se fijan en
   /// esta misma escritura (Sprint 6.1): las Rules exigen que viajen juntos
   /// con la transición a `entregado`, no en un update aparte.
+  ///
+  /// [codigoIngresado] es el código de 4 dígitos que el cliente le dictó al
+  /// repartidor (Sprint 8.2) — la regla de Firestore rechaza esta escritura
+  /// si no coincide con `envios/{envioId}/privado/entrega`, comparándolo
+  /// server-side sin que el repartidor llegue a leer el valor real.
   Future<void> marcarEntregado(
     String envioId, {
     required MetodoPago metodoPago,
+    required String codigoIngresado,
     String? comprobanteUrl,
   }) {
     return _envios.doc(envioId).update({
       'status': EnvioStatus.entregado.toFirestore(),
       'metodoPago': metodoPago.toFirestore(),
+      'codigoIngresado': codigoIngresado,
       'comprobanteUrl': ?comprobanteUrl,
     });
   }

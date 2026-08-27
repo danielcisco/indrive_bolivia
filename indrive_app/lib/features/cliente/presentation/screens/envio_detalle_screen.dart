@@ -168,6 +168,11 @@ class EnvioDetalleScreen extends ConsumerWidget {
                         repartidorId: envio.repartidorAsignadoId!,
                       ),
                     ],
+                    if (envio.status == EnvioStatus.asignado ||
+                        envio.status == EnvioStatus.enCurso) ...[
+                      const SizedBox(height: 12),
+                      _CodigoEntregaCard(envioId: envioId),
+                    ],
                     const SizedBox(height: 12),
                     EnvioMapPreview(envio: envio),
                     if (envio.status == EnvioStatus.entregado) ...[
@@ -275,6 +280,41 @@ class EnvioDetalleScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Código de entrega (Sprint 8.2): el cliente se lo dicta al repartidor en
+/// mano al recibir el paquete, nunca por otro canal — evita que alguien
+/// que interceptó la app del repartidor pueda "confirmar" una entrega que
+/// no ocurrió.
+class _CodigoEntregaCard extends ConsumerWidget {
+  const _CodigoEntregaCard({required this.envioId});
+
+  final String envioId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final codigoAsync = ref.watch(codigoEntregaProvider(envioId));
+    return codigoAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, _) => const SizedBox.shrink(),
+      data: (codigo) {
+        if (codigo == null) return const SizedBox.shrink();
+        return Card(
+          child: ListTile(
+            leading: const Icon(Icons.pin_outlined),
+            title: const Text('Código de entrega'),
+            subtitle: const Text(
+              'Dáselo al repartidor solo cuando recibas el paquete.',
+            ),
+            trailing: Text(
+              codigo,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -217,6 +217,6 @@ class Envio {
     'ofertaAceptadaId': null,
     'createdAt': FieldValue.serverTimestamp(),
     'categoria': categoria.toFirestore(),
-    if (fotoPaqueteUrl != null) 'fotoPaqueteUrl': fotoPaqueteUrl,
+    'fotoPaqueteUrl': ?fotoPaqueteUrl,
   };
 }

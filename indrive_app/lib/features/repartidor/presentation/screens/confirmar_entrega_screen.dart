@@ -28,9 +28,16 @@ class ConfirmarEntregaScreen extends ConsumerStatefulWidget {
 class _ConfirmarEntregaScreenState
     extends ConsumerState<ConfirmarEntregaScreen> {
   MetodoPago _metodoPago = MetodoPago.efectivo;
+  final _codigoController = TextEditingController();
   XFile? _foto;
   bool _procesando = false;
   String? _error;
+
+  @override
+  void dispose() {
+    _codigoController.dispose();
+    super.dispose();
+  }
 
   Future<void> _tomarFoto() async {
     // imageQuality + maxWidth: compresión en cliente antes de subir (regla
@@ -63,6 +70,7 @@ class _ConfirmarEntregaScreenState
       await repository.marcarEntregado(
         widget.envioId,
         metodoPago: _metodoPago,
+        codigoIngresado: _codigoController.text.trim(),
         comprobanteUrl: comprobanteUrl,
       );
       detenerTracking();
@@ -104,6 +112,7 @@ class _ConfirmarEntregaScreenState
   @override
   Widget build(BuildContext context) {
     final faltaFoto = _metodoPago == MetodoPago.qr && _foto == null;
+    final faltaCodigo = _codigoController.text.trim().length != 4;
     return Scaffold(
       appBar: AppBar(title: const Text('Confirmar entrega')),
       body: SingleChildScrollView(
@@ -111,6 +120,16 @@ class _ConfirmarEntregaScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text('Código que te dio el cliente'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _codigoController,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(labelText: 'Código de 4 dígitos'),
+            ),
+            const SizedBox(height: 16),
             const Text('¿Cómo te pagó el cliente?'),
             RadioGroup<MetodoPago>(
               groupValue: _metodoPago,
@@ -150,7 +169,9 @@ class _ConfirmarEntregaScreenState
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: (_procesando || faltaFoto) ? null : _confirmar,
+                onPressed: (_procesando || faltaFoto || faltaCodigo)
+                    ? null
+                    : _confirmar,
                 icon: const Icon(Icons.check_circle_outline),
                 label: Text(
                   _procesando ? 'Confirmando...' : 'Confirmar entrega',

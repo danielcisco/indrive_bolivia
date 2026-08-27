@@ -380,6 +380,36 @@ export const notificarAceptacionDirecta = onDocumentUpdated(
 );
 
 /**
+ * Avisa al Cliente cuando el repartidor confirma la recogida del paquete
+ * (Sprint 8.2/8.3) - la transicion asignado -> en_curso ya existia desde
+ * antes ("Iniciar viaje"), esto solo le suma el aviso; no hay un
+ * EnvioStatus nuevo para "recogido".
+ */
+export const notificarRecogida = onDocumentUpdated(
+  "envios/{envioId}",
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+
+    const fueRecogida =
+      before.status === "asignado" && after.status === "en_curso";
+    if (!fueRecogida) return;
+
+    const clienteId = after.clienteId as string | undefined;
+    const descripcion = (after.descripcion as string | undefined) ?? "tu envío";
+    if (!clienteId) return;
+
+    await enviarNotificacionAUsuario(
+      clienteId,
+      "Tu repartidor recogió el paquete",
+      `Va en camino con "${descripcion}".`,
+      event.params.envioId
+    );
+  }
+);
+
+/**
  * Avisa al Cliente cuando recibe una contraoferta nueva.
  */
 export const notificarNuevaContraoferta = onDocumentCreated(
