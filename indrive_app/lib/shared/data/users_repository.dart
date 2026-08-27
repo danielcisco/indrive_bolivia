@@ -185,14 +185,23 @@ class UsersRepository {
     );
   }
 
-  /// Todos los usuarios (Cliente + Repartidor mezclados), paginado —
-  /// alimenta `GestionUsuariosScreen` del panel Admin (sprint extra,
-  /// Grupo C).
-  Future<QuerySnapshot<Map<String, dynamic>>> listarUsuarios({
+  /// Usuarios de un rol y estado de verificación específicos, paginado —
+  /// alimenta las 4 secciones separadas (Cliente/Repartidor × Verificado/
+  /// No verificado) de `GestionUsuariosScreen` (Sprint 11 — antes era una
+  /// sola lista mezclada, difícil de escanear a simple vista). Mismo
+  /// índice compuesto que ya usa `listarUsuariosPendientesKyc`
+  /// (`role`+`isVerified`+`createdAt`).
+  Future<QuerySnapshot<Map<String, dynamic>>> listarUsuariosPorRolYEstado({
+    required String role,
+    required bool verificado,
     int limit = 20,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
   }) {
-    var query = _users.orderBy('createdAt', descending: true).limit(limit);
+    var query = _users
+        .where('role', isEqualTo: role)
+        .where('isVerified', isEqualTo: verificado)
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
     if (startAfter != null) {
       query = query.startAfterDocument(startAfter);
     }
