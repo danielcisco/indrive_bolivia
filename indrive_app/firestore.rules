@@ -230,6 +230,25 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Historial de posición (Sprint 8.3) — sin UI de disputas todavía
+      // (queda fuera de este roadmap), pero el dato ya queda protegido
+      // desde ahora: solo el repartidor asignado, mientras el viaje sigue
+      // en curso, puede agregar puntos; nadie los edita ni borra; solo
+      // Admin puede leerlos (no hay una razón operativa para que Cliente o
+      // Repartidor los lean directo, ya ven la posición actual en
+      // `repartidorPosicionActual`).
+      match /posiciones/{posId} {
+        allow read: if isAdmin();
+
+        allow create: if isSignedIn() &&
+          get(/databases/$(database)/documents/envios/$(envioId)).data.repartidorAsignadoId == request.auth.uid &&
+          get(/databases/$(database)/documents/envios/$(envioId)).data.status == 'en_curso' &&
+          request.resource.data.posicion is latlng;
+
+        allow update: if false;
+        allow delete: if false;
+      }
+
       // Código de entrega (Sprint 8.2), separado del documento padre a
       // propósito — ver `codigoEntregaValido()` más arriba para el porqué.
       // Solo el cliente dueño (o Admin, para una futura auditoría) puede

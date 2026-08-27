@@ -145,6 +145,13 @@ void onStartTracking(ServiceInstance service) async {
   // del sistema operativo descarta lecturas hasta que el dispositivo se
   // mueve ~15 m — throttling por distancia, tal como exige CLAUDE.md, sin
   // "streams crudos" ni cálculo manual de distancia.
+  // Throttle propio para el historial (Sprint 8.3), aparte del
+  // distanceFilter de arriba: ese ya limita por distancia (~15m), esto
+  // limita además por tiempo (30s) para no generar un punto de historial
+  // en cada actualización de posición en vivo — es un registro liviano
+  // para una futura auditoría, no un tracking de alta frecuencia.
+  DateTime? ultimoRegistroHistorial;
+
   positionSubscription = Geolocator.getPositionStream(
     locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
@@ -153,9 +160,14 @@ void onStartTracking(ServiceInstance service) async {
   ).listen((position) async {
     final id = envioId;
     if (id == null || !esPosicionValida(position)) return;
-    await repository.actualizarPosicionRepartidor(
-      envioId: id,
-      posicion: GeoPoint(position.latitude, position.longitude),
-    );
+    final posicion = GeoPoint(position.latitude, position.longitude);
+    await repository.actualizarPosicionRepartidor(envioId: id, posicion: posicion);
+
+    final ahora = DateTime.now();
+    if (ultimoRegistroHistorial == null ||
+        ahora.difference(ultimoRegistroHistorial!) >= const Duration(seconds: 30)) {
+      ultimoRegistroHistorial = ahora;
+      await repository.registrarPosicionHistorial(envioId: id, posicion: posicion);
+    }
   });
 }

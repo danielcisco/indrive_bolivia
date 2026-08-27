@@ -8,9 +8,11 @@ import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
 import 'confirmar_entrega_screen.dart';
 
-/// Pantalla de una entrega activa: "Iniciar viaje" arranca el Foreground
-/// Service de tracking (con el onboarding de batería antes, si hace
-/// falta); "Marcar como entregado" lo detiene.
+/// Pantalla de una entrega activa: "Confirmar recogida" arranca el
+/// Foreground Service de tracking (con el onboarding de batería antes, si
+/// hace falta) — la transición sigue siendo asignado→en_curso, sin un
+/// EnvioStatus nuevo para "recogido" (Sprint 8.3); "Marcar como entregado"
+/// lo detiene.
 class EntregaEnCursoScreen extends ConsumerStatefulWidget {
   const EntregaEnCursoScreen({super.key, required this.envioId});
 
@@ -116,7 +118,7 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
                       onPressed: _procesando ? null : _iniciarViaje,
                       icon: const Icon(Icons.play_arrow_outlined),
                       label: Text(
-                        _procesando ? 'Iniciando...' : 'Iniciar viaje',
+                        _procesando ? 'Confirmando...' : 'Confirmar recogida',
                       ),
                     ),
                   )

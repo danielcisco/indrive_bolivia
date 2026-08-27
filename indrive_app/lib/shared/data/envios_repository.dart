@@ -505,4 +505,20 @@ class EnviosRepository {
       'repartidorPosicionActualizada': FieldValue.serverTimestamp(),
     });
   }
+
+  /// Historial de posición (Sprint 8.3) — a diferencia de
+  /// [actualizarPosicionRepartidor] (la última posición conocida, para el
+  /// mapa en vivo), esto agrega un punto nuevo cada vez, con su propio
+  /// throttle de 30s hecho por quien llama (ver
+  /// `background_location_service.dart`). Pensado para una futura auditoría
+  /// de disputas, no para tiempo real.
+  Future<void> registrarPosicionHistorial({
+    required String envioId,
+    required GeoPoint posicion,
+  }) {
+    return _envios.doc(envioId).collection('posiciones').add({
+      'posicion': posicion,
+      'registradoEn': FieldValue.serverTimestamp(),
+    });
+  }
 }
