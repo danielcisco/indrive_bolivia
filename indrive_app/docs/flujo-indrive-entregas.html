@@ -1,0 +1,492 @@
+<!doctype html><html><head><!-- frame-runtime --><base href="/_f/1787754546-8959/"><script>window.__FRAME_PREAMBLE={"v":1,"capabilities":{"artifact":"artifact.Cg566fpb.js","assets":"assets.8Gk803W0.js","comments":"comments.GLuHR3zP.js","db":"db.CRhVHzSt.js","downloads":"downloads.C3GSvEDP.js","embed":"embed.CxGAyc-v.js","mcp":"mcp.Bvma3qD7.js","network":"network.B5UA9Su4.js","permissions":"permissions.BNySkLV5.js","room":"room.BMMoe2BY.js","sample":"sample.BW2Uysoh.js","self":"artifact.Cg566fpb.js","user":"user.BpKav-Rf.js"},"transforms":"_transforms.CQm3TZ9K.js","comments":"_comments.PBVy184F.js","translate":"_translate.5HCW4BJh.js"}</script><script>(function(){"use strict";var J=["light","dark","system"],Q=/^[A-Za-z0-9_-]{1,64}$/,H=/^[a-zA-Z_:][a-zA-Z0-9_:.-]{0,127}$/,ee=new Set(["class","hidden","value","checked"]);function te(e){const t=e.toLowerCase();return t.startsWith("data-")||t.startsWith("aria-")||ee.has(t)}var Me="http://www.w3.org/1999/xhtml",re="http://www.w3.org/2000/svg",ne=new Set(["script","style","iframe","noscript","noframes","noembed","xmp","plaintext","template","title","textarea","object","embed"]),oe=new Set(["script","style"]);function se(e){const t=e.localName.toLowerCase();return e.namespaceURI==="http://www.w3.org/1999/xhtml"?!ne.has(t):e.namespaceURI===re?!oe.has(t):!1}var ae=new Set(["html","head","body","frameset"]);function ie(e){return e.namespaceURI==="http://www.w3.org/1999/xhtml"&&ae.has(e.localName)}function ce(e){if(e===null||typeof e!="object")return!1;const t=e;if(typeof t.target!="string"||!Q.test(t.target)||t.text!==void 0&&typeof t.text!="string")return!1;if(t.attrsSet!==void 0){if(t.attrsSet===null||typeof t.attrsSet!="object")return!1;for(const[r,n]of Object.entries(t.attrsSet))if(!H.test(r)||typeof n!="string")return!1}if(t.attrsRemoved!==void 0){if(!Array.isArray(t.attrsRemoved))return!1;for(const r of t.attrsRemoved)if(typeof r!="string"||!H.test(r))return!1}return!0}function le(e,t){if(e===null||typeof e!="object")return!1;const{seq:r,elements:n}=e;if(typeof r!="number"||!Number.isSafeInteger(r)||!Array.isArray(n)||n.length===0||n.length>64)return!1;for(let s=0;s<n.length;s++)if(!t(n[s]))return!1;return!0}function ue(e){return e===null||typeof e!="object"?!1:le(e.__frame_patch,ce)}function fe(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_init;return t!==null&&typeof t=="object"}function pe(e){return e!==null&&typeof e=="object"&&e.__frame_size_poke===!0}function de(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_theme;if(t===null||typeof t!="object")return!1;const r=t.theme;return typeof r=="string"&&J.includes(r)}var A=/^[\w.-]+\.js$/;function me(e,t,r){return r?"inert":typeof t=="string"&&A.test(t)?e?[t]:"inert":e?"inert":"framed"}function he(){return{post(e,t){parent.postMessage(e,t)},on(e){const t=r=>{r.source===parent&&e(r.data,r.origin)};return addEventListener("message",t),()=>removeEventListener("message",t)}}}function _e(){return{post:()=>{},on:()=>()=>{}}}var O="__frame_scroll",ve=150,ye=310,we=160,be=3e4;function Ee(){let e=0,t=!1,r=!1,n=!1,s=0,a=null;const l=i=>{try{sessionStorage.setItem(O,JSON.stringify({y:i}))}catch{}},d=()=>{if(clearTimeout(e),a===null)return;const i=a;a=null,l(i)},v=()=>{if(t){t=!1;return}r=!0,a=scrollY,clearTimeout(e),e=setTimeout(d,ve)};try{addEventListener("scroll",v,{passive:!0}),addEventListener("pagehide",d)}catch{}const y=()=>{let i;try{i=sessionStorage.getItem(O)}catch{return null}if(i===null)return null;let m;try{m=JSON.parse(i)}catch{m=null}const u=m?.y;if(!(typeof u=="number"&&Number.isFinite(u)&&u>=0)){try{sessionStorage.removeItem(O)}catch{}return null}return u};let S=!1;const h=i=>{try{const m=scrollY;scrollTo({top:i,left:0,behavior:"instant"}),s=i,n=!0,clearTimeout(e),a=null,l(i);const u=scrollY;u!==m&&(t=!0),u!==i&&!S&&(S=!0,addEventListener("load",()=>{try{if(scrollY===u){const k=y();h(k!==null?k:s)}}catch{}},{once:!0}))}catch{}},w=()=>{try{return!!location.hash}catch{return!0}};let o=!1;const f=()=>{try{if(o||innerWidth>ye||innerHeight>we)return;o=!0;const i=Date.now(),m=()=>{try{removeEventListener("resize",m)}catch{}if(Date.now()-i>be||r||w())return;const u=y();h(u!==null?u:s)};addEventListener("resize",m)}catch{}};let _=!1,b=!1;return{restore(){if(_||(_=!0,w()))return;const i=y();i!==null&&(h(i),f())},promoted(){if(b||(b=!0,w()))return;const i=y();i!==null?(h(i),f()):n&&h(s)}}}function ge(e,t,r,n){let s=null;try{s=window.trustedTypes?.createPolicy("frame-runtime",{createScriptURL:v=>v})??null}catch{}const a=window.Worker,l=a?.prototype,d=Object.freeze({Worker:a,workerOn:l?.addEventListener,workerPost:l?.postMessage,workerTerminate:l?.terminate,fetch:window.fetch.bind(window),preventDefault:Event.prototype.preventDefault,policy:s,origins:t});r(e).then(v=>v?.bootTopLevel?v.bootTopLevel(d,n):n.settle()).catch(()=>n.settle())}var Oe="modulepreload",Ce=function(e){return"/"+e},je={},Ae=function(t,r,n){let s=Promise.resolve();function a(l){const d=new Event("vite:preloadError",{cancelable:!0});if(d.payload=l,window.dispatchEvent(d),!d.defaultPrevented)throw l}return s.then(l=>{for(const d of l||[])d.status==="rejected"&&a(d.reason);return t().catch(a)})},Re=window===top,q=Object.getOwnPropertyDescriptor(window,"claude"),T=me(Re,window.__FRAME_PREAMBLE?.topLevel,q?.writable===!1),C=typeof T=="object"&&T[0],p=C?_e():he();(function(){const e=Object.defineProperty,t=globalThis,r=["RTCPeerConnection","webkitRTCPeerConnection","RTCDataChannel","RTCIceCandidate","RTCSessionDescription","RTCRtpSender","RTCRtpReceiver"];let n=0;for(let s=0;s<r.length;s++){const a=r[s];try{e(t,a,{value:void 0,writable:!1,configurable:!1})}catch{try{delete t[a]}catch{}try{e(t,a,{value:void 0,writable:!1,configurable:!0})}catch{}}typeof t[a]=="function"&&n++}if(n&&T==="framed")try{p.post({__frame_rtc_lockdown_failed:n},"*")}catch{}})();var Se=1e4,W=Object.freeze([...window.__FRAME_PREAMBLE?.origins??["https://claude.ai","https://preview.claude.ai"]]);function $(e){for(const t of W)if(t.endsWith(":*"))try{const r=new URL(e);if(`${r.protocol}//${r.hostname}:*`===t)return!0}catch{}else if(e===t)return!0;return!1}var L=Object.freeze({...window.__FRAME_PREAMBLE?.capabilities}),j=window.__FRAME_PREAMBLE?.transforms,N=window.__FRAME_PREAMBLE?.comments,I=window.__FRAME_PREAMBLE?.translate;function R(e){return Ae(()=>import("/_runtime/"+e),void 0)}function K(e,t){return{contract:e.contract,changes:new Set(e.changes??[]),flags:new Set(e.flags??[]),capabilities:e.capabilities??{},capBudgets:e.capBudgets??{},transforms:new Map,shellOrigin:t,mount:D,pipe:()=>({wrap:(r,n)=>(...s)=>{try{return n(...s)}catch(a){return Promise.reject(a)}}})}}var P=null,E=null;function Y(e,t,r){try{Object.defineProperty(e,t,{value:r,writable:!1,configurable:!1,enumerable:!0})}catch{try{Object.defineProperty(e,t,{value:r,writable:!1,configurable:!0,enumerable:!0})}catch{}}}var B=!1;function ke(e,t){const r=[];for(const n of e.elements){const s=document.querySelector(`[data-id="${n.target}"]`);if(!s){p.post({__frame_patch_miss:{seq:e.seq}},t);return}if([...Object.keys(n.attrsSet??{}),...n.attrsRemoved??[]].some(a=>!te(a))){p.post({__frame_patch_miss:{seq:e.seq}},t);return}if(n.text!==void 0&&(!se(s)||ie(s))){p.post({__frame_patch_miss:{seq:e.seq}},t);return}for(const[a,l]of Object.entries(n.attrsSet??{}))if(!G(s,a)){try{s.setAttribute(a,l)}catch{}X(s,a,l)}for(const a of n.attrsRemoved??[])G(s,a)||(s.removeAttribute(a),X(s,a,null));typeof n.text=="string"&&(s.textContent=n.text),r.push(n.target)}try{document.dispatchEvent(new CustomEvent("claude:edit",{detail:{seq:e.seq,targets:r}}))}catch{}}function X(e,t,r){if(!(e instanceof HTMLInputElement))return;const n=t.toLowerCase();n==="checked"?e.checked=r!==null:n==="value"&&e.type!=="file"&&(e.value=r??"")}function G(e,t){const r=t.toLowerCase(),n=e;return r==="data-id"||(r==="value"||r==="checked")&&(n.__artifactSecret===!0||/^(password|hidden|file)$/.test(n.type??"")||/(^|\s)(cc-|one-time-code|current-password|new-password)/i.test(`${e.getAttribute("autocomplete")??""} ${n.autocomplete??""}`))}function V(e){const t=document.documentElement;e==="light"||e==="dark"?(t.dataset.theme=e,t.style.colorScheme=e,B=!0):B&&(delete t.dataset.theme,t.style.colorScheme="",B=!1)}var M=new Map;function Te(){let e;const t={u:new Promise(r=>{e=r}),r:r=>{t.done=!0,e(r)},done:!1,nulled:!1};return t}function U(){for(const e of M.values())e.done||(e.nulled=!0,e.r(null))}var Le=Object.freeze(Object.assign(Object.create(null),{call:Function.prototype.call,apply:Function.prototype.apply,bind:Function.prototype.bind})),D=(e,t)=>{const r=M.get(e);if(!r||r.done){r?.nulled&&E&&p.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:e}},E);return}const n=typeof t=="function"?Object.setPrototypeOf(t,Le):Object.assign(Object.create(null),t);typeof n.then=="function"&&delete n.then,r.r(Object.freeze(n))};function Z(){const e=q?.value??{};Y(window,"claude",e);for(const t of Object.keys(L)){if(e[t]!==void 0){Y(e,t,e[t]);continue}M.set(t,Te())}if(e.use===void 0){const t=r=>{if(typeof r!="string"||!Object.hasOwn(L,r))return Promise.resolve(null);const n=M.get(r);return n?n.u:Promise.resolve(e[r]??null)};try{Object.defineProperty(e,"use",{value:t,writable:!0,configurable:!0,enumerable:!1})}catch{}}}if(T==="framed"){const e=j&&A.test(j)?R(j).catch(()=>{}):Promise.resolve(void 0),t=o=>{if(o.type==="auxclick"&&o.button!==1)return;const f=o.target,_=f&&f.closest?f.closest("a[href],area[href]"):null;if(!_)return;const b=_.getAttribute("href");if(!b)return;let i;try{i=new URL(b,document.baseURI)}catch{return}if((i.protocol==="http:"||i.protocol==="https:")&&i.origin!==location.origin){o.preventDefault();const m=(_.getAttribute("target")??"").toLowerCase(),u=o.type==="auxclick"||o.metaKey||o.ctrlKey||o.shiftKey||o.altKey||!["","_self","_top","_parent"].includes(m);p.post({__frame_nav:!0,url:i.href,newTab:u},"*")}};addEventListener("click",t,!0),addEventListener("auxclick",t,!0);const r={},n=o=>{o.isTrusted&&(r.pointer=!0)},s=o=>{o.isTrusted&&(r.click=!0)};addEventListener("pointermove",n,{capture:!0,passive:!0}),addEventListener("click",s,{capture:!0,passive:!0}),e.then(o=>{o?.wireNav&&(o.wireNav(),removeEventListener("click",t,!0),removeEventListener("auxclick",t,!0),removeEventListener("pointermove",n,!0),removeEventListener("click",s,!0),o.wireEngagement?.(r))});let a=null;try{a=Ee()}catch{}Z();let l=null,d=null,v=0;const y=p.on((o,f)=>{$(f)&&fe(o)&&(l=o.__frame_init,E=f,y(),clearTimeout(v),d?.())});p.post({__frame_connect:!0},"*");const S=new Promise(o=>{d=o,v=setTimeout(()=>{y(),o()},Se)}),h=document.readyState==="loading"?new Promise(o=>document.addEventListener("DOMContentLoaded",()=>o(),{once:!0})):Promise.resolve();h.then(()=>{try{a?.restore()}catch{}});const w={cb:null};p.on((o,f)=>{if($(f)&&pe(o)){try{a?.promoted()}catch{}w.cb?.()}}),S.then(async()=>{if(!l||!E){U();return}V(l.theme);const o=E;let f=!1,_=!1;p.on((c,x)=>{if(x!==o)return;de(c)&&V(c.__frame_theme.theme),ue(c)&&ke(c.__frame_patch,o);const g=c?.__fc_mode;g&&typeof g=="object"&&!f&&N&&A.test(N)&&(f=!0,R(N).then(z=>z.install?.(o,g.on===!0)).catch(()=>{}));const F=c?.__ft_cmd;F&&typeof F=="object"&&!_&&I&&A.test(I)&&(_=!0,R(I).then(z=>z.install?.(o,F)).catch(()=>{}))});const b=Object.keys(l.capabilities??{}).filter(c=>Object.hasOwn(L,c)).map(c=>[c,L[c]]).filter(c=>typeof c[1]=="string"&&A.test(c[1])),i=await Promise.allSettled(b.map(([,c])=>R(c))),m=await e,u=E;if(m?.buildBoot||p.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:"_transforms"}},u),m?.buildBoot)try{P=m.buildBoot(l,m.TRANSFORMS??{},{shellOrigin:u,mount:D},c=>p.post({__frame_cap_telemetry:c},u))}catch{p.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:"_transforms"}},u),P=K(l,u)}else P=K(l,u);const k=c=>p.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:c}},u),Pe=P;i.forEach((c,x)=>{const g=b[x][0];if(c.status!=="fulfilled"){k(g);return}try{c.value?.install?.(Pe)}catch{k(g)}}),U(),await h,p.post({__frame_ready:!0},E),e.then(c=>c?.installSizeReporter?.(u,w))})}else C&&(Z(),ge(C,W,R,{settle:U,mount:D}))})();</script><!-- /frame-runtime --><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Flujo inDrive Entregas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --surface-alt: #eef1f9;
+    --text: #14171f;
+    --text-muted: #5b6172;
+    --border: #dde2ee;
+    --accent: #0b5fff;
+    --accent-soft: #e7eeff;
+    --repartidor: #b5680a;
+    --repartidor-soft: #fbeed9;
+    --admin: #6e5bc4;
+    --admin-soft: #ece8fb;
+    --success: #147a4a;
+    --success-soft: #e2f5ea;
+    --warning: #a3660a;
+    --warning-soft: #fbf0dc;
+    --danger: #b3261e;
+    --danger-soft: #fbe6e4;
+    --shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 8px 24px -12px rgba(20, 23, 31, 0.12);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0e17;
+      --surface: #121629;
+      --surface-alt: #1a2036;
+      --text: #e9ebf4;
+      --text-muted: #9aa3ba;
+      --border: #2a3152;
+      --accent: #6d95ff;
+      --accent-soft: #1c2647;
+      --repartidor: #f0ab4d;
+      --repartidor-soft: #382a13;
+      --admin: #b3a3ef;
+      --admin-soft: #2a2549;
+      --success: #58d99a;
+      --success-soft: #143726;
+      --warning: #f0c169;
+      --warning-soft: #3a2c10;
+      --danger: #ff8b85;
+      --danger-soft: #3a1a18;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0b0e17;
+    --surface: #121629;
+    --surface-alt: #1a2036;
+    --text: #e9ebf4;
+    --text-muted: #9aa3ba;
+    --border: #2a3152;
+    --accent: #6d95ff;
+    --accent-soft: #1c2647;
+    --repartidor: #f0ab4d;
+    --repartidor-soft: #382a13;
+    --admin: #b3a3ef;
+    --admin-soft: #2a2549;
+    --success: #58d99a;
+    --success-soft: #143726;
+    --warning: #f0c169;
+    --warning-soft: #3a2c10;
+    --danger: #ff8b85;
+    --danger-soft: #3a1a18;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Public Sans", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
+
+  header.page {
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  h1 {
+    font-family: "Sora", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 38px);
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 10px 0 12px;
+  }
+
+  header.page p {
+    color: var(--text-muted);
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  section { margin-top: 56px; }
+
+  h2 {
+    font-family: "Sora", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+
+  .section-intro {
+    color: var(--text-muted);
+    max-width: 68ch;
+    margin: 0 0 24px;
+  }
+
+  p { max-width: 68ch; }
+
+  code, .mono {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.9em;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin: 20px 0 28px;
+    font-size: 14px;
+  }
+
+  .legend span.dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 7px;
+    vertical-align: middle;
+  }
+
+  .legend .cliente .dot { background: var(--accent); }
+  .legend .repartidor .dot { background: var(--repartidor); }
+  .legend .admin .dot { background: var(--admin); }
+
+  figure {
+    margin: 0;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+
+  figure svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    min-width: 640px;
+  }
+
+  figcaption {
+    margin-top: 14px;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    border-top: 1px dashed var(--border);
+    padding-top: 12px;
+  }
+
+  .kyc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  .kyc-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .kyc-step .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .kyc-step p { margin: 6px 0 0; font-size: 14px; }
+
+  .obs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 20px;
+    list-style: none;
+    padding: 0;
+  }
+
+  .obs-item {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    padding: 18px 4px;
+    border-top: 1px solid var(--border);
+  }
+
+  .obs-item:last-child { border-bottom: 1px solid var(--border); }
+
+  .obs-item .n {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .obs-item h3 {
+    font-family: "Sora", system-ui, sans-serif;
+    font-size: 15.5px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .obs-item p { margin: 0; color: var(--text-muted); font-size: 14.5px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14.5px;
+  }
+
+  caption { display: none; }
+
+  th, td {
+    text-align: left;
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  th {
+    font-family: "Sora", system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  td:first-child, th:first-child { padding-left: 4px; }
+
+  .verdict {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .verdict.yes { background: var(--success-soft); color: var(--success); }
+  .verdict.no { background: var(--danger-soft); color: var(--danger); }
+  .verdict.partial { background: var(--warning-soft); color: var(--warning); }
+
+  .callout {
+    margin-top: 24px;
+    padding: 16px 18px;
+    background: var(--accent-soft);
+    border-radius: 12px;
+    font-size: 14.5px;
+  }
+
+  .callout strong { color: var(--accent); }
+
+  footer.meta {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+</style>
+
+<main>
+  <header class="page">
+    <div class="eyebrow">Referencia técnica</div>
+    <h1>Recorrido completo de inDrive Entregas</h1>
+    <p>Cómo se mueve un envío entre Cliente, Repartidor y Admin — de la creación a la entrega, el pago y la calificación — más lo que encontré revisando el código que vale la pena mejorar.</p>
+  </header>
+
+  <section id="flujo">
+    <h2>El recorrido de un envío</h2>
+    <p class="section-intro">Cinco estados posibles (los mismos strings que se guardan en Firestore), y quién dispara cada transición.</p>
+
+    <div class="legend">
+      <span class="cliente"><span class="dot"></span>Cliente</span>
+      <span class="repartidor"><span class="dot"></span>Repartidor</span>
+      <span class="admin"><span class="dot"></span>Admin</span>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 1180 400" role="img" aria-label="Diagrama del ciclo de vida de un envío: pendiente_ofertas, asignado, en_curso y entregado en secuencia, con una rama de cancelado desde pendiente_ofertas, una nota de que el repartidor necesita KYC aprobado antes de aceptar, y dos resultados posteriores a entregado: verificación de pago QR por el Admin y calificación cruzada opcional.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+          </marker>
+        </defs>
+
+        <!-- Estado 1 -->
+        <text x="115" y="26" text-anchor="middle" font-size="13" fill="var(--accent)" font-family="Public Sans, sans-serif" font-weight="600">Cliente crea el envío</text>
+        <rect x="30" y="40" width="170" height="56" rx="10" fill="var(--surface-alt)" stroke="currentColor" stroke-opacity="0.35"></rect>
+        <text x="115" y="73" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="600" fill="currentColor">pendiente_ofertas</text>
+
+        <!-- Arrow 1 -->
+        <line x1="200" y1="68" x2="335" y2="68" stroke="var(--repartidor)" stroke-width="2" marker-end="url(#arrow)"></line>
+        <text x="267" y="56" text-anchor="middle" font-size="12.5" fill="var(--repartidor)" font-weight="600">Repartidor acepta directo</text>
+        <text x="267" y="88" text-anchor="middle" font-size="11.5" fill="var(--text-muted)">o gana una contraoferta</text>
+
+        <!-- KYC gate note -->
+        <line x1="267" y1="96" x2="267" y2="140" stroke="var(--admin)" stroke-width="1.5" stroke-dasharray="4 3"></line>
+        <rect x="130" y="140" width="275" height="42" rx="8" fill="var(--admin-soft)"></rect>
+        <text x="267" y="157" text-anchor="middle" font-size="11.5" fill="var(--admin)" font-weight="600">requiere isVerified = true</text>
+        <text x="267" y="172" text-anchor="middle" font-size="11" fill="var(--admin)">(KYC aprobado por Admin)</text>
+
+        <!-- Estado 2 -->
+        <rect x="340" y="40" width="170" height="56" rx="10" fill="var(--surface-alt)" stroke="currentColor" stroke-opacity="0.35"></rect>
+        <text x="425" y="73" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="600" fill="currentColor">asignado</text>
+
+        <!-- Arrow 2 -->
+        <line x1="510" y1="68" x2="645" y2="68" stroke="var(--repartidor)" stroke-width="2" marker-end="url(#arrow)"></line>
+        <text x="577" y="56" text-anchor="middle" font-size="12.5" fill="var(--repartidor)" font-weight="600">Repartidor inicia viaje</text>
+        <text x="577" y="88" text-anchor="middle" font-size="11.5" fill="var(--text-muted)">arranca tracking GPS</text>
+
+        <!-- Estado 3 -->
+        <rect x="650" y="40" width="170" height="56" rx="10" fill="var(--surface-alt)" stroke="currentColor" stroke-opacity="0.35"></rect>
+        <text x="735" y="73" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="600" fill="currentColor">en_curso</text>
+
+        <!-- Arrow 3 -->
+        <line x1="820" y1="68" x2="955" y2="68" stroke="var(--repartidor)" stroke-width="2" marker-end="url(#arrow)"></line>
+        <text x="887" y="56" text-anchor="middle" font-size="12.5" fill="var(--repartidor)" font-weight="600">Repartidor confirma entrega</text>
+        <text x="887" y="88" text-anchor="middle" font-size="11.5" fill="var(--text-muted)">+ elige efectivo o QR</text>
+
+        <!-- Estado 4 -->
+        <rect x="960" y="40" width="170" height="56" rx="10" fill="var(--surface-alt)" stroke="currentColor" stroke-opacity="0.35"></rect>
+        <text x="1045" y="73" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="600" fill="currentColor">entregado</text>
+
+        <!-- Cancelado branch -->
+        <line x1="70" y1="96" x2="70" y2="150" stroke="var(--accent)" stroke-width="2"></line>
+        <line x1="70" y1="150" x2="70" y2="216" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrow)"></line>
+        <text x="82" y="140" font-size="12" fill="var(--accent)" font-weight="600">Cliente cancela</text>
+        <text x="82" y="155" font-size="11" fill="var(--text-muted)">(solo si sigue pendiente)</text>
+        <rect x="30" y="220" width="170" height="56" rx="10" fill="var(--danger-soft)"></rect>
+        <text x="115" y="253" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="600" fill="var(--danger)">cancelado</text>
+
+        <!-- Outcomes after entregado -->
+        <line x1="1010" y1="96" x2="890" y2="216" stroke="var(--admin)" stroke-width="2" marker-end="url(#arrow)"></line>
+        <line x1="1075" y1="96" x2="1085" y2="216" stroke="currentColor" stroke-opacity="0.5" stroke-width="2" marker-end="url(#arrow)"></line>
+
+        <rect x="800" y="220" width="180" height="56" rx="10" fill="var(--admin-soft)"></rect>
+        <text x="890" y="245" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--admin)">Pago QR</text>
+        <text x="890" y="262" text-anchor="middle" font-size="11.5" fill="var(--admin)">revisión Admin (async)</text>
+
+        <rect x="995" y="220" width="180" height="56" rx="10" fill="var(--surface-alt)"></rect>
+        <text x="1085" y="245" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">Calificación cruzada</text>
+        <text x="1085" y="262" text-anchor="middle" font-size="11.5" fill="var(--text-muted)">opcional, ambos lados</text>
+      </svg>
+      <figcaption>El estado vive en <code>envios/{id}.status</code>. La entrega se marca <code>entregado</code> al toque — la verificación del pago QR es un proceso aparte que no bloquea nada. El envío en efectivo no pasa por la caja "Pago QR".</figcaption>
+    </figure>
+  </section>
+
+  <section id="kyc">
+    <h2>¿Qué significa KYC?</h2>
+    <p class="section-intro"><strong>KYC = "Know Your Customer"</strong> ("Conoce a tu Cliente"), un término de la industria financiera/fintech: el proceso de verificar que una persona es quien dice ser antes de dejarla operar en la plataforma — acá, antes de dejar que un repartidor acepte envíos reales.</p>
+
+    <div class="kyc-grid">
+      <div class="kyc-step">
+        <div class="num">01</div>
+        <p>El repartidor se registra por teléfono. La cuenta arranca con <code>isVerified: false</code> — no puede aceptar envíos ni mandar contraofertas todavía (lo bloquean las Firestore Rules).</p>
+      </div>
+      <div class="kyc-step">
+        <div class="num">02</div>
+        <p>Sube una foto de su Cédula de Identidad boliviana desde la app (queda en Storage, en <code>kyc/{uid}/</code>).</p>
+      </div>
+      <div class="kyc-step">
+        <div class="num">03</div>
+        <p>Un Admin la revisa en el panel y toca "Aprobar" — dispara la Cloud Function <code>approveKyc</code>, la única vía autorizada para escribir <code>isVerified: true</code>.</p>
+      </div>
+      <div class="kyc-step">
+        <div class="num">04</div>
+        <p>Recién ahí las Rules dejan que esa cuenta acepte envíos directo o mande contraofertas.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="ux">
+    <h2>Oportunidades de UX que encontré</h2>
+    <p class="section-intro">No son bugs — la app funciona como está construida. Son fricciones reales que noté revisando el comportamiento actual de Cliente y Repartidor.</p>
+
+    <ol class="obs-list">
+      <li class="obs-item">
+        <span class="n">01</span>
+        <div><h3>Elegir destino es 100% manual</h3><p>El Cliente marca origen y destino a mano en el mapa, sin autocompletado de direcciones — es una limitación anotada desde el propio Sprint 3.1. Un buscador de lugares (Places Autocomplete) reduciría errores de ubicación y el tiempo para crear un envío.</p></div>
+      </li>
+      <li class="obs-item">
+        <span class="n">02</span>
+        <div><h3>No hay botón de cancelar, aunque el backend sí lo permite</h3><p>Las Firestore Rules ya dejan que el Cliente cancele un envío mientras siga <code>pendiente_ofertas</code> — pero ninguna pantalla tiene ese botón. Es una capacidad construida y nunca expuesta.</p></div>
+      </li>
+      <li class="obs-item">
+        <span class="n">03</span>
+        <div><h3>El Cliente no recibe ninguna notificación push</h3><p>Solo el Repartidor tiene FCM configurado (para avisos de ofertas cercanas). El Cliente tiene que tener la app abierta para enterarse de que aceptaron, iniciaron o entregaron su envío.</p></div>
+      </li>
+      <li class="obs-item">
+        <span class="n">04</span>
+        <div><h3>Nadie ve su propio historial de calificaciones</h3><p>Se puede calificar a la otra parte, pero no existe una pantalla de "mis calificaciones recibidas" ni un promedio visible — justo la señal de confianza que un mercado como este necesita mostrar para que la gente confíe en aceptar/pagar.</p></div>
+      </li>
+      <li class="obs-item">
+        <span class="n">05</span>
+        <div><h3>Un envío vencido se queda visible para siempre</h3><p>Nada cambia el <code>status</code> cuando pasa <code>expiraEn</code> — un envío sin asignar sigue apareciendo en el Radar del Repartidor indefinidamente, aunque su ventana de subasta ya haya cerrado en teoría.</p></div>
+      </li>
+      <li class="obs-item">
+        <span class="n">06</span>
+        <div><h3>"Aceptar directo" no pide confirmación</h3><p>Un toque accidental compromete al repartidor con una entrega real de inmediato — un diálogo corto de "¿confirmás?" evitaría aceptaciones sin querer.</p></div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="crud">
+    <h2>¿CRUD de Clientes/Repartidores desde el Admin?</h2>
+    <p class="section-intro">Sí a leer y a un update acotado. No a crear cuentas ni a borrar de verdad — un CRUD literal rompería el modelo de verificación y la integridad de los datos que ya referencian a cada usuario.</p>
+
+    <table>
+      <caption>Recomendación por operación CRUD</caption>
+      <thead>
+        <tr><th>Operación</th><th>Recomendación</th><th>Por qué</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Crear</strong></td>
+          <td><span class="verdict no">No</span></td>
+          <td>Crear una cuenta sin pasar por SMS real rompe el modelo de verificación por teléfono en el que se apoya todo el KYC.</td>
+        </tr>
+        <tr>
+          <td><strong>Leer</strong></td>
+          <td><span class="verdict yes">Sí</span></td>
+          <td>Lista buscable — teléfono, fecha de alta, estado KYC, cantidad de entregas, rating promedio. Es información operativa estándar que hoy no existe en ningún lado del panel.</td>
+        </tr>
+        <tr>
+          <td><strong>Actualizar</strong></td>
+          <td><span class="verdict partial">Parcial</span></td>
+          <td>Suspender/reactivar una cuenta o forzar una re-verificación tiene sentido operativo. Editar el teléfono u otros datos de identidad, no — abriría una vía de suplantación.</td>
+        </tr>
+        <tr>
+          <td><strong>Eliminar</strong></td>
+          <td><span class="verdict no">No</span> <span style="color:var(--text-muted); font-size:12.5px;">→ mejor "deshabilitar"</span></td>
+          <td>Envíos, ofertas y calificaciones ya guardan el <code>uid</code> del usuario. Borrarlo de verdad deja esas referencias huérfanas — un flag <code>isActive: false</code> logra lo mismo operativamente y es reversible.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      En criollo: lo que hace falta no es un "CRUD de usuarios" genérico, sino una <strong>pantalla de gestión de cuentas</strong> — lista + detalle + suspender/reactivar. Es un sprint acotado y natural después de este, si querés que lo diseñemos.
+    </div>
+  </section>
+
+  <footer class="meta">
+    inDrive Entregas — Villazón, Potosí · Referencia generada a partir del estado real del código a esta fecha.
+  </footer>
+</main>
+
+</body></html>

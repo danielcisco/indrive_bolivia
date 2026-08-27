@@ -1,0 +1,726 @@
+<!doctype html><html><head><!-- frame-runtime --><base href="/_f/1787674478-4d0f/"><script>window.__FRAME_PREAMBLE={"v":1,"capabilities":{"artifact":"artifact.Cg566fpb.js","assets":"assets.8Gk803W0.js","comments":"comments.GLuHR3zP.js","db":"db.CRhVHzSt.js","downloads":"downloads.C3GSvEDP.js","embed":"embed.CxGAyc-v.js","mcp":"mcp.Bvma3qD7.js","network":"network.B5UA9Su4.js","permissions":"permissions.BNySkLV5.js","room":"room.BMMoe2BY.js","sample":"sample.BW2Uysoh.js","self":"artifact.Cg566fpb.js","user":"user.BpKav-Rf.js"},"transforms":"_transforms.CQm3TZ9K.js","comments":"_comments.PBVy184F.js","translate":"_translate.5HCW4BJh.js"}</script><script>(function(){"use strict";var J=["light","dark","system"],Q=/^[A-Za-z0-9_-]{1,64}$/,H=/^[a-zA-Z_:][a-zA-Z0-9_:.-]{0,127}$/,ee=new Set(["class","hidden","value","checked"]);function te(e){const t=e.toLowerCase();return t.startsWith("data-")||t.startsWith("aria-")||ee.has(t)}var Me="http://www.w3.org/1999/xhtml",re="http://www.w3.org/2000/svg",ne=new Set(["script","style","iframe","noscript","noframes","noembed","xmp","plaintext","template","title","textarea","object","embed"]),oe=new Set(["script","style"]);function se(e){const t=e.localName.toLowerCase();return e.namespaceURI==="http://www.w3.org/1999/xhtml"?!ne.has(t):e.namespaceURI===re?!oe.has(t):!1}var ae=new Set(["html","head","body","frameset"]);function ie(e){return e.namespaceURI==="http://www.w3.org/1999/xhtml"&&ae.has(e.localName)}function ce(e){if(e===null||typeof e!="object")return!1;const t=e;if(typeof t.target!="string"||!Q.test(t.target)||t.text!==void 0&&typeof t.text!="string")return!1;if(t.attrsSet!==void 0){if(t.attrsSet===null||typeof t.attrsSet!="object")return!1;for(const[r,n]of Object.entries(t.attrsSet))if(!H.test(r)||typeof n!="string")return!1}if(t.attrsRemoved!==void 0){if(!Array.isArray(t.attrsRemoved))return!1;for(const r of t.attrsRemoved)if(typeof r!="string"||!H.test(r))return!1}return!0}function le(e,t){if(e===null||typeof e!="object")return!1;const{seq:r,elements:n}=e;if(typeof r!="number"||!Number.isSafeInteger(r)||!Array.isArray(n)||n.length===0||n.length>64)return!1;for(let s=0;s<n.length;s++)if(!t(n[s]))return!1;return!0}function ue(e){return e===null||typeof e!="object"?!1:le(e.__frame_patch,ce)}function fe(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_init;return t!==null&&typeof t=="object"}function pe(e){return e!==null&&typeof e=="object"&&e.__frame_size_poke===!0}function de(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_theme;if(t===null||typeof t!="object")return!1;const r=t.theme;return typeof r=="string"&&J.includes(r)}var A=/^[\w.-]+\.js$/;function me(e,t,r){return r?"inert":typeof t=="string"&&A.test(t)?e?[t]:"inert":e?"inert":"framed"}function he(){return{post(e,t){parent.postMessage(e,t)},on(e){const t=r=>{r.source===parent&&e(r.data,r.origin)};return addEventListener("message",t),()=>removeEventListener("message",t)}}}function _e(){return{post:()=>{},on:()=>()=>{}}}var O="__frame_scroll",ve=150,ye=310,we=160,be=3e4;function Ee(){let e=0,t=!1,r=!1,n=!1,s=0,a=null;const l=i=>{try{sessionStorage.setItem(O,JSON.stringify({y:i}))}catch{}},d=()=>{if(clearTimeout(e),a===null)return;const i=a;a=null,l(i)},v=()=>{if(t){t=!1;return}r=!0,a=scrollY,clearTimeout(e),e=setTimeout(d,ve)};try{addEventListener("scroll",v,{passive:!0}),addEventListener("pagehide",d)}catch{}const y=()=>{let i;try{i=sessionStorage.getItem(O)}catch{return null}if(i===null)return null;let m;try{m=JSON.parse(i)}catch{m=null}const u=m?.y;if(!(typeof u=="number"&&Number.isFinite(u)&&u>=0)){try{sessionStorage.removeItem(O)}catch{}return null}return u};let S=!1;const h=i=>{try{const m=scrollY;scrollTo({top:i,left:0,behavior:"instant"}),s=i,n=!0,clearTimeout(e),a=null,l(i);const u=scrollY;u!==m&&(t=!0),u!==i&&!S&&(S=!0,addEventListener("load",()=>{try{if(scrollY===u){const k=y();h(k!==null?k:s)}}catch{}},{once:!0}))}catch{}},w=()=>{try{return!!location.hash}catch{return!0}};let o=!1;const f=()=>{try{if(o||innerWidth>ye||innerHeight>we)return;o=!0;const i=Date.now(),m=()=>{try{removeEventListener("resize",m)}catch{}if(Date.now()-i>be||r||w())return;const u=y();h(u!==null?u:s)};addEventListener("resize",m)}catch{}};let _=!1,b=!1;return{restore(){if(_||(_=!0,w()))return;const i=y();i!==null&&(h(i),f())},promoted(){if(b||(b=!0,w()))return;const i=y();i!==null?(h(i),f()):n&&h(s)}}}function ge(e,t,r,n){let s=null;try{s=window.trustedTypes?.createPolicy("frame-runtime",{createScriptURL:v=>v})??null}catch{}const a=window.Worker,l=a?.prototype,d=Object.freeze({Worker:a,workerOn:l?.addEventListener,workerPost:l?.postMessage,workerTerminate:l?.terminate,fetch:window.fetch.bind(window),preventDefault:Event.prototype.preventDefault,policy:s,origins:t});r(e).then(v=>v?.bootTopLevel?v.bootTopLevel(d,n):n.settle()).catch(()=>n.settle())}var Oe="modulepreload",Ce=function(e){return"/"+e},je={},Ae=function(t,r,n){let s=Promise.resolve();function a(l){const d=new Event("vite:preloadError",{cancelable:!0});if(d.payload=l,window.dispatchEvent(d),!d.defaultPrevented)throw l}return s.then(l=>{for(const d of l||[])d.status==="rejected"&&a(d.reason);return t().catch(a)})},Re=window===top,q=Object.getOwnPropertyDescriptor(window,"claude"),T=me(Re,window.__FRAME_PREAMBLE?.topLevel,q?.writable===!1),C=typeof T=="object"&&T[0],p=C?_e():he();(function(){const e=Object.defineProperty,t=globalThis,r=["RTCPeerConnection","webkitRTCPeerConnection","RTCDataChannel","RTCIceCandidate","RTCSessionDescription","RTCRtpSender","RTCRtpReceiver"];let n=0;for(let s=0;s<r.length;s++){const a=r[s];try{e(t,a,{value:void 0,writable:!1,configurable:!1})}catch{try{delete t[a]}catch{}try{e(t,a,{value:void 0,writable:!1,configurable:!0})}catch{}}typeof t[a]=="function"&&n++}if(n&&T==="framed")try{p.post({__frame_rtc_lockdown_failed:n},"*")}catch{}})();var Se=1e4,W=Object.freeze([...window.__FRAME_PREAMBLE?.origins??["https://claude.ai","https://preview.claude.ai"]]);function $(e){for(const t of W)if(t.endsWith(":*"))try{const r=new URL(e);if(`${r.protocol}//${r.hostname}:*`===t)return!0}catch{}else if(e===t)return!0;return!1}var L=Object.freeze({...window.__FRAME_PREAMBLE?.capabilities}),j=window.__FRAME_PREAMBLE?.transforms,N=window.__FRAME_PREAMBLE?.comments,I=window.__FRAME_PREAMBLE?.translate;function R(e){return Ae(()=>import("/_runtime/"+e),void 0)}function K(e,t){return{contract:e.contract,changes:new Set(e.changes??[]),flags:new Set(e.flags??[]),capabilities:e.capabilities??{},capBudgets:e.capBudgets??{},transforms:new Map,shellOrigin:t,mount:D,pipe:()=>({wrap:(r,n)=>(...s)=>{try{return n(...s)}catch(a){return Promise.reject(a)}}})}}var P=null,E=null;function Y(e,t,r){try{Object.defineProperty(e,t,{value:r,writable:!1,configurable:!1,enumerable:!0})}catch{try{Object.defineProperty(e,t,{value:r,writable:!1,configurable:!0,enumerable:!0})}catch{}}}var B=!1;function ke(e,t){const r=[];for(const n of e.elements){const s=document.querySelector(`[data-id="${n.target}"]`);if(!s){p.post({__frame_patch_miss:{seq:e.seq}},t);return}if([...Object.keys(n.attrsSet??{}),...n.attrsRemoved??[]].some(a=>!te(a))){p.post({__frame_patch_miss:{seq:e.seq}},t);return}if(n.text!==void 0&&(!se(s)||ie(s))){p.post({__frame_patch_miss:{seq:e.seq}},t);return}for(const[a,l]of Object.entries(n.attrsSet??{}))if(!G(s,a)){try{s.setAttribute(a,l)}catch{}X(s,a,l)}for(const a of n.attrsRemoved??[])G(s,a)||(s.removeAttribute(a),X(s,a,null));typeof n.text=="string"&&(s.textContent=n.text),r.push(n.target)}try{document.dispatchEvent(new CustomEvent("claude:edit",{detail:{seq:e.seq,targets:r}}))}catch{}}function X(e,t,r){if(!(e instanceof HTMLInputElement))return;const n=t.toLowerCase();n==="checked"?e.checked=r!==null:n==="value"&&e.type!=="file"&&(e.value=r??"")}function G(e,t){const r=t.toLowerCase(),n=e;return r==="data-id"||(r==="value"||r==="checked")&&(n.__artifactSecret===!0||/^(password|hidden|file)$/.test(n.type??"")||/(^|\s)(cc-|one-time-code|current-password|new-password)/i.test(`${e.getAttribute("autocomplete")??""} ${n.autocomplete??""}`))}function V(e){const t=document.documentElement;e==="light"||e==="dark"?(t.dataset.theme=e,t.style.colorScheme=e,B=!0):B&&(delete t.dataset.theme,t.style.colorScheme="",B=!1)}var M=new Map;function Te(){let e;const t={u:new Promise(r=>{e=r}),r:r=>{t.done=!0,e(r)},done:!1,nulled:!1};return t}function U(){for(const e of M.values())e.done||(e.nulled=!0,e.r(null))}var Le=Object.freeze(Object.assign(Object.create(null),{call:Function.prototype.call,apply:Function.prototype.apply,bind:Function.prototype.bind})),D=(e,t)=>{const r=M.get(e);if(!r||r.done){r?.nulled&&E&&p.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:e}},E);return}const n=typeof t=="function"?Object.setPrototypeOf(t,Le):Object.assign(Object.create(null),t);typeof n.then=="function"&&delete n.then,r.r(Object.freeze(n))};function Z(){const e=q?.value??{};Y(window,"claude",e);for(const t of Object.keys(L)){if(e[t]!==void 0){Y(e,t,e[t]);continue}M.set(t,Te())}if(e.use===void 0){const t=r=>{if(typeof r!="string"||!Object.hasOwn(L,r))return Promise.resolve(null);const n=M.get(r);return n?n.u:Promise.resolve(e[r]??null)};try{Object.defineProperty(e,"use",{value:t,writable:!0,configurable:!0,enumerable:!1})}catch{}}}if(T==="framed"){const e=j&&A.test(j)?R(j).catch(()=>{}):Promise.resolve(void 0),t=o=>{if(o.type==="auxclick"&&o.button!==1)return;const f=o.target,_=f&&f.closest?f.closest("a[href],area[href]"):null;if(!_)return;const b=_.getAttribute("href");if(!b)return;let i;try{i=new URL(b,document.baseURI)}catch{return}if((i.protocol==="http:"||i.protocol==="https:")&&i.origin!==location.origin){o.preventDefault();const m=(_.getAttribute("target")??"").toLowerCase(),u=o.type==="auxclick"||o.metaKey||o.ctrlKey||o.shiftKey||o.altKey||!["","_self","_top","_parent"].includes(m);p.post({__frame_nav:!0,url:i.href,newTab:u},"*")}};addEventListener("click",t,!0),addEventListener("auxclick",t,!0);const r={},n=o=>{o.isTrusted&&(r.pointer=!0)},s=o=>{o.isTrusted&&(r.click=!0)};addEventListener("pointermove",n,{capture:!0,passive:!0}),addEventListener("click",s,{capture:!0,passive:!0}),e.then(o=>{o?.wireNav&&(o.wireNav(),removeEventListener("click",t,!0),removeEventListener("auxclick",t,!0),removeEventListener("pointermove",n,!0),removeEventListener("click",s,!0),o.wireEngagement?.(r))});let a=null;try{a=Ee()}catch{}Z();let l=null,d=null,v=0;const y=p.on((o,f)=>{$(f)&&fe(o)&&(l=o.__frame_init,E=f,y(),clearTimeout(v),d?.())});p.post({__frame_connect:!0},"*");const S=new Promise(o=>{d=o,v=setTimeout(()=>{y(),o()},Se)}),h=document.readyState==="loading"?new Promise(o=>document.addEventListener("DOMContentLoaded",()=>o(),{once:!0})):Promise.resolve();h.then(()=>{try{a?.restore()}catch{}});const w={cb:null};p.on((o,f)=>{if($(f)&&pe(o)){try{a?.promoted()}catch{}w.cb?.()}}),S.then(async()=>{if(!l||!E){U();return}V(l.theme);const o=E;let f=!1,_=!1;p.on((c,x)=>{if(x!==o)return;de(c)&&V(c.__frame_theme.theme),ue(c)&&ke(c.__frame_patch,o);const g=c?.__fc_mode;g&&typeof g=="object"&&!f&&N&&A.test(N)&&(f=!0,R(N).then(z=>z.install?.(o,g.on===!0)).catch(()=>{}));const F=c?.__ft_cmd;F&&typeof F=="object"&&!_&&I&&A.test(I)&&(_=!0,R(I).then(z=>z.install?.(o,F)).catch(()=>{}))});const b=Object.keys(l.capabilities??{}).filter(c=>Object.hasOwn(L,c)).map(c=>[c,L[c]]).filter(c=>typeof c[1]=="string"&&A.test(c[1])),i=await Promise.allSettled(b.map(([,c])=>R(c))),m=await e,u=E;if(m?.buildBoot||p.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:"_transforms"}},u),m?.buildBoot)try{P=m.buildBoot(l,m.TRANSFORMS??{},{shellOrigin:u,mount:D},c=>p.post({__frame_cap_telemetry:c},u))}catch{p.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:"_transforms"}},u),P=K(l,u)}else P=K(l,u);const k=c=>p.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:c}},u),Pe=P;i.forEach((c,x)=>{const g=b[x][0];if(c.status!=="fulfilled"){k(g);return}try{c.value?.install?.(Pe)}catch{k(g)}}),U(),await h,p.post({__frame_ready:!0},E),e.then(c=>c?.installSizeReporter?.(u,w))})}else C&&(Z(),ge(C,W,R,{settle:U,mount:D}))})();</script><!-- /frame-runtime --><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Bitácora inDrive Villazón</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #eef0f1;
+    --surface: #ffffff;
+    --surface-2: #e4e7e9;
+    --ink: #1b1f24;
+    --ink-muted: #5b6570;
+    --ink-faint: #838d96;
+    --border: #d7dbde;
+    --accent: #b5642b;
+    --accent-ink: #ffffff;
+    --accent-tint: #f4e3d3;
+    --go: #2f7a5f;
+    --go-tint: #dcebe4;
+    --warn: #a14b3f;
+    --warn-tint: #f3ded9;
+    --code-bg: #1b1f24;
+    --code-ink: #edeef0;
+    --code-muted: #8fa0ad;
+    --shadow: 0 1px 2px rgba(20, 23, 27, 0.06), 0 8px 24px rgba(20, 23, 27, 0.06);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171b;
+      --surface: #1c2025;
+      --surface-2: #242930;
+      --ink: #edeef0;
+      --ink-muted: #9aa3ac;
+      --ink-faint: #6d7680;
+      --border: #2a2f35;
+      --accent: #e0975a;
+      --accent-ink: #201005;
+      --accent-tint: #3a2818;
+      --go: #6cc4a4;
+      --go-tint: #16241f;
+      --warn: #e28a7c;
+      --warn-tint: #2c1a17;
+      --code-bg: #0e1013;
+      --code-ink: #e7ecef;
+      --code-muted: #7c8994;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #14171b;
+    --surface: #1c2025;
+    --surface-2: #242930;
+    --ink: #edeef0;
+    --ink-muted: #9aa3ac;
+    --ink-faint: #6d7680;
+    --border: #2a2f35;
+    --accent: #e0975a;
+    --accent-ink: #201005;
+    --accent-tint: #3a2818;
+    --go: #6cc4a4;
+    --go-tint: #16241f;
+    --warn: #e28a7c;
+    --warn-tint: #2c1a17;
+    --code-bg: #0e1013;
+    --code-ink: #e7ecef;
+    --code-muted: #7c8994;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: var(--accent); }
+
+  h1, h2, h3 {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    text-wrap: balance;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+
+  .eyebrow {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    color: var(--accent);
+  }
+
+  code, .mono {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ---------- Shell layout ---------- */
+
+  .shell {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    max-width: 1240px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    padding: 28px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .brand .mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: linear-gradient(155deg, var(--accent), var(--go));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+
+  .brand h1 { font-size: 1.3rem; line-height: 1.15; }
+  .brand p { margin: 0; color: var(--ink-muted); font-size: 0.86rem; }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    font-size: 0.72rem;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 3px 9px;
+    border-radius: 100px;
+    background: var(--go-tint);
+    color: var(--go);
+    border: 1px solid color-mix(in srgb, var(--go) 35%, transparent);
+  }
+
+  nav.toc {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.88rem;
+  }
+
+  nav.toc a {
+    color: var(--ink-muted);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 7px;
+    border-left: 2px solid transparent;
+  }
+
+  nav.toc a:hover {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+
+  .theme-note {
+    margin-top: auto;
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+
+  /* ---------- Main content ---------- */
+
+  main {
+    padding: 40px clamp(20px, 4vw, 56px) 100px;
+    min-width: 0;
+  }
+
+  .page-head {
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-head h1 {
+    font-size: clamp(2rem, 4vw, 2.7rem);
+    margin: 10px 0 10px;
+  }
+
+  .page-head .lede {
+    color: var(--ink-muted);
+    max-width: 62ch;
+    font-size: 1.02rem;
+  }
+
+  section.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 26px clamp(18px, 3vw, 32px) 30px;
+    margin-bottom: 22px;
+    scroll-margin-top: 20px;
+  }
+
+  section.card > .eyebrow { display: block; margin-bottom: 6px; }
+  section.card > h2 { font-size: 1.55rem; margin-bottom: 4px; }
+  section.card > .dek { color: var(--ink-muted); font-size: 0.93rem; margin: 6px 0 20px; max-width: 68ch; }
+
+  h3.sub {
+    font-size: 1.05rem;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    margin: 22px 0 10px;
+    color: var(--ink);
+  }
+
+  h3.sub:first-of-type { margin-top: 4px; }
+
+  p { margin: 0 0 12px; max-width: 68ch; }
+  p:last-child { margin-bottom: 0; }
+
+  ul.plain, ol.plain { margin: 0 0 12px; padding-left: 1.2em; }
+  ul.plain li, ol.plain li { margin-bottom: 6px; }
+
+  /* ---------- credential cards ---------- */
+
+  .cred-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+    margin: 4px 0 18px;
+  }
+
+  .cred {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+    background: var(--surface-2);
+    position: relative;
+  }
+
+  .cred .role {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .role-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+  }
+  .role-dot.cliente { background: var(--go); }
+  .role-dot.repartidor { background: var(--accent); }
+  .role-dot.admin { background: var(--ink-faint); }
+
+  .cred dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 10px;
+    margin: 0;
+    font-size: 0.86rem;
+  }
+  .cred dt { color: var(--ink-faint); }
+  .cred dd { margin: 0; font-family: 'IBM Plex Mono', monospace; word-break: break-all; }
+  .cred dd.empty { font-family: 'IBM Plex Sans', sans-serif; color: var(--ink-faint); font-style: italic; }
+
+  /* ---------- code blocks ---------- */
+
+  .codeblock {
+    position: relative;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 10px;
+    margin: 0 0 16px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--code-ink) 12%, transparent);
+  }
+
+  .codeblock .label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--code-muted);
+    border-bottom: 1px solid color-mix(in srgb, var(--code-ink) 10%, transparent);
+    letter-spacing: 0.03em;
+  }
+
+  .codeblock pre {
+    margin: 0;
+    padding: 13px 14px 15px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.87rem;
+    line-height: 1.6;
+  }
+
+  .copy-btn {
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--code-ink) 25%, transparent);
+    color: var(--code-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .copy-btn:hover { background: color-mix(in srgb, var(--code-ink) 12%, transparent); color: var(--code-ink); }
+  .copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .copy-btn.copied { color: var(--go); border-color: var(--go); }
+
+  /* ---------- link list / table-ish rows ---------- */
+
+  .row-list { display: flex; flex-direction: column; }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .row:last-child { border-bottom: none; }
+  .row .name { font-weight: 600; min-width: 190px; }
+  .row .desc { color: var(--ink-muted); font-size: 0.9rem; flex: 1 1 240px; }
+  .row a.ext { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; white-space: nowrap; text-decoration: none; }
+  .row a.ext:hover { text-decoration: underline; }
+
+  /* ---------- callouts ---------- */
+
+  .callout {
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin: 4px 0 16px;
+    font-size: 0.9rem;
+    border: 1px solid transparent;
+  }
+  .callout.warn { background: var(--warn-tint); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+  .callout.warn strong { color: var(--warn); }
+  .callout.go { background: var(--go-tint); border-color: color-mix(in srgb, var(--go) 35%, transparent); }
+  .callout.go strong { color: var(--go); }
+  .callout p { margin: 0; }
+  .callout p + p { margin-top: 6px; }
+
+  /* ---------- gotcha list ---------- */
+
+  .gotcha {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 10px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .gotcha:last-child { border-bottom: none; }
+  .gotcha .n {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    padding-top: 2px;
+  }
+  .gotcha .body strong { display: block; margin-bottom: 3px; }
+  .gotcha .body p { font-size: 0.9rem; color: var(--ink-muted); margin: 0; }
+
+  /* ---------- progress / backlog ---------- */
+
+  .phase-list { display: flex; flex-direction: column; gap: 10px; }
+  .phase {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .phase .num { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1rem; color: var(--ink-muted); }
+  .phase .label { font-weight: 600; font-size: 0.94rem; }
+  .phase .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .phase.done .tag { background: var(--go-tint); color: var(--go); }
+  .phase.next .tag { background: var(--accent-tint); color: var(--accent); }
+  .phase.todo .tag { background: var(--surface); color: var(--ink-faint); border: 1px solid var(--border); }
+  .phase.next { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+
+  footer.foot {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+  }
+</style>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">iE</div>
+      <h1>Bitácora del proyecto</h1>
+      <p>inDrive Entregas — Villazón, Potosí</p>
+      <span class="status-pill">● Fases 1–4 completas</span>
+    </div>
+    <nav class="toc">
+      <a href="#credenciales">Credenciales de prueba</a>
+      <a href="#comandos">Levantar las apps</a>
+      <a href="#firebase">Firebase y Firestore</a>
+      <a href="#scripts">Scripts de administración</a>
+      <a href="#arquitectura">Mapa del código</a>
+      <a href="#gotchas">Cosas que ya nos mordieron</a>
+      <a href="#enlaces">Enlaces directos</a>
+      <a href="#backlog">Estado del backlog</a>
+    </nav>
+    <div class="theme-note">Villazón · Potosí · Bolivia<br>Proyecto: <code>indrive-entregas-villazon</code></div>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <span class="eyebrow">Ayuda memoria — uso interno</span>
+      <h1>Todo lo que se te puede olvidar, en un solo lugar</h1>
+      <p class="lede">Credenciales de prueba, comandos exactos para levantar cada app, cómo hablarle a Firebase desde la terminal, y los errores que ya nos mordieron una vez — para no volver a perder tiempo con lo mismo.</p>
+    </div>
+
+    <!-- CREDENCIALES -->
+    <section class="card" id="credenciales">
+      <span class="eyebrow">01 · Acceso</span>
+      <h2>Credenciales de prueba</h2>
+      <p class="dek">Cada número de teléfono queda casado de por vida con el primer rol que se le asigna — la Cloud Function <code>assignInitialRole</code> lo rechaza si intentas cambiarlo. Si necesitas probar un rol nuevo, agrega un número de prueba nuevo en Firebase, no reuses uno existente.</p>
+
+      <div class="cred-grid">
+        <div class="cred">
+          <div class="role"><span class="role-dot cliente"></span>Cliente</div>
+          <dl>
+            <dt>Teléfono</dt><dd>+59170000000</dd>
+            <dt>Código</dt><dd>123456</dd>
+            <dt>UID</dt><dd>gKIkNURH3QQfjWiuKVGCTPsSHn52</dd>
+            <dt>Verificado</dt><dd class="empty">no aplica (isVerified: false)</dd>
+          </dl>
+        </div>
+        <div class="cred">
+          <div class="role"><span class="role-dot repartidor"></span>Repartidor</div>
+          <dl>
+            <dt>Teléfono</dt><dd>+59170000001</dd>
+            <dt>Código</dt><dd>654321</dd>
+            <dt>UID</dt><dd>TomADcfY1qZSe8WcVgZ9chKMQYS2</dd>
+            <dt>Verificado</dt><dd>isVerified: true</dd>
+          </dl>
+        </div>
+        <div class="cred">
+          <div class="role"><span class="role-dot admin"></span>Admin</div>
+          <dl>
+            <dt>Estado</dt><dd class="empty">todavía no existe ninguna cuenta</dd>
+            <dt>Cómo crearla</dt><dd class="empty">ver sección Scripts →</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="callout go">
+        <p><strong>Números de prueba de Firebase</strong> — se administran en Firebase Console → Authentication → Método de acceso → Teléfono → "Números de teléfono para pruebas". No consumen SMS reales y no chocan con el límite de región.</p>
+      </div>
+    </section>
+
+    <!-- COMANDOS -->
+    <section class="card" id="comandos">
+      <span class="eyebrow">02 · Terminal</span>
+      <h2>Levantar cada app</h2>
+      <p class="dek">Las 3 apps salen del mismo código con distinto entry point. Dispositivo de prueba conocido: Samsung SM G781B, id <code>RFCT416HY5K</code>. Corre siempre desde <code>D:\indrive_bolivia\indrive_app</code>.</p>
+
+      <h3 class="sub">App Cliente (Android)</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell</span><button class="copy-btn">Copiar</button></div>
+        <pre>flutter run -d RFCT416HY5K -t lib\main_cliente.dart</pre>
+      </div>
+
+      <h3 class="sub">App Repartidor (Android)</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell</span><button class="copy-btn">Copiar</button></div>
+        <pre>flutter run -d RFCT416HY5K -t lib\main_repartidor.dart</pre>
+      </div>
+
+      <h3 class="sub">Panel Admin (Web / Chrome)</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell</span><button class="copy-btn">Copiar</button></div>
+        <pre>flutter run -d chrome -t lib\main_admin.dart</pre>
+      </div>
+
+      <div class="callout warn">
+        <p><strong>No se puede tener dos apps a la vez en el mismo celular.</strong> Cliente, Repartidor y Admin comparten el mismo <code>applicationId</code> (<code>com.example.indrive_app</code>) — instalar una sobrescribe a la otra. Para probar dos roles a la vez: usa un emulador Android además del celular físico, o pide la migración a product flavors (pendiente, ver Backlog).</p>
+      </div>
+
+      <h3 class="sub">Desde VS Code (sin recordar el comando)</h3>
+      <p>El proyecto ya tiene <code>.vscode/launch.json</code> con 3 configuraciones nombradas. Abre el panel "Run and Debug", elige <strong>Cliente</strong>, <strong>Repartidor</strong> o <strong>Admin (Web)</strong> en el dropdown, elige el dispositivo abajo, y presiona <code>F5</code>.</p>
+
+      <h3 class="sub">Verificación rápida (sin dispositivo)</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell</span><button class="copy-btn">Copiar</button></div>
+        <pre>flutter pub get
+flutter analyze
+flutter test</pre>
+      </div>
+    </section>
+
+    <!-- FIREBASE -->
+    <section class="card" id="firebase">
+      <span class="eyebrow">03 · Backend</span>
+      <h2>Firebase y Firestore</h2>
+      <p class="dek">Proyecto <code>indrive-entregas-villazon</code>, plan Blaze, región <code>southamerica-east1</code>. Sesión de Firebase CLI activa como <code>dagmcisco@gmail.com</code>.</p>
+
+      <h3 class="sub">Desplegar reglas + índices de Firestore</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell</span><button class="copy-btn">Copiar</button></div>
+        <pre>firebase deploy --only firestore --project=indrive-entregas-villazon</pre>
+      </div>
+
+      <h3 class="sub">Desplegar Cloud Functions</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell</span><button class="copy-btn">Copiar</button></div>
+        <pre>firebase deploy --only functions --project=indrive-entregas-villazon</pre>
+      </div>
+
+      <h3 class="sub">Ver qué rol/verificación tiene cada cuenta</h3>
+      <p>No hay UI para esto todavía (llega en el panel Admin). Mientras tanto, exporta los usuarios y mira <code>customAttributes</code>:</p>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell</span><button class="copy-btn">Copiar</button></div>
+        <pre>firebase auth:export usuarios.json --project=indrive-entregas-villazon --format=json
+type usuarios.json</pre>
+      </div>
+
+      <h3 class="sub">Ver logs de una Cloud Function</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell</span><button class="copy-btn">Copiar</button></div>
+        <pre>firebase functions:log --only assignInitialRole --project=indrive-entregas-villazon</pre>
+      </div>
+
+      <div class="callout warn">
+        <p><strong>Primer deploy de una función nueva puede fallar</strong> con "Cannot determine backend specification. Timeout after 10000" — es la primera vez que Eventarc propaga permisos, espera 2–3 minutos y vuelve a correr el mismo comando.</p>
+      </div>
+    </section>
+
+    <!-- SCRIPTS -->
+    <section class="card" id="scripts">
+      <span class="eyebrow">04 · Bootstrap manual</span>
+      <h2>Scripts de administración</h2>
+      <p class="dek">Dos acciones que hoy no tienen UI (llegan con el panel Admin) y se resuelven con scripts puntuales desde <code>indrive_app/functions</code>.</p>
+
+      <h3 class="sub">Paso previo, una sola vez: la clave de servicio</h3>
+      <p>Ambos scripts necesitan <code>functions/scripts/serviceAccountKey.json</code> (gitignored, nunca se sube). Se genera en Firebase Console → Configuración del proyecto → Cuentas de servicio → Generar nueva clave privada, y se guarda con ese nombre exacto en esa carpeta.</p>
+
+      <h3 class="sub">Crear o promover un Admin</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell · desde indrive_app/functions</span><button class="copy-btn">Copiar</button></div>
+        <pre>npx ts-node scripts/setAdminClaim.ts &lt;UID&gt;</pre>
+      </div>
+
+      <h3 class="sub">Marcar un Repartidor como verificado (KYC)</h3>
+      <div class="codeblock" data-copy>
+        <div class="label"><span>powershell · desde indrive_app/functions</span><button class="copy-btn">Copiar</button></div>
+        <pre>npx ts-node scripts/setVerifiedClaim.ts &lt;UID&gt;</pre>
+      </div>
+
+      <div class="callout warn">
+        <p><strong>Nunca escribas <code>&lt;UID&gt;</code> literal.</strong> En PowerShell, <code>&lt;</code> y <code>&gt;</code> son símbolos reservados de redirección — copia el UID real desde Firebase Console → Authentication → clic en la fila del usuario.</p>
+      </div>
+    </section>
+
+    <!-- ARQUITECTURA -->
+    <section class="card" id="arquitectura">
+      <span class="eyebrow">05 · Orientación</span>
+      <h2>Mapa del código</h2>
+      <p class="dek">Una sola base Flutter, tres binarios. Todo vive bajo <code>D:\indrive_bolivia\indrive_app</code>.</p>
+
+      <div class="row-list">
+        <div class="row"><span class="name mono">lib/main_cliente.dart</span><span class="desc">Entry point de la app Cliente</span></div>
+        <div class="row"><span class="name mono">lib/main_repartidor.dart</span><span class="desc">Entry point de la app Repartidor</span></div>
+        <div class="row"><span class="name mono">lib/main_admin.dart</span><span class="desc">Entry point del panel Admin (compila a Web)</span></div>
+        <div class="row"><span class="name mono">lib/core/</span><span class="desc">Infraestructura transversal: auth, notificaciones, tracking GPS, ubicación, offline</span></div>
+        <div class="row"><span class="name mono">lib/shared/</span><span class="desc">Dominio y datos compartidos: entidades, repositorios, Money, widgets de mapa</span></div>
+        <div class="row"><span class="name mono">lib/features/&lt;rol&gt;/</span><span class="desc">Pantallas y providers específicos de cada rol</span></div>
+        <div class="row"><span class="name mono">functions/src/index.ts</span><span class="desc">Cloud Functions: assignInitialRole, setEnvioExpiration, notifyNearbyRepartidores</span></div>
+        <div class="row"><span class="name mono">firestore.rules</span><span class="desc">Reglas de seguridad — aislamiento por rol, transiciones de estado válidas</span></div>
+      </div>
+    </section>
+
+    <!-- GOTCHAS -->
+    <section class="card" id="gotchas">
+      <span class="eyebrow">06 · Cicatrices</span>
+      <h2>Cosas que ya nos mordieron una vez</h2>
+      <p class="dek">Errores reales que ya diagnosticamos — si vuelven a aparecer, la solución ya está probada.</p>
+
+      <div class="gotcha">
+        <span class="n">01</span>
+        <div class="body"><strong>Kotlin incremental roto en Windows</strong><p>Falla si el proyecto y el pub-cache están en discos distintos (C: vs D:). Ya está desactivado en <code>android/gradle.properties</code> (<code>kotlin.incremental=false</code>) — no lo reactives.</p></div>
+      </div>
+      <div class="gotcha">
+        <span class="n">02</span>
+        <div class="body"><strong>Windows desktop no es una plataforma objetivo</strong><p>Solo Android + Web. Cualquier error de Gradle/AGP corriendo <code>-d windows</code> es irrelevante, ignóralo.</p></div>
+      </div>
+      <div class="gotcha">
+        <span class="n">03</span>
+        <div class="body"><strong>Gradle no corre en el entorno de Claude</strong><p>"Unable to establish loopback connection" — es una limitación del sandbox donde corre Claude, no del proyecto. Los builds de Android/Gradle los tienes que correr vos, en tu propia terminal.</p></div>
+      </div>
+      <div class="gotcha">
+        <span class="n">04</span>
+        <div class="body"><strong>El rol de un teléfono es para siempre</strong><p><code>assignInitialRole</code> rechaza reasignar rol a una cuenta que ya tiene uno. Para probar un rol nuevo, se necesita un número de teléfono de prueba nuevo.</p></div>
+      </div>
+      <div class="gotcha">
+        <span class="n">05</span>
+        <div class="body"><strong><code>flutter_local_notifications</code> necesita <code>.initialize()</code></strong><p>Sin esa llamada, crear canales o mostrar notificaciones falla en silencio. Ya está corregido en <code>FcmService</code>.</p></div>
+      </div>
+      <div class="gotcha">
+        <span class="n">06</span>
+        <div class="body"><strong>La API key de Google Maps no se commitea</strong><p>Vive en <code>android/local.properties</code> como <code>MAPS_API_KEY=...</code> (gitignored). Si clonas el repo en otra máquina, hay que volver a ponerla ahí.</p></div>
+      </div>
+    </section>
+
+    <!-- ENLACES -->
+    <section class="card" id="enlaces">
+      <span class="eyebrow">07 · Atajos</span>
+      <h2>Enlaces directos</h2>
+      <div class="row-list">
+        <div class="row"><span class="name">Consola Firebase</span><a class="ext" href="https://console.firebase.google.com/project/indrive-entregas-villazon/overview" target="_blank" rel="noopener">console.firebase.google.com →</a></div>
+        <div class="row"><span class="name">Authentication</span><a class="ext" href="https://console.firebase.google.com/project/indrive-entregas-villazon/authentication/users" target="_blank" rel="noopener">/authentication/users →</a></div>
+        <div class="row"><span class="name">Firestore</span><a class="ext" href="https://console.firebase.google.com/project/indrive-entregas-villazon/firestore" target="_blank" rel="noopener">/firestore →</a></div>
+        <div class="row"><span class="name">Cloud Functions</span><a class="ext" href="https://console.firebase.google.com/project/indrive-entregas-villazon/functions" target="_blank" rel="noopener">/functions →</a></div>
+        <div class="row"><span class="name">Cuentas de servicio</span><a class="ext" href="https://console.firebase.google.com/project/indrive-entregas-villazon/settings/serviceaccounts/adminsdk" target="_blank" rel="noopener">/serviceaccounts →</a></div>
+        <div class="row"><span class="name">Credenciales de Google Cloud</span><a class="ext" href="https://console.cloud.google.com/apis/credentials?project=indrive-entregas-villazon" target="_blank" rel="noopener">/apis/credentials →</a></div>
+        <div class="row"><span class="name">Repositorio en GitHub</span><a class="ext" href="https://github.com/danielcisco/indrive_bolivia" target="_blank" rel="noopener">danielcisco/indrive_bolivia →</a></div>
+      </div>
+    </section>
+
+    <!-- BACKLOG -->
+    <section class="card" id="backlog">
+      <span class="eyebrow">08 · Avance</span>
+      <h2>Estado del backlog</h2>
+      <div class="phase-list">
+        <div class="phase done"><span class="num">Fase 1</span><span class="label">Entorno, Clean Architecture, Auth por teléfono, RBAC</span><span class="tag">completa</span></div>
+        <div class="phase done"><span class="num">Fase 2</span><span class="label">Esquemas Firestore, dinero en centavos, cola offline</span><span class="tag">completa</span></div>
+        <div class="phase done"><span class="num">Fase 3</span><span class="label">Vistas Cliente/Repartidor, radar, FCM</span><span class="tag">completa</span></div>
+        <div class="phase done"><span class="num">Fase 4</span><span class="label">Mapas, GPS en vivo, Foreground Service, batería</span><span class="tag">completa</span></div>
+        <div class="phase next"><span class="num">Sprint 5.1</span><span class="label">Panel de Administración Web</span><span class="tag">siguiente</span></div>
+        <div class="phase todo"><span class="num">Sprint 6.1</span><span class="label">Transacciones y pagos</span><span class="tag">pendiente</span></div>
+        <div class="phase todo"><span class="num">Sprint 7.1</span><span class="label">Pruebas y despliegue en producción</span><span class="tag">pendiente</span></div>
+      </div>
+
+      <h3 class="sub">Deuda técnica anotada (no urgente)</h3>
+      <ul class="plain">
+        <li>Migrar los 6 paquetes de Firebase a versión mayor (elimina un warning de Kotlin Gradle Plugin).</li>
+        <li>FullScreenIntent para notificaciones críticas (pantalla completa tipo "llamada entrante").</li>
+        <li>Product flavors para que las 3 apps convivan instaladas en un mismo dispositivo.</li>
+        <li>Recuperación de estado del Foreground Service si el proceso muere a mitad de un viaje.</li>
+        <li>Renombrar <code>com.example.indrive_app</code> antes de producción.</li>
+      </ul>
+    </section>
+
+    <footer class="foot">Actualizado durante la sesión de trabajo tras el cierre del Sprint 4.1b · Villazón, Potosí, Bolivia</footer>
+  </main>
+</div>
+
+<script>
+  document.querySelectorAll('.codeblock[data-copy]').forEach(function (block) {
+    var btn = block.querySelector('.copy-btn');
+    var pre = block.querySelector('pre');
+    if (!btn || !pre) return;
+    btn.addEventListener('click', function () {
+      var text = pre.textContent;
+      navigator.clipboard.writeText(text).then(function () {
+        var original = btn.textContent;
+        btn.textContent = 'Copiado';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1600);
+      });
+    });
+  });
+</script>
+
+</body></html>

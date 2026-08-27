@@ -1,0 +1,681 @@
+<title>Manifiesto de Sesión — inDrive Entregas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --paper: #efede4;
+    --paper-raised: #f8f6ee;
+    --ink: #1c1e1a;
+    --ink-soft: #4a4c44;
+    --line: #d8d3c2;
+    --accent: #93601f;
+    --accent-soft: #e7dcc4;
+    --accent2: #2b5866;
+    --accent2-soft: #d9e5e6;
+    --ok: #3c6b3f;
+    --ok-soft: #dfe8dc;
+    --warn: #9c5a1d;
+    --warn-soft: #f0e0c8;
+    --pending: #5c5850;
+    --pending-soft: #e6e2d4;
+
+    --font-display: 'Newsreader', 'Iowan Old Style', Georgia, serif;
+    --font-body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #16181a;
+      --paper-raised: #1f2224;
+      --ink: #e9e6db;
+      --ink-soft: #a8a599;
+      --line: #35362f;
+      --accent: #d8a24f;
+      --accent-soft: #3a2f18;
+      --accent2: #7fb2c2;
+      --accent2-soft: #1c3038;
+      --ok: #8fc088;
+      --ok-soft: #223324;
+      --warn: #e0a860;
+      --warn-soft: #3a2c14;
+      --pending: #b7b3a5;
+      --pending-soft: #2a2924;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #16181a;
+    --paper-raised: #1f2224;
+    --ink: #e9e6db;
+    --ink-soft: #a8a599;
+    --line: #35362f;
+    --accent: #d8a24f;
+    --accent-soft: #3a2f18;
+    --accent2: #7fb2c2;
+    --accent2-soft: #1c3038;
+    --ok: #8fc088;
+    --ok-soft: #223324;
+    --warn: #e0a860;
+    --warn-soft: #3a2c14;
+    --pending: #b7b3a5;
+    --pending-soft: #2a2924;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sheet {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 64px 32px 120px;
+  }
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+  }
+
+  .masthead .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .masthead h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    line-height: 1.08;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .masthead .dek {
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  .masthead .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+  .masthead .meta span b { color: var(--ink); font-weight: 600; }
+
+  /* --- Dashboard de estado --- */
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin: 40px 0 56px;
+  }
+  .status-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px 18px;
+  }
+  .status-card .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.pending { background: var(--pending-soft); color: var(--pending); }
+  .status-card .body { font-size: 14px; margin-top: 8px; color: var(--ink); }
+
+  /* --- Navegación de fases --- */
+  nav.toc {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin-bottom: 56px;
+  }
+  nav.toc .toc-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  nav.toc ol {
+    columns: 2;
+    column-gap: 28px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  nav.toc li { break-inside: avoid; margin-bottom: 6px; }
+  nav.toc a {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    gap: 8px;
+  }
+  nav.toc a:hover { color: var(--accent); }
+  nav.toc a .n {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 12.5px;
+    flex-shrink: 0;
+  }
+
+  /* --- Fases --- */
+  section.phase {
+    margin-bottom: 60px;
+    scroll-margin-top: 24px;
+  }
+  .phase-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  .phase-num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .phase h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.65rem;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .phase .tag {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    padding: 1px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .phase > p, .phase > ul, .phase > ol { max-width: 68ch; }
+  .phase p { margin: 0 0 14px; }
+  .phase ul, .phase ol { padding-left: 22px; margin: 0 0 14px; }
+  .phase li { margin-bottom: 6px; }
+
+  code, .code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--accent2-soft);
+    color: var(--accent2);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .callout {
+    border-left: 3px solid var(--line);
+    padding: 10px 16px;
+    margin: 16px 0;
+    font-size: 14.5px;
+    max-width: 68ch;
+    border-radius: 0 4px 4px 0;
+    background: var(--paper-raised);
+  }
+  .callout.bug { border-color: var(--warn); }
+  .callout.bug .k { color: var(--warn); }
+  .callout.decision { border-color: var(--accent2); }
+  .callout.decision .k { color: var(--accent2); }
+  .callout.done { border-color: var(--ok); }
+  .callout.done .k { color: var(--ok); }
+  .callout .k {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 16px 0 20px;
+  }
+  .table-wrap { overflow-x: auto; }
+  th, td {
+    text-align: left;
+    padding: 7px 12px 7px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  td .code, th .code { white-space: nowrap; }
+
+  hr.div {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 56px 0;
+  }
+
+  .backlog-list { list-style: none; padding: 0; margin: 16px 0; max-width: 68ch; }
+  .backlog-list li {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 14.5px;
+  }
+  .backlog-list li:last-child { border-bottom: none; }
+  .backlog-list .why { color: var(--ink-soft); font-size: 13.5px; }
+
+  footer.colophon {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 640px) {
+    .sheet { padding: 40px 18px 80px; }
+    nav.toc ol { columns: 1; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header class="masthead">
+    <div class="eyebrow">Manifiesto técnico · inDrive Entregas</div>
+    <h1>Del buscador de direcciones al primer despliegue en producción</h1>
+    <p class="dek">Registro completo de una sesión de arquitectura: qué se construyó, qué se rompió y por qué, y qué decisiones quedaron tomadas para Cliente, Repartidor y el Panel Admin.</p>
+    <div class="meta">
+      <span>Proyecto: <b>indrive-entregas-villazon</b></span>
+      <span>Alcance: <b>Villazón, Potosí, Bolivia</b></span>
+      <span>Apps: <b>Cliente · Repartidor · Admin</b></span>
+      <span>Commit de cierre: <b>2ae997e</b></span>
+    </div>
+  </header>
+
+  <div class="status-grid">
+    <div class="status-card">
+      <div class="label">Panel Admin <span class="pill ok">resuelto</span></div>
+      <div class="body">Desplegado en Firebase Hosting — <span class="code">indrive-entregas-villazon.web.app</span>. Antes solo corría local.</div>
+    </div>
+    <div class="status-card">
+      <div class="label">Mapa en vivo (Admin) <span class="pill ok">resuelto</span></div>
+      <div class="body">Referrer de la key de Maps corregido con el dominio fijo de Hosting; ícono a tamaño correcto; nombre del repartidor visible.</div>
+    </div>
+    <div class="status-card">
+      <div class="label">SMS a números reales <span class="pill warn">en observación</span></div>
+      <div class="body">Política de regiones y cuota de registros descartadas como causa. Queda un límite específico por número, no configurable — se resuelve solo con tiempo.</div>
+    </div>
+    <div class="status-card">
+      <div class="label">Tests automatizados <span class="pill pending">a mitad</span></div>
+      <div class="body">20 tests de Dart ya existían (no había cero, como llegué a decir por error). Suite nueva de Firestore Rules escrita, pendiente de correr en tu máquina.</div>
+    </div>
+    <div class="status-card">
+      <div class="label">Crashlytics / Performance <span class="pill ok">confirmado</span></div>
+      <div class="body">Ambos reciben datos reales. El único crash registrado ya está corregido (el bug de <span class="code">already-exists</span>).</div>
+    </div>
+    <div class="status-card">
+      <div class="label">Commit <span class="pill ok">hecho</span></div>
+      <div class="body">46 archivos, un solo commit de cierre. 15 commits locales por delante de <span class="code">origin/master</span> — no se hizo push.</div>
+    </div>
+  </div>
+
+  <nav class="toc">
+    <div class="toc-title">Índice cronológico</div>
+    <ol>
+      <li><a href="#f01"><span class="n">01</span> Buscador de direcciones (Places Autocomplete)</a></li>
+      <li><a href="#f02"><span class="n">02</span> Identidad visual: header, avatares, ícono del repartidor</a></li>
+      <li><a href="#f03"><span class="n">03</span> Identidad de la contraparte + fix de navegación</a></li>
+      <li><a href="#f04"><span class="n">04</span> La cadena de bugs de plataforma</a></li>
+      <li><a href="#f05"><span class="n">05</span> Rediseño del registro: Bienvenida + 4 pasos + KYC</a></li>
+      <li><a href="#f06"><span class="n">06</span> Gate de verificación pendiente (Repartidor)</a></li>
+      <li><a href="#f07"><span class="n">07</span> Filtros de estado + auto-refresco + navegación directa</a></li>
+      <li><a href="#f08"><span class="n">08</span> Radar con sondeo automático</a></li>
+      <li><a href="#f09"><span class="n">09</span> Hosting, el mapa y el panel Admin en vivo</a></li>
+      <li><a href="#f10"><span class="n">10</span> SMS a números reales: la investigación</a></li>
+      <li><a href="#f11"><span class="n">11</span> Tests, Crashlytics y Performance</a></li>
+      <li><a href="#f12"><span class="n">12</span> El commit de cierre</a></li>
+      <li><a href="#f13"><span class="n">13</span> Backlog explícito para después</a></li>
+    </ol>
+  </nav>
+
+  <section class="phase" id="f01">
+    <div class="phase-head">
+      <span class="phase-num">01</span>
+      <h2>Buscador de direcciones (Places Autocomplete)</h2>
+      <span class="tag">Cliente</span>
+    </div>
+    <p>Punto de partida de la sesión: el Cliente elegía origen y destino arrastrando un pin a mano, sin poder escribir una dirección — limitación anotada desde el Sprint 3.1. Se agregó un buscador directamente en <code>MapPickerScreen</code>, sin tocar el flujo de confirmación manual (se mantiene como red de seguridad si el resultado no es exacto).</p>
+    <ul>
+      <li>Nuevo <code>lib/core/location/places_service.dart</code>: llamadas REST directas a Places API (New) — <code>autocomplete</code> y <code>details</code> — sin paquete de terceros, con sesgo geográfico hacia Villazón.</li>
+      <li>La key de Android ya restringida por paquete+SHA-1 necesitó habilitar "Places API (New)" en Google Cloud Console y adjuntar los headers <code>X-Android-Package</code>/<code>X-Android-Cert</code> a mano (una llamada REST cruda no los adjunta sola como sí lo hace el SDK nativo).</li>
+    </ul>
+    <div class="callout decision">
+      <span class="k">Decisión</span>
+      La key nunca vive en código versionado. Se resolvió con <code>dart_define.local.json</code> (gitignorado, mismo criterio que <code>local.properties</code>) + <code>--dart-define-from-file</code>, después de que un primer intento de escribir la key directo en <code>.vscode/launch.json</code> fuera bloqueado por el propio editor al detectar un secreto yendo a un archivo versionado.
+    </div>
+  </section>
+
+  <section class="phase" id="f02">
+    <div class="phase-head">
+      <span class="phase-num">02</span>
+      <h2>Identidad visual: header, avatares, ícono del repartidor</h2>
+      <span class="tag">Las 3 apps</span>
+    </div>
+    <p>Pedido explícito de mejorar la experiencia visual del mapa y agregar identidad de usuario. Se construyó en dos piezas independientes:</p>
+    <ul>
+      <li><b>Ícono del repartidor</b> (<code>lib/shared/widgets/marcador_repartidor.dart</code>): un círculo azul con <code>Icons.two_wheeler</code>, dibujado a mano sobre un <code>Canvas</code> y convertido a <code>BitmapDescriptor</code>, cacheado una sola vez por sesión. Reemplazó el pin genérico <code>hueAzure</code> en el mapa de seguimiento del Cliente/Repartidor y en el mapa en vivo del Admin.</li>
+      <li><b>Header de usuario</b> (<code>lib/shared/widgets/user_profile_header.dart</code>): avatar elegible (grid de 12 íconos predefinidos — se descartó deliberadamente la foto real para no sumar permisos de cámara/galería a algo puramente decorativo), identificador del usuario y, para Cliente/Repartidor, su ⭐ calificación al lado. Se integró como <code>bottom:</code> del <code>AppBar</code> en las 3 Home.</li>
+    </ul>
+    <div class="callout bug">
+      <span class="k">Bug encontrado antes de llegar al usuario</span>
+      El primer diseño de <code>AppTheme</code> tenía <code>minimumSize: Size(double.infinity, 48)</code> global para botones — habría roto todo botón chico dentro de una tarjeta o diálogo, forzándolo a ancho infinito. Se corrigió a <code>Size(64, 48)</code> (solo alto mínimo) antes de que el usuario lo viera.
+    </div>
+  </section>
+
+  <section class="phase" id="f03">
+    <div class="phase-head">
+      <span class="phase-num">03</span>
+      <h2>Identidad de la contraparte + fix de navegación al aceptar</h2>
+      <span class="tag">Cliente ↔ Repartidor</span>
+    </div>
+    <p>Pedido: que el Cliente sepa qué repartidor aceptó su envío, y viceversa; y que al aceptar un envío el repartidor caiga directo en sus entregas en vez de quedarse en el Radar.</p>
+    <div class="callout decision">
+      <span class="k">Decisión de privacidad</span>
+      <code>users/{uid}</code> tiene campos sensibles (<code>cedulaUrl</code>, <code>phoneNumber</code>), de lectura solo-dueño/admin. Se creó la colección paralela <code>perfiles_publicos/{uid}</code> — solo <code>nombre</code>, <code>apellido</code>, <code>nick</code>, <code>avatarId</code> — de lectura abierta a cualquier autenticado, escrita en el mismo <code>WriteBatch</code> que <code>users/{uid}</code> para que ambas copias no se desincronicen.
+    </div>
+    <ul>
+      <li><code>PerfilPublico</code> (entidad nueva), <code>_guardarPerfil</code> en <code>UsersRepository</code> (batch atómico), providers <code>miPerfilProvider</code>/<code>perfilPublicoProvider</code>.</li>
+      <li>Tarjetas "Tu repartidor" (Cliente) y "Cliente" (Repartidor) en las pantallas de detalle, reusando <code>AvatarCirculo</code>.</li>
+      <li><code>envio_repartidor_detalle_screen.dart</code>: tras "Aceptar directo", <code>popUntil</code> + navegación directa a la entrega (afinado más adelante en la fase 07).</li>
+    </ul>
+  </section>
+
+  <section class="phase" id="f04">
+    <div class="phase-head">
+      <span class="phase-num">04</span>
+      <h2>La cadena de bugs de plataforma</h2>
+      <span class="tag">Correcciones</span>
+    </div>
+    <p>Tres bugs reales encadenados, cada uno descubierto al testear el anterior — vale la pena leerlos en orden porque cada corrección expuso el siguiente.</p>
+    <div class="callout bug">
+      <span class="k">Bug 1 — setState con un Future</span>
+      <code>setState(() =&gt; _x = _future(...))</code>: el cuerpo de esa flecha es una asignación que "devuelve" el <code>Future</code> asignado, así que Flutter rechaza el closure en runtime ("setState() callback argument returned a Future"). Se corrigió usando un cuerpo en bloque <code>{ }</code>, que sí devuelve <code>void</code>.
+    </div>
+    <div class="callout bug">
+      <span class="k">Bug 2 — Firestore Rules con acceso directo a claves ausentes</span>
+      La regla de <code>users/{uid}</code> comparaba <code>request.resource.data.role == resource.data.role</code> con acceso directo. Con el registro nuevo, <code>nombre</code>/<code>nick</code> se guardan <b>antes</b> de que la Cloud Function <code>assignInitialRole</code> fije <code>role</code>/<code>isVerified</code> — en esa ventana, el acceso directo a una clave ausente rompe la regla para <b>toda</b> escritura del dueño, no solo esa. Se manifestó como <code>[cloud_firestore/permission-denied]</code> al subir la foto de Cédula. Corregido con <code>.get(key, default)</code> en los tres campos (<code>role</code>, <code>isVerified</code>, <code>isActive</code>), mismo patrón que ya se usaba para <code>isActive</code>.
+    </div>
+    <div class="callout bug">
+      <span class="k">Bug 3 — providers "mi*" con datos de la cuenta anterior</span>
+      <code>miPerfilProvider</code>/<code>miRatingProvider</code>/<code>miEstadoKycProvider</code> leían <code>FirebaseAuth.instance.currentUser!.uid</code> una sola vez al construirse; al cambiar de cuenta de prueba dentro del mismo proceso de la app (sin reiniciarla), seguían resolviendo con el uid viejo. Se agregó <code>authUidProvider</code> (<code>StreamProvider</code> sobre <code>authStateChanges()</code>) y los providers "mi*" pasaron a depender de él, para recalcularse solos ante cualquier cambio de sesión.
+    </div>
+  </section>
+
+  <section class="phase" id="f05">
+    <div class="phase-head">
+      <span class="phase-num">05</span>
+      <h2>Rediseño del registro: Bienvenida + 4 pasos + KYC integrado</h2>
+      <span class="tag">Cliente y Repartidor</span>
+    </div>
+    <p>El flujo de entrada pasó por tres iteraciones reales antes de asentarse — vale la pena documentar el porqué de cada una, no solo el resultado final.</p>
+    <ol>
+      <li><b>Primer intento:</b> nombre/nick pedidos en una pantalla <code>CompletarPerfilScreen</code> separada, bloqueada por <code>AuthGate</code> tras el login. Funcionaba, pero el usuario pidió explícitamente que se sintiera parte del registro, no un paso posterior.</li>
+      <li><b>Segundo intento:</b> los campos se movieron al mismo <code>PhoneLoginView</code>, usando <code>UserCredential.additionalUserInfo?.isNewUser</code> para mostrarlos solo en cuentas nuevas. Se descubrió una condición de carrera real: <code>authStateChanges()</code> dispara la navegación a Home apenas se confirma el código SMS, <b>antes</b> de que el código llegara a preguntar por nombre/nick — el usuario podía terminar en Home sin haber completado el registro.</li>
+      <li><b>Diseño final:</b> se mantiene el paso inline en <code>PhoneLoginView</code> como camino rápido, y se <b>reincorpora</b> el gate de <code>AuthGate</code> (con el bug de <code>setState</code> ya corregido) como red de seguridad silenciosa — en el camino feliz nunca se nota, pero cubre tanto la carrera como cuentas viejas sin nombre/nick.</li>
+    </ol>
+    <p>Pedido final del usuario, ya con foto de Cédula incluida en el mismo flujo: Bienvenida (identifica la app) → teléfono (prefijo <code>+591</code> fijo, ver fase 07) → código SMS → si es cuenta nueva: Nombres, Apellidos, Nick y foto de Cédula, para <b>ambos</b> roles.</p>
+    <ul>
+      <li><code>BienvenidaScreen</code> nueva — dos botones ("Registrarme" / "Ya tengo cuenta") que llevan al <b>mismo</b> flujo; la diferencia es solo de expectativa, sin lógica separada (confirmado explícitamente con el usuario).</li>
+      <li>Campo <code>apellido</code> nuevo en <code>users/{uid}</code> y <code>perfiles_publicos/{uid}</code> (regla actualizada a <code>hasOnly(['nombre','apellido','nick','avatarId'])</code>).</li>
+      <li>Cliente entra directo a su Home al terminar — su foto de Cédula queda archivada, sin bloquear nada (decisión explícita: Cliente no necesita aprobación).</li>
+    </ul>
+  </section>
+
+  <section class="phase" id="f06">
+    <div class="phase-head">
+      <span class="phase-num">06</span>
+      <h2>Gate de verificación pendiente</h2>
+      <span class="tag">Repartidor</span>
+    </div>
+    <p>Se detectó que un repartidor sin aprobar entraba igual al Radar y recién se enteraba de que no podía operar al chocar con un <code>permission-denied</code> confuso al intentar aceptar o contraofertar (la regla <code>isVerifiedRepartidor()</code> ya exigía <code>isVerified == true</code> — el comportamiento de fondo era correcto, la experiencia no).</p>
+    <ul>
+      <li><code>EsperandoVerificacionScreen</code> nueva: si falta la foto de Cédula (cuentas creadas antes de este cambio), la pide ahí mismo; si ya está subida, espera en vivo (stream de <code>users/{uid}</code>) la aprobación del Admin.</li>
+      <li>Al aprobarse, "Continuar" se habilita, fuerza un refresco del token (<code>getIdTokenResult(true)</code>) y recién ahí pasa a Home con mensaje de bienvenida.</li>
+      <li><code>AuthGate</code> ganó un tercer parámetro, <code>verificacionPendienteBuilder</code>, con un <code>typedef</code> propio en vez de importar la pantalla directo — mantiene la separación de Clean Architecture (<code>shared/</code> no importa de <code>features/repartidor/</code>).</li>
+    </ul>
+  </section>
+
+  <section class="phase" id="f07">
+    <div class="phase-head">
+      <span class="phase-num">07</span>
+      <h2>Filtros de estado + auto-refresco + navegación directa</h2>
+      <span class="tag">Cliente y Repartidor</span>
+    </div>
+    <p>Cinco pedidos relacionados sobre "Mis envíos"/"Mis entregas", resueltos juntos por compartir la misma raíz (paginación + navegación tras una acción):</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pedido</th><th>Resuelto con</th></tr></thead>
+      <tbody>
+        <tr><td>Filtrar Mis envíos por estado</td><td><code>FiltroEstadoChips</code> (compartido) + <code>status</code> en <code>listarEnviosDeCliente</code></td></tr>
+        <tr><td>Crear envío → ir a su detalle</td><td><code>crearEnvio</code> ya devolvía el id; <code>CrearEnvioController.crear()</code> lo expone, <code>pushReplacement</code> al detalle</td></tr>
+        <tr><td>Mis entregas se actualiza tras aceptar/contraoferta</td><td><code>ref.invalidate(misEntregasControllerProvider)</code> en <code>_aceptarDirecto</code></td></tr>
+        <tr><td>Aceptar → ir a la entrega, no a la lista</td><td><code>EntregaEnCursoScreen(envioId)</code> en vez de <code>MisEntregasScreen</code></td></tr>
+        <tr><td>Mis entregas se actualiza tras cobrar+calificar</td><td>misma invalidación en <code>confirmar_entrega_screen.dart</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="callout bug">
+      <span class="k">Bug latente corregido de paso</span>
+      <code>listarEntregasDeRepartidor</code> filtraba <code>asignado</code>/<code>enCurso</code> <b>en memoria, después de paginar</b> — <code>hasMore</code> se calculaba sobre el total sin filtrar, así que la paginación podía cortarse antes de tiempo. Mover el filtro a la query de Firestore (<code>.where('status', ...)</code>, con 2 índices compuestos nuevos) lo resolvió de encima.
+    </div>
+  </section>
+
+  <section class="phase" id="f08">
+    <div class="phase-head">
+      <span class="phase-num">08</span>
+      <h2>Radar con sondeo automático</h2>
+      <span class="tag">Repartidor</span>
+    </div>
+    <p>CLAUDE.md pedía "sondeo adaptativo" para el Radar desde el principio del proyecto, pero nunca se había implementado como algo periódico — era 100% manual (refresco al entrar o pull-to-refresh). Un envío nuevo del Cliente no aparecía para el Repartidor hasta que lo pedía a mano.</p>
+    <ul>
+      <li><code>RadarController</code> pasó a <code>AutoDisposeAsyncNotifier</code> con un <code>Timer.periodic</code> cada 20s, cancelado solo al salir de la pantalla (para no seguir prendiendo el GPS en segundo plano para siempre).</li>
+      <li>El tick automático usa un método "silencioso" que no pasa por <code>AsyncLoading</code> — evita que la lista parpadee a una pantalla de carga cada vez que se actualiza sola.</li>
+    </ul>
+  </section>
+
+  <section class="phase" id="f09">
+    <div class="phase-head">
+      <span class="phase-num">09</span>
+      <h2>Hosting, el mapa y el panel Admin en vivo</h2>
+      <span class="tag">Admin</span>
+    </div>
+    <p>Al preguntar "qué falta para una v1", surgieron 3 bloqueadores reales. Dos se resolvieron en esta sesión:</p>
+    <ul>
+      <li><b>Panel Admin sin desplegar</b> — corría solo local. <code>firebase.json</code> ya tenía la config de <code>hosting</code> lista, nunca usada. Se hizo <code>flutter build web -t lib/main_admin.dart</code> + <code>firebase deploy --only hosting</code> → <code>indrive-entregas-villazon.web.app</code>.</li>
+      <li><b>Mapa del Admin (<code>RefererNotAllowedMapError</code>)</b> — la key Web de Maps no tenía el dominio nuevo de Hosting autorizado. Un dominio fijo de Hosting resuelve esto para siempre, a diferencia de <code>localhost</code> con puerto aleatorio en cada <code>flutter run -d chrome</code>.</li>
+    </ul>
+    <p>Una vez confirmado en vivo, el usuario mismo notó dos cosas más, corregidas en el momento:</p>
+    <ul>
+      <li>El ícono del repartidor se veía desproporcionado — se generaba a 96px pero nunca se le decía a Maps a qué tamaño <i>lógico</i> mostrarlo (por defecto, 96px lógicos — el doble de un pin normal). Se fijó <code>width</code>/<code>height</code> a 40 en <code>BitmapDescriptor.bytes(...)</code>.</li>
+      <li>No se sabía qué repartidor era cada marcador — se agregó su nombre al globo de info y a una lista visible en la tarjeta de "N entregas en curso". Primer intento se quedaba en "cargando..." para siempre en cuentas sin perfil — corregido distinguiendo <code>AsyncValue.loading</code> de un <code>data(null)</code> genuino.</li>
+    </ul>
+  </section>
+
+  <section class="phase" id="f10">
+    <div class="phase-head">
+      <span class="phase-num">10</span>
+      <h2>SMS a números reales: la investigación</h2>
+      <span class="tag">Bloqueador #1 — sin resolver</span>
+    </div>
+    <p>El tercer bloqueador de v1: un número de teléfono real (boliviano) falló al pedir el código con <code>[auth/error-code:-39]</code>, mientras los números de prueba de Firebase funcionaban siempre. Se investigaron dos hipótesis concretas, ambas descartadas con evidencia directa de la consola:</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Hipótesis</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>Política de regiones SMS bloqueando Bolivia</td><td>Descartada — Bolivia y Argentina ya estaban en la lista de permitidos (el usuario de paso agregó Argentina, relevante por la frontera con La Quiaca)</td></tr>
+        <tr><td>Cuota de registros por IP agotada</td><td>Descartada — 100/hora, muy por encima de las pruebas hechas</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>Conclusión: es un límite de anti-abuso específico por número de teléfono (documentado en varios issues públicos de Firebase para otros proyectos), sin interruptor en la consola. Recomendación dada: esperar unas horas y reintentar, o probar con un número real distinto para confirmar si es específico de ese número. Solo si un número nuevo también falla, recién ahí abrir un caso con soporte de Firebase.</p>
+  </section>
+
+  <section class="phase" id="f11">
+    <div class="phase-head">
+      <span class="phase-num">11</span>
+      <h2>Tests, Crashlytics y Performance</h2>
+      <span class="tag">Bloqueadores #2 y #3 de la lista corta</span>
+    </div>
+    <div class="callout done">
+      <span class="k">Corrección propia</span>
+      Se había afirmado "cero tests" — falso. Ya existían 20 tests de Dart pasando: <code>Money</code>, la cola offline (<code>sqflite_common_ffi</code>), los prefijos de geohash del Radar, y el filtro de precisión GPS.
+    </div>
+    <p>Lo que sí faltaba, y donde más valor tenía agregar cobertura dado el historial real de bugs de esta sesión: las <b>Firestore Security Rules</b>. Se creó <code>firestore-tests/</code> (Node + <code>@firebase/rules-unit-testing</code> + <code>vitest</code>), cubriendo:</p>
+    <ul>
+      <li><code>users/{uid}</code>: creación sin <code>role</code>/<code>isVerified</code>; el bug real de campos ausentes; inmutabilidad de <code>role</code>/<code>isVerified</code>/<code>isActive</code>; lectura solo dueño/admin.</li>
+      <li><code>perfiles_publicos/{uid}</code>: lectura abierta; escritura acotada a 4 campos; rechazo de campo extra o de uid ajeno.</li>
+      <li><code>envios/{envioId}</code>: creación válida, rechazo de <code>clienteId</code> ajeno, aceptación por repartidor verificado, rechazo si no está verificado, y la regla más crítica del proyecto — <b>un segundo repartidor no puede aceptar un envío ya asignado</b>.</li>
+    </ul>
+    <div class="callout bug">
+      <span class="k">Limitación de entorno, no de diseño</span>
+      El emulador de Firestore (JVM) chocó con la misma limitación de "Unable to establish loopback connection" que ya bloqueaba Gradle en esta máquina — confirmado incluso con el sandbox desactivado. Los tests están escritos y listos; quedan pendientes de que el usuario los corra en su propia terminal.
+    </div>
+    <p>Crashlytics y Performance Monitoring, en cambio, se confirmaron ambos activos y recibiendo datos reales — incluyendo, coincidentemente, el registro del bug de <code>already-exists</code> ya corregido en la fase 05.</p>
+  </section>
+
+  <section class="phase" id="f12">
+    <div class="phase-head">
+      <span class="phase-num">12</span>
+      <h2>El commit de cierre</h2>
+      <span class="tag">Repositorio</span>
+    </div>
+    <p>Un solo commit agrupando todo el trabajo de la sesión — 46 archivos, +4668/-116 líneas. Se ajustó <code>.gitignore</code> antes de commitear (<code>/.firebase/</code>, cache de despliegue de Hosting; <code>firestore-tests/node_modules/</code>) para no versionar artefactos generados.</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Hash</td><td><span class="code">2ae997e</span></td></tr>
+        <tr><td>Mensaje</td><td><span class="code">feat(sprint-8): registro unificado con KYC, verificacion de repartidor y despliegue a Hosting</span></td></tr>
+        <tr><td>Estado</td><td>15 commits locales por delante de <span class="code">origin/master</span> — sin <span class="code">push</span> (no se pidió)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="phase" id="f13">
+    <div class="phase-head">
+      <span class="phase-num">13</span>
+      <h2>Backlog explícito para después</h2>
+      <span class="tag">Pospuesto a propósito</span>
+    </div>
+    <p>Nada de esto bloquea la v1 recién cerrada — son decisiones deliberadas de alcance, no descuidos.</p>
+    <ul class="backlog-list">
+      <li>
+        <div>
+          <b>Migración Riverpod 2→3 + versiones mayores de Firebase.</b>
+          <div class="why">El propio usuario pidió dejarla para otra sesión, "para no tronar lo que tenemos hasta acá".</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Grupo E — OCR de Carnet/Licencia.</b>
+          <div class="why">Incertidumbre técnica real reconocida desde que se pospuso (parseo de documentos bolivianos, costo de API).</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Confirmar SMS con un número real distinto.</b>
+          <div class="why">Para saber si el bloqueo de la fase 10 era específico de un número o algo más amplio.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Correr <code>firestore-tests/</code> en una máquina sin la limitación de loopback.</b>
+          <div class="why">Los tests están listos; solo falta ejecutarlos donde el emulador de Firestore pueda levantar.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Limpieza total de cuentas de prueba.</b>
+          <div class="why">Pasos exactos ya entregados (Authentication → Users, Firestore → Delete collection, Storage → borrar <code>kyc/</code>/<code>comprobantes/</code>) — es una acción irreversible que el usuario debe ejecutar él mismo.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Canal de distribución de las APKs.</b>
+          <div class="why">Ya firmadas desde el Sprint 7.1, pero sin decidir Play Store interno vs. link directo.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Documento de casos de uso con capturas reales.</b>
+          <div class="why">Se entregó una versión en texto plano; la versión con capturas reales sigue bloqueada por la misma limitación técnica de esta sesión para guardar imágenes en disco.</div>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <footer class="colophon">
+    <span>inDrive Entregas — Villazón, Potosí</span>
+    <span>Preparado como arquitecto de sesión, sin omisiones deliberadas</span>
+  </footer>
+
+</div>
