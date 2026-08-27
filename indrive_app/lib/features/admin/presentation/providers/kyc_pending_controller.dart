@@ -2,13 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/data/providers.dart';
-import '../../domain/repartidor_kyc_pendiente.dart';
+import '../../domain/usuario_kyc_pendiente.dart';
 
 const _pageSize = 20;
 
 class KycPendingState {
   const KycPendingState({
-    required this.repartidores,
+    required this.usuarios,
     required this.hasMore,
     required this.isLoadingMore,
     required this.lastDocument,
@@ -16,13 +16,13 @@ class KycPendingState {
   });
 
   const KycPendingState.initial()
-    : repartidores = const [],
+    : usuarios = const [],
       hasMore = true,
       isLoadingMore = false,
       lastDocument = null,
       aprobando = const {};
 
-  final List<RepartidorKycPendiente> repartidores;
+  final List<UsuarioKycPendiente> usuarios;
   final bool hasMore;
   final bool isLoadingMore;
   final DocumentSnapshot<Map<String, dynamic>>? lastDocument;
@@ -32,13 +32,13 @@ class KycPendingState {
   final Set<String> aprobando;
 
   KycPendingState copyWith({
-    List<RepartidorKycPendiente>? repartidores,
+    List<UsuarioKycPendiente>? usuarios,
     bool? hasMore,
     bool? isLoadingMore,
     DocumentSnapshot<Map<String, dynamic>>? lastDocument,
     Set<String>? aprobando,
   }) => KycPendingState(
-    repartidores: repartidores ?? this.repartidores,
+    usuarios: usuarios ?? this.usuarios,
     hasMore: hasMore ?? this.hasMore,
     isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     lastDocument: lastDocument ?? this.lastDocument,
@@ -46,7 +46,7 @@ class KycPendingState {
   );
 }
 
-/// Lista paginada de repartidores con KYC pendiente (Sprint 5.1). Mismo
+/// Lista paginada de usuarios con KYC pendiente (Sprint 5.1). Mismo
 /// esqueleto que `MisEnviosController`/`RadarController`: nunca una query
 /// sin cota.
 class KycPendingController extends AsyncNotifier<KycPendingState> {
@@ -71,12 +71,12 @@ class KycPendingController extends AsyncNotifier<KycPendingState> {
     );
     try {
       await ref.read(usersRepositoryProvider).aprobarKyc(uid);
-      final sinAprobado = current.repartidores
+      final sinAprobado = current.usuarios
           .where((repartidor) => repartidor.uid != uid)
           .toList();
       state = AsyncData(
         current.copyWith(
-          repartidores: sinAprobado,
+          usuarios: sinAprobado,
           aprobando: {...current.aprobando}..remove(uid),
         ),
       );
@@ -90,15 +90,15 @@ class KycPendingController extends AsyncNotifier<KycPendingState> {
 
   Future<KycPendingState> _cargarPagina(KycPendingState current) async {
     final repository = ref.read(usersRepositoryProvider);
-    final snapshot = await repository.listarRepartidoresPendientesKyc(
+    final snapshot = await repository.listarUsuariosPendientesKyc(
       limit: _pageSize,
       startAfter: current.lastDocument,
     );
     final nuevos = snapshot.docs
-        .map(RepartidorKycPendiente.fromFirestore)
+        .map(UsuarioKycPendiente.fromFirestore)
         .toList();
     return current.copyWith(
-      repartidores: [...current.repartidores, ...nuevos],
+      usuarios: [...current.usuarios, ...nuevos],
       hasMore: nuevos.length == _pageSize,
       isLoadingMore: false,
       lastDocument: snapshot.docs.isNotEmpty

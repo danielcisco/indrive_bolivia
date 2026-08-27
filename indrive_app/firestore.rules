@@ -60,6 +60,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.role == 'cliente';
     }
 
+    // Sprint 10: antes solo el repartidor necesitaba isVerified para
+    // operar (aceptar/ofertar) — el cliente podía publicar envíos sin
+    // ninguna revisión previa, dejando la puerta abierta a que cualquiera
+    // sature el sistema con envíos falsos. Ahora ambos roles requieren
+    // aprobación de un Admin antes de poder usar la app de verdad.
+    function isVerifiedCliente() {
+      return isCliente() && request.auth.token.isVerified == true;
+    }
+
     // Sprint 6.1: el repartidor fija metodoPago (y comprobanteUrl si es QR)
     // en la misma escritura que entregado. pagoVerificado no puede venir
     // en esta escritura — solo un Admin lo fija despues (ver mas abajo).
@@ -94,7 +103,7 @@ service cloud.firestore {
     match /envios/{envioId} {
       allow read: if isSignedIn();
 
-      allow create: if isCliente() &&
+      allow create: if isVerifiedCliente() &&
         request.auth.uid == request.resource.data.clienteId &&
         request.resource.data.status == 'pendiente_ofertas' &&
         request.resource.data.repartidorAsignadoId == null &&
@@ -258,7 +267,7 @@ service cloud.firestore {
         allow read: if isAdmin() ||
           (isSignedIn() && resource.data.clienteId == request.auth.uid);
 
-        allow create: if isCliente() &&
+        allow create: if isVerifiedCliente() &&
           request.resource.data.clienteId == request.auth.uid &&
           request.resource.data.codigoEntrega is string &&
           request.resource.data.codigoEntrega.size() == 4 &&

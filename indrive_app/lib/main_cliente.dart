@@ -9,6 +9,7 @@ import 'firebase_options.dart';
 import 'shared/data/providers.dart';
 import 'shared/widgets/auth_gate.dart';
 import 'shared/widgets/bienvenida_screen.dart';
+import 'shared/widgets/esperando_verificacion_screen.dart';
 
 Future<void> main() async {
   await bootstrapApp(options: DefaultFirebaseOptions.androidCliente);
@@ -36,6 +37,12 @@ class ClienteApp extends ConsumerWidget {
           appLabel: 'Cliente',
           destino: (_) => const ClienteLoginScreen(),
         ),
+        verificacionPendienteBuilder: (_, onVerificado) =>
+            EsperandoVerificacionScreen(
+              onVerificado: onVerificado,
+              appLabel: 'Cliente',
+              descripcionDesbloqueo: 'puedas publicar envíos',
+            ),
         homeBuilder: (_) => const ClienteHomeScreen(),
       ),
     );

@@ -6,21 +6,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../shared/data/providers.dart';
-import '../../../../shared/widgets/soporte_whatsapp.dart';
+import '../data/providers.dart';
+import 'soporte_whatsapp.dart';
 
-/// Se muestra en vez de Home mientras el repartidor no está verificado —
-/// antes, un repartidor sin aprobar entraba igual al Radar y recién se
-/// enteraba de que no podía aceptar/ofertar con un `permission-denied`
-/// confuso al intentarlo. Cubre 2 estados:
+/// Se muestra en vez de Home mientras la cuenta (Cliente o Repartidor,
+/// Sprint 10) no está verificada — antes, un repartidor sin aprobar
+/// entraba igual al Radar y recién se enteraba de que no podía
+/// aceptar/ofertar con un `permission-denied` confuso al intentarlo; con
+/// el Sprint 10, lo mismo aplica al Cliente para evitar que cualquiera
+/// entre a publicar envíos sin haber sido revisado. Cubre 2 estados:
 /// - Sin foto de Cédula todavía (cuentas creadas antes del registro en 4
 ///   pasos, que nunca pasaron por esa captura): la pide acá mismo.
 /// - Con foto ya subida: espera la aprobación del Admin en tiempo real
 ///   (stream de `users/{uid}`) y habilita "Continuar" apenas se aprueba.
 class EsperandoVerificacionScreen extends ConsumerStatefulWidget {
-  const EsperandoVerificacionScreen({super.key, required this.onVerificado});
+  const EsperandoVerificacionScreen({
+    super.key,
+    required this.onVerificado,
+    required this.appLabel,
+    required this.descripcionDesbloqueo,
+  });
 
   final VoidCallback onVerificado;
+
+  /// 'Cliente' o 'Repartidor' — identifica la app en el mensaje de
+  /// soporte por WhatsApp.
+  final String appLabel;
+
+  /// Qué se desbloquea al aprobar el KYC, ej. "veas envíos disponibles"
+  /// (Repartidor) o "publiques envíos" (Cliente) — completa la frase "Un
+  /// administrador va a verificar tu Cédula antes de que ...".
+  final String descripcionDesbloqueo;
 
   @override
   ConsumerState<EsperandoVerificacionScreen> createState() =>
@@ -64,7 +80,7 @@ class _EsperandoVerificacionScreenState
           ref,
           mensaje: 'No pudimos subir la foto de tu Cédula. Probá de nuevo '
               'o contactanos si sigue fallando.',
-          app: 'Repartidor',
+          app: widget.appLabel,
           motivo: 'no puedo subir la foto de mi Cédula para verificarme',
         );
       }
@@ -146,11 +162,10 @@ class _EsperandoVerificacionScreenState
                 ] else ...[
                   const Icon(Icons.hourglass_empty, size: 64),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Tu cuenta está en revisión. Un administrador va a '
-                    'verificar tu Cédula antes de que puedas ver envíos '
-                    'disponibles — esta pantalla se actualiza sola apenas '
-                    'te aprueben.',
+                    'verificar tu Cédula antes de que ${widget.descripcionDesbloqueo} '
+                    '— esta pantalla se actualiza sola apenas te aprueben.',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
@@ -168,7 +183,7 @@ class _EsperandoVerificacionScreenState
                   OutlinedButton.icon(
                     onPressed: () => abrirSoporteWhatsapp(
                       ref: ref,
-                      app: 'Repartidor',
+                      app: widget.appLabel,
                       motivo: 'mi cuenta sigue sin verificarse',
                     ),
                     icon: const Icon(Icons.chat_outlined),

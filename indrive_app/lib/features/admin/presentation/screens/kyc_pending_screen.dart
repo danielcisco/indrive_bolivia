@@ -17,9 +17,9 @@ class KycPendingScreen extends ConsumerWidget {
         mostrarErrorConSoporte(
           context,
           ref,
-          mensaje: 'No pudimos aprobar al repartidor. Probá de nuevo.',
+          mensaje: 'No pudimos aprobar la cuenta. Probá de nuevo.',
           app: 'Admin',
-          motivo: 'no puedo aprobar el KYC de un repartidor',
+          motivo: 'no puedo aprobar el KYC de una cuenta',
         );
       }
     });
@@ -27,7 +27,7 @@ class KycPendingScreen extends ConsumerWidget {
     return estado.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => const SupportErrorView(
-        mensaje: 'No pudimos cargar los repartidores pendientes de KYC. '
+        mensaje: 'No pudimos cargar las cuentas pendientes de KYC. '
             'Revisá tu conexión y volvé a intentar.',
         app: 'Admin',
         motivo: 'no puedo ver la lista de KYC pendiente',
@@ -38,7 +38,7 @@ class KycPendingScreen extends ConsumerWidget {
           await ref.read(kycPendingControllerProvider.future);
         }
 
-        if (data.repartidores.isEmpty) {
+        if (data.usuarios.isEmpty) {
           return RefreshIndicator(
             onRefresh: refrescar,
             child: ListView(
@@ -51,7 +51,7 @@ class KycPendingScreen extends ConsumerWidget {
                       children: [
                         Icon(Icons.verified_user_outlined, size: 48),
                         SizedBox(height: 8),
-                        Text('No hay repartidores con KYC pendiente.'),
+                        Text('No hay cuentas con KYC pendiente.'),
                       ],
                     ),
                   ),
@@ -64,9 +64,9 @@ class KycPendingScreen extends ConsumerWidget {
         return RefreshIndicator(
           onRefresh: refrescar,
           child: ListView.builder(
-            itemCount: data.repartidores.length + (data.hasMore ? 1 : 0),
+            itemCount: data.usuarios.length + (data.hasMore ? 1 : 0),
             itemBuilder: (context, index) {
-              if (index >= data.repartidores.length) {
+              if (index >= data.usuarios.length) {
                 return Padding(
                   padding: const EdgeInsets.all(16),
                   child: Center(
@@ -81,9 +81,9 @@ class KycPendingScreen extends ConsumerWidget {
                   ),
                 );
               }
-              final repartidor = data.repartidores[index];
-              final aprobando = data.aprobando.contains(repartidor.uid);
-              final cedulaUrl = repartidor.cedulaUrl;
+              final usuario = data.usuarios[index];
+              final aprobando = data.aprobando.contains(usuario.uid);
+              final cedulaUrl = usuario.cedulaUrl;
               return Card(
                 margin: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -94,10 +94,25 @@ class KycPendingScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(repartidor.phoneNumber ?? repartidor.uid),
+                      Row(
+                        children: [
+                          Chip(
+                            label: Text(
+                              usuario.role == 'cliente'
+                                  ? 'Cliente'
+                                  : 'Repartidor',
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(usuario.phoneNumber ?? usuario.uid),
+                          ),
+                        ],
+                      ),
                       Text(
-                        repartidor.createdAt != null
-                            ? 'Registrado: ${repartidor.createdAt!.toDate()}'
+                        usuario.createdAt != null
+                            ? 'Registrado: ${usuario.createdAt!.toDate()}'
                             : 'Fecha de registro no disponible',
                       ),
                       const SizedBox(height: 8),
@@ -120,7 +135,7 @@ class KycPendingScreen extends ConsumerWidget {
                               ? null
                               : () => ref
                                   .read(kycPendingControllerProvider.notifier)
-                                  .aprobar(repartidor.uid),
+                                  .aprobar(usuario.uid),
                           icon: aprobando
                               ? const SizedBox(
                                   width: 16,

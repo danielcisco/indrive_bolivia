@@ -172,11 +172,13 @@ describe('envios/{envioId}: creación y prevención de doble asignación', () =>
     status: 'pendiente_ofertas',
     repartidorAsignadoId: null,
     ofertaAceptadaId: null,
+    categoria: 'documentos',
   };
 
   it('el cliente dueño puede crear un envío pendiente válido', async () => {
     const cliente = testEnv.authenticatedContext('cliente10', {
       role: 'cliente',
+      isVerified: true,
     });
     await assertSucceeds(
       setDoc(doc(cliente.firestore(), 'envios/envioA'), envioBase),
@@ -186,12 +188,23 @@ describe('envios/{envioId}: creación y prevención de doble asignación', () =>
   it('rechaza crear un envío a nombre de otro clienteId', async () => {
     const cliente = testEnv.authenticatedContext('cliente10', {
       role: 'cliente',
+      isVerified: true,
     });
     await assertFails(
       setDoc(doc(cliente.firestore(), 'envios/envioB'), {
         ...envioBase,
         clienteId: 'otro-cliente',
       }),
+    );
+  });
+
+  it('rechaza que un cliente NO verificado cree un envío (Sprint 10)', async () => {
+    const cliente = testEnv.authenticatedContext('cliente10', {
+      role: 'cliente',
+      isVerified: false,
+    });
+    await assertFails(
+      setDoc(doc(cliente.firestore(), 'envios/envioNoVerificado'), envioBase),
     );
   });
 

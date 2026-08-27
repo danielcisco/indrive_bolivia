@@ -69,14 +69,18 @@ class UsersRepository {
     return snapshot.data()?['disponible'] as bool? ?? true;
   }
 
-  /// Repartidores con KYC pendiente (`isVerified == false`), paginado —
-  /// alimenta la pantalla de Verificación KYC del panel Admin (Sprint 5.1).
-  Future<QuerySnapshot<Map<String, dynamic>>> listarRepartidoresPendientesKyc({
+  /// Clientes y repartidores con KYC pendiente (`isVerified == false`),
+  /// paginado — alimenta la pantalla de Verificación de identidad del
+  /// panel Admin (Sprint 5.1; ampliado a Cliente en el Sprint 10 — antes
+  /// solo mostraba repartidores, dejando pasar cuentas Cliente sin
+  /// revisión). `whereIn` con los 2 roles usa el mismo índice compuesto
+  /// que ya existía para `role == 'repartidor'`.
+  Future<QuerySnapshot<Map<String, dynamic>>> listarUsuariosPendientesKyc({
     int limit = 20,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
   }) {
     var query = _users
-        .where('role', isEqualTo: 'repartidor')
+        .where('role', whereIn: ['cliente', 'repartidor'])
         .where('isVerified', isEqualTo: false)
         .orderBy('createdAt', descending: true)
         .limit(limit);
