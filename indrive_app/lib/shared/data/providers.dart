@@ -160,6 +160,14 @@ final perfilPublicoProvider = FutureProvider.family<PerfilPublico?, String>((
   return ref.watch(usersRepositoryProvider).obtenerPerfilPublico(uid);
 });
 
+/// Disponibilidad del repartidor autenticado (Sprint 8.4) — alimenta el
+/// `Switch` de `RepartidorHomeScreen`.
+final miDisponibilidadProvider = FutureProvider<bool>((ref) {
+  final uid = ref.watch(authUidProvider).value;
+  if (uid == null) return Future.value(true);
+  return ref.watch(usersRepositoryProvider).obtenerDisponibilidad(uid);
+});
+
 final miEstadoKycProvider =
     FutureProvider<({bool isVerified, String? cedulaUrl})>((ref) async {
       final uid = ref.watch(authUidProvider).value;

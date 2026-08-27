@@ -196,7 +196,13 @@ export const notifyNearbyRepartidores = onDocumentCreated(
       .limit(MAX_REPARTIDORES_A_NOTIFICAR)
       .get();
 
+    // Filtro por disponibilidad (Sprint 8.4) en memoria sobre el batch ya
+    // acotado por MAX_REPARTIDORES_A_NOTIFICAR - no un nuevo indice
+    // compuesto ni un filtro "!=" en la query, que forzaria uno. Ausente
+    // se interpreta como disponible (mismo criterio que
+    // UsersRepository.obtenerDisponibilidad en el cliente).
     const tokens = usersSnapshot.docs
+      .filter((doc) => doc.data().disponible !== false)
       .map((doc) => doc.data().fcmToken as string | undefined)
       .filter((token): token is string => Boolean(token));
 

@@ -52,6 +52,22 @@ class UsersRepository {
     }, SetOptions(merge: true));
   }
 
+  /// Prende/apaga la disponibilidad del repartidor para recibir ofertas
+  /// (Sprint 8.4) — ausente en `users/{uid}` se interpreta como disponible
+  /// (compatibilidad con cuentas existentes, sin backfill; ver
+  /// `notifyNearbyRepartidores` en Cloud Functions, que filtra por esto).
+  Future<void> actualizarDisponibilidad(String uid, bool disponible) {
+    return _users.doc(uid).set({
+      'disponible': disponible,
+    }, SetOptions(merge: true));
+  }
+
+  /// Fetch puntual — `true` (disponible) si el campo todavía no existe.
+  Future<bool> obtenerDisponibilidad(String uid) async {
+    final snapshot = await _users.doc(uid).get();
+    return snapshot.data()?['disponible'] as bool? ?? true;
+  }
+
   /// Repartidores con KYC pendiente (`isVerified == false`), paginado —
   /// alimenta la pantalla de Verificación KYC del panel Admin (Sprint 5.1).
   Future<QuerySnapshot<Map<String, dynamic>>> listarRepartidoresPendientesKyc({

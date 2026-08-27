@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,6 +32,7 @@ class RepartidorHomeScreen extends ConsumerWidget {
             const SessionStatusView(
               appLabel: 'App Repartidor — Villazón, Potosí',
             ),
+            const _DisponibilidadSwitch(),
             // Diferido de KYC (seguimiento del Sprint 5.1): aviso solo
             // mientras no está verificado y todavía no subió ninguna
             // foto — una vez subida desaparece, aunque el admin todavía
@@ -96,6 +98,54 @@ class RepartidorHomeScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Disponible/no disponible para recibir ofertas (Sprint 8.4). Estado
+/// optimista local: cambia el switch al toque y solo lo revierte si la
+/// escritura falla — esperar el round-trip de `miDisponibilidadProvider`
+/// para reflejar el toque haría el switch sentirse con lag.
+class _DisponibilidadSwitch extends ConsumerStatefulWidget {
+  const _DisponibilidadSwitch();
+
+  @override
+  ConsumerState<_DisponibilidadSwitch> createState() =>
+      _DisponibilidadSwitchState();
+}
+
+class _DisponibilidadSwitchState extends ConsumerState<_DisponibilidadSwitch> {
+  bool? _valorLocal;
+
+  Future<void> _cambiar(bool valor) async {
+    setState(() => _valorLocal = valor);
+    try {
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      await ref
+          .read(usersRepositoryProvider)
+          .actualizarDisponibilidad(uid, valor);
+    } catch (_) {
+      if (mounted) setState(() => _valorLocal = !valor);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final disponibleAsync = ref.watch(miDisponibilidadProvider);
+    return disponibleAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, _) => const SizedBox.shrink(),
+      data: (disponible) {
+        final valor = _valorLocal ?? disponible;
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: SwitchListTile(
+            title: const Text('Disponible para recibir ofertas'),
+            value: valor,
+            onChanged: _cambiar,
+          ),
+        );
+      },
     );
   }
 }
