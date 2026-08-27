@@ -102,7 +102,8 @@ class MisEnviosScreen extends ConsumerWidget {
                 return ListTile(
                   title: Text(envio.descripcion),
                   subtitle: Text(
-                    '${envio.status.name} · ${envio.montoOfertadoInicial.format()}',
+                    '${envio.categoria.etiqueta} · ${envio.status.name} · '
+                    '${envio.montoOfertadoInicial.format()}',
                   ),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(

@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/location/current_location.dart';
+import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/map_picker_screen.dart';
 import '../providers/crear_envio_controller.dart';
@@ -24,6 +28,8 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
   GeoPoint? _origen;
   GeoPoint? _destino;
   String? _errorUbicacion;
+  CategoriaPaquete _categoria = CategoriaPaquete.documentos;
+  XFile? _foto;
 
   @override
   void dispose() {
@@ -79,6 +85,17 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
     }
   }
 
+  Future<void> _tomarFoto() async {
+    // Opcional: no todas las categorías la necesitan (ej. documentos), no
+    // bloquea la publicación si no hay foto.
+    final foto = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+      maxWidth: 1280,
+    );
+    if (foto != null && mounted) setState(() => _foto = foto);
+  }
+
   Future<void> _enviar() async {
     final origen = _origen;
     final destino = _destino;
@@ -99,6 +116,8 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
           origen: origen,
           destino: destino,
           montoOfertadoInicial: monto,
+          categoria: _categoria,
+          foto: _foto != null ? File(_foto!.path) : null,
         );
 
     if (!mounted) return;
@@ -145,6 +164,25 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
           key: _formKey,
           child: ListView(
             children: [
+              const Text(
+                'Este servicio opera dentro de Villazón, Bolivia.',
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+              const SizedBox(height: 16),
+              const Text('Categoría'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final opcion in CategoriaPaquete.values)
+                    ChoiceChip(
+                      label: Text(opcion.etiqueta),
+                      selected: _categoria == opcion,
+                      onSelected: (_) => setState(() => _categoria = opcion),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _descripcionController,
                 decoration: const InputDecoration(
@@ -198,6 +236,20 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                     style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ),
+              const SizedBox(height: 24),
+              const Text('Foto del paquete (opcional)'),
+              const SizedBox(height: 8),
+              if (_foto != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(File(_foto!.path), height: 160),
+                ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _tomarFoto,
+                icon: const Icon(Icons.camera_alt),
+                label: Text(_foto == null ? 'Tomar foto' : 'Repetir foto'),
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,

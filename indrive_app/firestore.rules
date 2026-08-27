@@ -92,6 +92,8 @@ service cloud.firestore {
         request.resource.data.ofertaAceptadaId == null &&
         request.resource.data.montoOfertadoInicialCentavos is int &&
         request.resource.data.montoOfertadoInicialCentavos > 0 &&
+        request.resource.data.categoria in
+          ['documentos', 'paquete_chico', 'paquete_mediano', 'encomienda_mercado'] &&
         !("expiraEn" in request.resource.data);
 
       // El cliente dueño puede cancelar mientras siga pendiente.

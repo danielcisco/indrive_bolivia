@@ -33,6 +33,38 @@ enum EnvioStatus {
   };
 }
 
+/// Categorías propias del contexto real de uso (Villazón, comercio de
+/// frontera) — no una copia genérica de "mudanzas ligeras" etc., que no
+/// aplica a esta escala.
+enum CategoriaPaquete {
+  documentos,
+  paqueteChico,
+  paqueteMediano,
+  encomiendaMercado;
+
+  static CategoriaPaquete fromFirestore(String value) => switch (value) {
+    'documentos' => CategoriaPaquete.documentos,
+    'paquete_chico' => CategoriaPaquete.paqueteChico,
+    'paquete_mediano' => CategoriaPaquete.paqueteMediano,
+    'encomienda_mercado' => CategoriaPaquete.encomiendaMercado,
+    _ => throw ArgumentError('CategoriaPaquete desconocida: $value'),
+  };
+
+  String toFirestore() => switch (this) {
+    CategoriaPaquete.documentos => 'documentos',
+    CategoriaPaquete.paqueteChico => 'paquete_chico',
+    CategoriaPaquete.paqueteMediano => 'paquete_mediano',
+    CategoriaPaquete.encomiendaMercado => 'encomienda_mercado',
+  };
+
+  String get etiqueta => switch (this) {
+    CategoriaPaquete.documentos => 'Documentos',
+    CategoriaPaquete.paqueteChico => 'Paquete chico',
+    CategoriaPaquete.paqueteMediano => 'Paquete mediano',
+    CategoriaPaquete.encomiendaMercado => 'Encomienda de mercado',
+  };
+}
+
 enum MetodoPago {
   efectivo,
   qr;
@@ -73,6 +105,8 @@ class Envio {
     required this.metodoPago,
     required this.comprobanteUrl,
     required this.pagoVerificado,
+    required this.categoria,
+    required this.fotoPaqueteUrl,
   });
 
   factory Envio.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -100,6 +134,13 @@ class Envio {
           : null,
       comprobanteUrl: data['comprobanteUrl'] as String?,
       pagoVerificado: data['pagoVerificado'] as bool? ?? false,
+      // Fallback a "documentos" para envíos creados antes de este sprint,
+      // que no tienen el campo — evita que fromFirestore reviente al leer
+      // datos viejos.
+      categoria: data['categoria'] != null
+          ? CategoriaPaquete.fromFirestore(data['categoria'] as String)
+          : CategoriaPaquete.documentos,
+      fotoPaqueteUrl: data['fotoPaqueteUrl'] as String?,
     );
   }
 
@@ -142,6 +183,16 @@ class Envio {
   /// efectivo no pasa por esta verificación (no tiene sentido para él).
   final bool pagoVerificado;
 
+  /// Categoría elegida por el cliente al crear el envío (sprint de
+  /// paridad con el flujo real) — para envíos de antes de este sprint,
+  /// [fromFirestore] cae a `documentos` por defecto.
+  final CategoriaPaquete categoria;
+
+  /// Foto opcional del paquete, subida al crear — útil para auditar
+  /// daños en una disputa. Null si el cliente no adjuntó ninguna (nunca
+  /// bloquea la publicación) o si no había conexión al crear.
+  final String? fotoPaqueteUrl;
+
   /// Datos para `collection('envios').add(...)` al crear. No incluye
   /// `expiraEn` (lo fija la Cloud Function) ni `repartidorAsignadoId`
   /// (empieza null).
@@ -152,6 +203,8 @@ class Envio {
     required String origenGeohash,
     required GeoPoint destino,
     required Money montoOfertadoInicial,
+    required CategoriaPaquete categoria,
+    String? fotoPaqueteUrl,
   }) => {
     'clienteId': clienteId,
     'status': EnvioStatus.pendienteOfertas.toFirestore(),
@@ -163,5 +216,7 @@ class Envio {
     'repartidorAsignadoId': null,
     'ofertaAceptadaId': null,
     'createdAt': FieldValue.serverTimestamp(),
+    'categoria': categoria.toFirestore(),
+    if (fotoPaqueteUrl != null) 'fotoPaqueteUrl': fotoPaqueteUrl,
   };
 }

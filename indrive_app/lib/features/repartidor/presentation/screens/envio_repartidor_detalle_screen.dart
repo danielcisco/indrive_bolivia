@@ -146,9 +146,18 @@ class _EnvioRepartidorDetalleScreenState
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
+                Text('Categoría: ${envio.categoria.etiqueta}'),
+                const SizedBox(height: 8),
                 Text(
                   'Oferta inicial: ${envio.montoOfertadoInicial.format()}',
                 ),
+                if (envio.fotoPaqueteUrl != null) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(envio.fotoPaqueteUrl!, height: 160),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 CountdownTimer(expiraEn: envio.expiraEn),
                 const SizedBox(height: 12),

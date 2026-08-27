@@ -37,6 +37,8 @@ class EnviosRepository {
     required GeoPoint origen,
     required GeoPoint destino,
     required Money montoOfertadoInicial,
+    required CategoriaPaquete categoria,
+    String? fotoPaqueteUrl,
   }) async {
     final ref = _envios.doc();
     await crearEnvioConId(
@@ -46,6 +48,8 @@ class EnviosRepository {
       origen: origen,
       destino: destino,
       montoOfertadoInicial: montoOfertadoInicial,
+      categoria: categoria,
+      fotoPaqueteUrl: fotoPaqueteUrl,
     );
     return ref.id;
   }
@@ -61,6 +65,8 @@ class EnviosRepository {
     required GeoPoint origen,
     required GeoPoint destino,
     required Money montoOfertadoInicial,
+    required CategoriaPaquete categoria,
+    String? fotoPaqueteUrl,
   }) {
     final origenGeohash = _geoHasher.encode(
       origen.longitude,
@@ -75,8 +81,24 @@ class EnviosRepository {
         origenGeohash: origenGeohash,
         destino: destino,
         montoOfertadoInicial: montoOfertadoInicial,
+        categoria: categoria,
+        fotoPaqueteUrl: fotoPaqueteUrl,
       ),
     );
+  }
+
+  /// Sube la foto del paquete (opcional, sprint de paridad con el flujo
+  /// real) — mismo patrón que `subirFotoCedula`: el uid del cliente va en
+  /// el path para que la regla de Storage valide el dueño directo, sin
+  /// depender de un `firestore.get()` cruzado en la escritura.
+  Future<String> subirFotoPaquete({
+    required String envioId,
+    required String clienteId,
+    required File archivo,
+  }) async {
+    final ref = _storage.ref('paquetes/$envioId/$clienteId/foto.jpg');
+    await ref.putFile(archivo, SettableMetadata(contentType: 'image/jpeg'));
+    return ref.getDownloadURL();
   }
 
   /// Fetch puntual de un envío por id (no es un stream: no siempre hace

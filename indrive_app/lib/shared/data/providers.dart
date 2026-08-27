@@ -66,6 +66,11 @@ final offlineActionQueueProvider = Provider<OfflineActionQueue>((ref) {
         (payload['destinoLng'] as num).toDouble(),
       ),
       montoOfertadoInicial: Money.centavos(payload['montoCentavos'] as int),
+      // Fallback por si esta acción quedó encolada desde antes de que
+      // existiera el campo (mismo criterio que Envio.fromFirestore).
+      categoria: CategoriaPaquete.fromFirestore(
+        payload['categoria'] as String? ?? 'documentos',
+      ),
     );
   });
 

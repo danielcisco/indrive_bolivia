@@ -137,10 +137,21 @@ class EnvioDetalleScreen extends ConsumerWidget {
                       envio.descripcion,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
+                    Text('Categoría: ${envio.categoria.etiqueta}'),
                     Text('Estado: ${envio.status.name}'),
                     Text(
                       'Monto inicial: ${envio.montoOfertadoInicial.format()}',
                     ),
+                    if (envio.fotoPaqueteUrl != null) ...[
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          envio.fotoPaqueteUrl!,
+                          height: 160,
+                        ),
+                      ),
+                    ],
                     if (envio.status == EnvioStatus.pendienteOfertas) ...[
                       const SizedBox(height: 8),
                       CountdownTimer(expiraEn: envio.expiraEn),

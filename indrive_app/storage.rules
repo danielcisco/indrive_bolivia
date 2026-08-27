@@ -39,6 +39,22 @@ service firebase.storage {
         request.resource.contentType.matches('image/.*');
     }
 
+    // Foto del paquete (opcional, sprint de paridad con el flujo real): el
+    // uid del cliente va en el path, mismo criterio que /kyc/{uid}/ y
+    // /comprobantes/.../{repartidorId}/ — evita depender de un
+    // firestore.get() cruzado para la escritura. La lectura del
+    // repartidor asignado sí necesita cruzar a Firestore, porque su uid
+    // no está en el path.
+    match /paquetes/{envioId}/{clienteId}/{allPaths=**} {
+      allow read: if isOwner(clienteId) ||
+        isAdmin() ||
+        (isSignedIn() &&
+          firestore.get(/databases/(default)/documents/envios/$(envioId)).data.repartidorAsignadoId == request.auth.uid);
+      allow write: if isOwner(clienteId) &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

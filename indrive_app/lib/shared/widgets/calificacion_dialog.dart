@@ -29,6 +29,28 @@ class _CalificacionDialogState extends State<_CalificacionDialog> {
   int _estrellas = 5;
   final _comentarioController = TextEditingController();
 
+  // Sugerencias de texto según las estrellas elegidas: solo rellenan el
+  // campo al tocarlas, no se guardan como dato aparte (a diferencia de
+  // "tags" fijos, el usuario puede editar libremente lo que quede en el
+  // TextField antes de enviar).
+  static const _sugerenciasPositivas = [
+    'Muy puntual',
+    'Paquete en buen estado',
+    'Buena comunicación',
+  ];
+  static const _sugerenciasNeutrales = ['Cumplió, sin problemas', 'Todo normal'];
+  static const _sugerenciasNegativas = [
+    'Llegó tarde',
+    'Mala comunicación',
+    'Paquete dañado',
+  ];
+
+  List<String> get _sugerencias => switch (_estrellas) {
+    >= 4 => _sugerenciasPositivas,
+    3 => _sugerenciasNeutrales,
+    _ => _sugerenciasNegativas,
+  };
+
   @override
   void dispose() {
     _comentarioController.dispose();
@@ -54,6 +76,19 @@ class _CalificacionDialogState extends State<_CalificacionDialog> {
                 onPressed: () => setState(() => _estrellas = valor),
               );
             }),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final sugerencia in _sugerencias)
+                ActionChip(
+                  label: Text(sugerencia),
+                  onPressed: () => setState(() {
+                    _comentarioController.text = sugerencia;
+                  }),
+                ),
+            ],
           ),
           TextField(
             controller: _comentarioController,

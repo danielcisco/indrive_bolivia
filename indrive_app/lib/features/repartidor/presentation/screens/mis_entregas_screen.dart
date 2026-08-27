@@ -86,7 +86,9 @@ class MisEntregasScreen extends ConsumerWidget {
                 final envio = data.entregas[index];
                 return ListTile(
                   title: Text(envio.descripcion),
-                  subtitle: Text(envio.status.name),
+                  subtitle: Text(
+                    '${envio.categoria.etiqueta} · ${envio.status.name}',
+                  ),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => EntregaEnCursoScreen(envioId: envio.id),
