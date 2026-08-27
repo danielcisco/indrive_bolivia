@@ -55,14 +55,14 @@ class PagosPendientesController extends AsyncNotifier<PagosPendientesState> {
   }
 
   Future<void> cargarMas() async {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
     state = AsyncData(current.copyWith(isLoadingMore: true));
     state = await AsyncValue.guard(() => _cargarPagina(current));
   }
 
   Future<void> verificar(String envioId) async {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null || current.verificando.contains(envioId)) return;
 
     state = AsyncData(

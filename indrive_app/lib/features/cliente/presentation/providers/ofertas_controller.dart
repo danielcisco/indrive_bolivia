@@ -40,21 +40,22 @@ class OfertasState {
 
 /// Lista paginada de propuestas de un envío. Mismo patrón que
 /// [MisEnviosController] — reutilizado, no reimplementado.
-class OfertasController extends FamilyAsyncNotifier<OfertasState, String> {
-  // No "final": Riverpod puede volver a llamar build() sobre la misma
-  // instancia (hot reload, o un re-watch de dependencias) — con "final"
-  // una segunda asignación revienta con LateInitializationError aunque el
-  // valor sea idéntico.
-  late String _envioId;
+///
+/// `FamilyAsyncNotifier` no existe en Riverpod 3 — el argumento de familia
+/// ahora se recibe por constructor (Riverpod llama `OfertasController.new`
+/// con el envioId), no por parámetro de `build()`.
+class OfertasController extends AsyncNotifier<OfertasState> {
+  OfertasController(this._envioId);
+
+  final String _envioId;
 
   @override
-  Future<OfertasState> build(String arg) {
-    _envioId = arg;
+  Future<OfertasState> build() {
     return _cargarPagina(const OfertasState.initial());
   }
 
   Future<void> cargarMas() async {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
     state = AsyncData(current.copyWith(isLoadingMore: true));
     state = await AsyncValue.guard(() => _cargarPagina(current));

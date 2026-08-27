@@ -58,7 +58,7 @@ dependencies:
   dart_geohash: ^2.1.0
 
   # Gestor de estado (Sprint 3.1).
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.4.2
 
   # Ubicación GPS puntual para autocompletar el origen del envío (una sola
   # lectura — el streaming continuo con throttling es Fase 4).

@@ -27,7 +27,7 @@ class MisEntregasScreen extends ConsumerWidget {
           preferredSize: const Size.fromHeight(48),
           child: FiltroEstadoChips(
             opciones: _opcionesFiltro,
-            seleccionado: estado.valueOrNull?.filtro,
+            seleccionado: estado.value?.filtro,
             onCambiar: (filtro) => ref
                 .read(misEntregasControllerProvider.notifier)
                 .cambiarFiltro(filtro),

@@ -79,7 +79,7 @@ class RadarState {
 /// repartidor lo pedía a mano. `autoDispose` para que el timer (y el GPS
 /// que dispara cada sondeo) se corte solo al salir de la pantalla, no
 /// quede sondeando en segundo plano para siempre.
-class RadarController extends AutoDisposeAsyncNotifier<RadarState> {
+class RadarController extends AsyncNotifier<RadarState> {
   final _geoHasher = GeoHasher();
 
   @override
@@ -116,7 +116,7 @@ class RadarController extends AutoDisposeAsyncNotifier<RadarState> {
   }
 
   Future<void> cargarMas() async {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null ||
         !current.hasMore ||
         current.isLoadingMore ||

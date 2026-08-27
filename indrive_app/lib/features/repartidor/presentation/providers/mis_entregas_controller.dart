@@ -55,7 +55,7 @@ class MisEntregasController extends AsyncNotifier<MisEntregasState> {
   }
 
   Future<void> refrescar() async {
-    final filtroActual = state.valueOrNull?.filtro;
+    final filtroActual = state.value?.filtro;
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => _cargarPagina(MisEntregasState.initial(filtro: filtroActual)),
@@ -70,7 +70,7 @@ class MisEntregasController extends AsyncNotifier<MisEntregasState> {
   }
 
   Future<void> cargarMas() async {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
     state = AsyncData(current.copyWith(isLoadingMore: true));
     state = await AsyncValue.guard(() => _cargarPagina(current));
