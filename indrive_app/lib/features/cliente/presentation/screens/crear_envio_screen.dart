@@ -10,6 +10,7 @@ import '../../../../core/location/current_location.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/map_picker_screen.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/crear_envio_controller.dart';
 import 'envio_detalle_screen.dart';
 
@@ -148,11 +149,14 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
   Widget build(BuildContext context) {
     final estado = ref.watch(crearEnvioControllerProvider);
     ref.listen(crearEnvioControllerProvider, (previous, next) {
-      final error = next.error;
-      if (error != null) {
-        ScaffoldMessenger.of(
+      if (next.hasError) {
+        mostrarErrorConSoporte(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $error')));
+          ref,
+          mensaje: 'No pudimos publicar tu envío. Probá de nuevo.',
+          app: 'Cliente',
+          motivo: 'no puedo publicar un envío nuevo',
+        );
       }
     });
 

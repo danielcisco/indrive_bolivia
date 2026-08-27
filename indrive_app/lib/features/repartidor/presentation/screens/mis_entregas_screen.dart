@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/widgets/filtro_estado_chips.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_entregas_controller.dart';
 import 'entrega_en_curso_screen.dart';
 
@@ -36,7 +37,12 @@ class MisEntregasScreen extends ConsumerWidget {
       ),
       body: estado.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => const SupportErrorView(
+          mensaje: 'No pudimos cargar tus entregas. Revisá tu conexión y '
+              'volvé a intentar.',
+          app: 'Repartidor',
+          motivo: 'no puedo ver mis entregas',
+        ),
         data: (data) {
           Future<void> refrescar() =>
               ref.read(misEntregasControllerProvider.notifier).refrescar();

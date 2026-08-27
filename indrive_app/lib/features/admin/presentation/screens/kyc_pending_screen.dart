@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/kyc_pending_controller.dart';
 
 class KycPendingScreen extends ConsumerWidget {
@@ -13,15 +14,24 @@ class KycPendingScreen extends ConsumerWidget {
     ref.listen(kycPendingControllerProvider, (previous, next) {
       final error = next.error;
       if (error != null && previous?.error != error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo aprobar: $error')),
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos aprobar al repartidor. Probá de nuevo.',
+          app: 'Admin',
+          motivo: 'no puedo aprobar el KYC de un repartidor',
         );
       }
     });
 
     return estado.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => const SupportErrorView(
+        mensaje: 'No pudimos cargar los repartidores pendientes de KYC. '
+            'Revisá tu conexión y volvé a intentar.',
+        app: 'Admin',
+        motivo: 'no puedo ver la lista de KYC pendiente',
+      ),
       data: (data) {
         Future<void> refrescar() async {
           ref.invalidate(kycPendingControllerProvider);

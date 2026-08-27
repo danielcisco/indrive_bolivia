@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/widgets/filtro_estado_chips.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_envios_controller.dart';
 import 'crear_envio_screen.dart';
 import 'envio_detalle_screen.dart';
@@ -46,7 +47,12 @@ class MisEnviosScreen extends ConsumerWidget {
       ),
       body: estado.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => const SupportErrorView(
+          mensaje: 'No pudimos cargar tus envíos. Revisá tu conexión y '
+              'volvé a intentar.',
+          app: 'Cliente',
+          motivo: 'no puedo ver mis envíos',
+        ),
         data: (data) {
           // No usa ref.invalidate(): eso vuelve a construir el provider
           // desde MisEnviosState.initial() sin filtro, perdiendo el que

@@ -9,6 +9,7 @@ import '../../../../shared/widgets/avatar_circulo.dart';
 import '../../../../shared/widgets/calificacion_dialog.dart';
 import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_envios_controller.dart';
 import '../providers/ofertas_controller.dart';
 
@@ -38,11 +39,16 @@ class EnvioDetalleScreen extends ConsumerWidget {
           context,
         ).showSnackBar(const SnackBar(content: Text('Propuesta aceptada.')));
       }
-    } catch (error) {
+    } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
+        mostrarErrorConSoporte(
           context,
-        ).showSnackBar(SnackBar(content: Text('No se pudo aceptar: $error')));
+          ref,
+          mensaje: 'Esa propuesta ya no está disponible — puede que otro '
+              'repartidor haya sido asignado justo antes. Probá con otra.',
+          app: 'Cliente',
+          motivo: 'no puedo aceptar una propuesta de mi envío $envioId',
+        );
       }
     }
   }
@@ -77,11 +83,15 @@ class EnvioDetalleScreen extends ConsumerWidget {
           context,
         ).showSnackBar(const SnackBar(content: Text('Envío cancelado.')));
       }
-    } catch (error) {
+    } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
+        mostrarErrorConSoporte(
           context,
-        ).showSnackBar(SnackBar(content: Text('No se pudo cancelar: $error')));
+          ref,
+          mensaje: 'No pudimos cancelar el envío. Probá de nuevo.',
+          app: 'Cliente',
+          motivo: 'no puedo cancelar mi envío $envioId',
+        );
       }
     }
   }
@@ -120,7 +130,12 @@ class EnvioDetalleScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Detalle del envío')),
       body: envioAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => const SupportErrorView(
+          mensaje: 'No pudimos cargar este envío. Revisá tu conexión y '
+              'volvé a intentar.',
+          app: 'Cliente',
+          motivo: 'no puedo ver el detalle de un envío',
+        ),
         data: (envio) {
           if (envio == null) {
             return const Center(child: Text('Este envío ya no existe.'));
@@ -216,7 +231,12 @@ class EnvioDetalleScreen extends ConsumerWidget {
               Expanded(
                 child: ofertasAsync.when(
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, _) => Center(child: Text('Error: $error')),
+                  error: (error, _) => const SupportErrorView(
+                    mensaje: 'No pudimos cargar las propuestas de este '
+                        'envío. Revisá tu conexión y volvé a intentar.',
+                    app: 'Cliente',
+                    motivo: 'no puedo ver las propuestas de mi envío',
+                  ),
                   data: (data) {
                     if (data.ofertas.isEmpty) {
                       return const Center(

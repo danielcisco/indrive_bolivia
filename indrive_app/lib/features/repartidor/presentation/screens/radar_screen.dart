@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/radar_controller.dart';
 import 'envio_repartidor_detalle_screen.dart';
 
@@ -24,7 +25,12 @@ class RadarScreen extends ConsumerWidget {
       ),
       body: estado.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => const SupportErrorView(
+          mensaje: 'No pudimos cargar el radar de ofertas. Revisá tu '
+              'conexión y volvé a intentar.',
+          app: 'Repartidor',
+          motivo: 'no puedo ver el radar de ofertas',
+        ),
         data: (data) {
           Future<void> refrescar() =>
               ref.read(radarControllerProvider.notifier).refrescar();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/gestion_usuarios_controller.dart';
 import 'usuario_detalle_screen.dart';
 
@@ -13,7 +14,12 @@ class GestionUsuariosScreen extends ConsumerWidget {
 
     return estado.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => const SupportErrorView(
+        mensaje: 'No pudimos cargar la lista de usuarios. Revisá tu '
+            'conexión y volvé a intentar.',
+        app: 'Admin',
+        motivo: 'no puedo ver la lista de usuarios',
+      ),
       data: (data) {
         Future<void> refrescar() async {
           ref.invalidate(gestionUsuariosControllerProvider);

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../shared/data/providers.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 
 /// Se muestra en vez de Home mientras el repartidor no está verificado —
 /// antes, un repartidor sin aprobar entraba igual al Radar y recién se
@@ -30,13 +31,16 @@ class _EsperandoVerificacionScreenState
     extends ConsumerState<EsperandoVerificacionScreen> {
   XFile? _foto;
   bool _procesando = false;
-  String? _error;
 
   Future<void> _tomarFoto() async {
+    // imageQuality/maxWidth más altos que una foto de paquete: acá lo que
+    // importa es que el Admin pueda leer el número de Cédula ampliando la
+    // imagen, no solo confirmar que algo llegó entero (Sprint 9).
     final foto = await ImagePicker().pickImage(
       source: ImageSource.camera,
-      imageQuality: 70,
-      maxWidth: 1280,
+      imageQuality: 90,
+      maxWidth: 1920,
+      preferredCameraDevice: CameraDevice.rear,
     );
     if (foto != null && mounted) setState(() => _foto = foto);
   }
@@ -44,10 +48,7 @@ class _EsperandoVerificacionScreenState
   Future<void> _subirFoto() async {
     final foto = _foto;
     if (foto == null) return;
-    setState(() {
-      _procesando = true;
-      _error = null;
-    });
+    setState(() => _procesando = true);
     try {
       final uid = FirebaseAuth.instance.currentUser!.uid;
       final repository = ref.read(usersRepositoryProvider);
@@ -56,8 +57,17 @@ class _EsperandoVerificacionScreenState
         archivo: File(foto.path),
       );
       await repository.guardarCedulaUrl(uid, url);
-    } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+    } catch (_) {
+      if (mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos subir la foto de tu Cédula. Probá de nuevo '
+              'o contactanos si sigue fallando.',
+          app: 'Repartidor',
+          motivo: 'no puedo subir la foto de mi Cédula para verificarme',
+        );
+      }
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
@@ -133,15 +143,6 @@ class _EsperandoVerificacionScreenState
                         : _subirFoto,
                     child: Text(_procesando ? 'Subiendo...' : 'Subir'),
                   ),
-                  if (_error != null) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
                 ] else ...[
                   const Icon(Icons.hourglass_empty, size: 64),
                   const SizedBox(height: 16),
@@ -156,6 +157,22 @@ class _EsperandoVerificacionScreenState
                   const FilledButton(
                     onPressed: null,
                     child: Text('Continuar'),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '¿La revisión está tardando mucho?',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => abrirSoporteWhatsapp(
+                      ref: ref,
+                      app: 'Repartidor',
+                      motivo: 'mi cuenta sigue sin verificarse',
+                    ),
+                    icon: const Icon(Icons.chat_outlined),
+                    label: const Text('Contactar soporte por WhatsApp'),
                   ),
                 ],
                 const SizedBox(height: 16),

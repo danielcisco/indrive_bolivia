@@ -6,6 +6,7 @@ import 'package:dart_geohash/dart_geohash.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/auth/token_retry.dart';
 import '../domain/entities/calificacion.dart';
 import '../domain/entities/envio.dart';
 import '../domain/entities/oferta.dart';
@@ -438,7 +439,9 @@ class EnviosRepository {
   /// entregado — único campo que el rol admin puede tocar sobre `envios`
   /// (ver `firestore.rules`).
   Future<void> verificarPago(String envioId) {
-    return _envios.doc(envioId).update({'pagoVerificado': true});
+    return conReintentoDeToken(
+      () => _envios.doc(envioId).update({'pagoVerificado': true}),
+    );
   }
 
   /// Envíos entregados con pago QR todavía sin verificar, paginado —

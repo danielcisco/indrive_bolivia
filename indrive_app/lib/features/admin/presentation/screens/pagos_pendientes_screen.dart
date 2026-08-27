@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/pagos_pendientes_controller.dart';
 
 class PagosPendientesScreen extends ConsumerWidget {
@@ -13,15 +14,24 @@ class PagosPendientesScreen extends ConsumerWidget {
     ref.listen(pagosPendientesControllerProvider, (previous, next) {
       final error = next.error;
       if (error != null && previous?.error != error) {
-        ScaffoldMessenger.of(
+        mostrarErrorConSoporte(
           context,
-        ).showSnackBar(SnackBar(content: Text('No se pudo verificar: $error')));
+          ref,
+          mensaje: 'No pudimos verificar el pago. Probá de nuevo.',
+          app: 'Admin',
+          motivo: 'no puedo verificar un pago QR',
+        );
       }
     });
 
     return estado.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => const SupportErrorView(
+        mensaje: 'No pudimos cargar los pagos pendientes. Revisá tu '
+            'conexión y volvé a intentar.',
+        app: 'Admin',
+        motivo: 'no puedo ver la lista de pagos QR pendientes',
+      ),
       data: (data) {
         Future<void> refrescar() async {
           ref.invalidate(pagosPendientesControllerProvider);

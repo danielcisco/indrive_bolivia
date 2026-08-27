@@ -8,6 +8,7 @@ import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/avatar_circulo.dart';
 import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_entregas_controller.dart';
 import 'entrega_en_curso_screen.dart';
 
@@ -85,8 +86,25 @@ class _EnvioRepartidorDetalleScreenState
           ),
         );
       }
-    } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+    } on StateError {
+      // El repository lanza esto cuando la transacción atómica detecta que
+      // otro repartidor ya lo tomó — no es una falla real, es una carrera
+      // perdida, así que el mensaje es accionable, no un error genérico.
+      if (mounted) {
+        setState(
+          () => _error = 'Este envío ya fue tomado por otro repartidor.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos aceptar el envío. Probá de nuevo.',
+          app: 'Repartidor',
+          motivo: 'no puedo aceptar un envío directo (${widget.envioId})',
+        );
+      }
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
@@ -111,8 +129,16 @@ class _EnvioRepartidorDetalleScreenState
       }
     } on FormatException {
       setState(() => _error = 'Monto inválido.');
-    } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+    } catch (_) {
+      if (mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos enviar tu contraoferta. Probá de nuevo.',
+          app: 'Repartidor',
+          motivo: 'no puedo enviar una contraoferta (${widget.envioId})',
+        );
+      }
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
@@ -131,7 +157,12 @@ class _EnvioRepartidorDetalleScreenState
       appBar: AppBar(title: const Text('Detalle del envío')),
       body: envioAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => const SupportErrorView(
+          mensaje: 'No pudimos cargar este envío. Revisá tu conexión y '
+              'volvé a intentar.',
+          app: 'Repartidor',
+          motivo: 'no puedo ver el detalle de un envío',
+        ),
         data: (envio) {
           if (envio == null) {
             return const Center(child: Text('Este envío ya no existe.'));

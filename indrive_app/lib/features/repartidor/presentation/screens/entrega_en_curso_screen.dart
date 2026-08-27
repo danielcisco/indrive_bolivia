@@ -6,6 +6,7 @@ import '../../../../core/tracking/battery_optimization.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import 'confirmar_entrega_screen.dart';
 
 /// Pantalla de una entrega activa: "Confirmar recogida" arranca el
@@ -25,7 +26,6 @@ class EntregaEnCursoScreen extends ConsumerStatefulWidget {
 
 class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
   bool _procesando = false;
-  String? _error;
 
   Future<bool> _confirmarOnboardingBateria() async {
     if (await BatteryOptimization.estaExcluida()) return true;
@@ -58,16 +58,21 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
   }
 
   Future<void> _iniciarViaje() async {
-    setState(() {
-      _procesando = true;
-      _error = null;
-    });
+    setState(() => _procesando = true);
     try {
       await _confirmarOnboardingBateria();
       await ref.read(enviosRepositoryProvider).iniciarViaje(widget.envioId);
       await iniciarTracking(widget.envioId);
-    } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+    } catch (_) {
+      if (mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos confirmar la recogida. Probá de nuevo.',
+          app: 'Repartidor',
+          motivo: 'no puedo confirmar la recogida (${widget.envioId})',
+        );
+      }
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
@@ -92,7 +97,12 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
       appBar: AppBar(title: const Text('Entrega')),
       body: envioAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => const SupportErrorView(
+          mensaje: 'No pudimos cargar esta entrega. Revisá tu conexión y '
+              'volvé a intentar.',
+          app: 'Repartidor',
+          motivo: 'no puedo ver una entrega en curso',
+        ),
         data: (envio) {
           if (envio == null) {
             return const Center(child: Text('Este envío ya no existe.'));
@@ -131,13 +141,6 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
                       label: const Text('Marcar como entregado'),
                     ),
                   ),
-                if (_error != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
-                ],
               ],
             ),
           );

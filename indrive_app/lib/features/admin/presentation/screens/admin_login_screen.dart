@@ -1,16 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 
 /// Login de staff con email/contraseña. No hay auto-registro: las cuentas
 /// admin se crean manualmente (ver functions/scripts/setAdminClaim.ts).
-class AdminLoginScreen extends StatefulWidget {
+class AdminLoginScreen extends ConsumerStatefulWidget {
   const AdminLoginScreen({super.key});
 
   @override
-  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
+  ConsumerState<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _AdminLoginScreenState extends State<AdminLoginScreen> {
+class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isSubmitting = false;
@@ -35,7 +38,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       );
     } on FirebaseAuthException catch (error) {
       setState(
-        () => _errorMessage = error.message ?? 'No se pudo iniciar sesión.',
+        () => _errorMessage = switch (error.code) {
+          'invalid-credential' ||
+          'wrong-password' ||
+          'user-not-found' => 'Email o contraseña incorrectos.',
+          _ => 'No pudimos iniciar sesión. Probá de nuevo.',
+        },
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -76,6 +84,19 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               Text(
                 _errorMessage!,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => abrirSoporteWhatsapp(
+                  ref: ref,
+                  app: 'Admin',
+                  motivo: 'no puedo iniciar sesión en el panel',
+                  identidadFallback: _emailController.text.trim().isEmpty
+                      ? null
+                      : 'intentando entrar con ${_emailController.text.trim()}',
+                ),
+                icon: const Icon(Icons.chat_outlined, size: 18),
+                label: const Text('¿Sigue fallando? Contactar soporte'),
               ),
             ],
           ],

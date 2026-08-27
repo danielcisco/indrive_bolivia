@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/widgets/marcador_repartidor.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 
 /// Villazón, Potosí — mismo centro por defecto que `MapPickerScreen`.
 const _centroVillazon = LatLng(-22.0864, -65.5946);
@@ -35,7 +36,12 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen> {
 
     return enviosEnCurso.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => const SupportErrorView(
+        mensaje: 'No pudimos cargar el mapa en vivo. Revisá tu conexión y '
+            'volvé a intentar.',
+        app: 'Admin',
+        motivo: 'no puedo ver el mapa en vivo',
+      ),
       data: (envios) {
         // Nombre del repartidor de cada envío — perfiles_publicos/{uid} es
         // lectura abierta a cualquier autenticado (Admin incluido), así

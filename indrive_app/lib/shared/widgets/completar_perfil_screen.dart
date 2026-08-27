@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/providers.dart';
+import 'soporte_whatsapp.dart';
 
 /// Red de seguridad de `AuthGate`: se muestra en vez de Home mientras
 /// `nombre`/`nick` no existan en `users/{uid}`. En el camino feliz nunca
@@ -54,8 +55,20 @@ class _CompletarPerfilScreenState
           .read(usersRepositoryProvider)
           .actualizarPerfil(uid, nombre: nombre, apellido: apellido, nick: nick);
       widget.onCompletado();
-    } catch (error) {
-      if (mounted) setState(() => _error = 'No se pudo guardar: $error');
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'No pudimos guardar tus datos. Revisá tu conexión '
+              'y volvé a intentar.',
+        );
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos guardar tu perfil.',
+          app: 'Cliente/Repartidor',
+          motivo: 'no puedo completar mi perfil (nombre/apellido/nick)',
+        );
+      }
     } finally {
       if (mounted) setState(() => _guardando = false);
     }

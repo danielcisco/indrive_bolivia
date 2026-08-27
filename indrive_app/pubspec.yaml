@@ -85,6 +85,7 @@ dependencies:
   # Buscador de direcciones (Places Autocomplete) en el picker de mapa:
   # llamadas REST directas a Places API (New), sin paquete de terceros.
   http: ^1.2.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/auth/phone_auth_repository.dart';
 import '../data/providers.dart';
+import 'soporte_whatsapp.dart';
 
 /// Único código de país que opera esta app (Villazón, Potosí, Bolivia) —
 /// fijo, no seleccionable, para no pedirle al usuario que lo escriba cada
@@ -74,10 +75,14 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
   }
 
   Future<void> _tomarFotoCarnet() async {
+    // imageQuality/maxWidth más altos que una foto de paquete: acá lo que
+    // importa es que el Admin pueda leer el número de Cédula ampliando la
+    // imagen, no solo confirmar que algo llegó entero (Sprint 9).
     final foto = await ImagePicker().pickImage(
       source: ImageSource.camera,
-      imageQuality: 70,
-      maxWidth: 1280,
+      imageQuality: 90,
+      maxWidth: 1920,
+      preferredCameraDevice: CameraDevice.rear,
     );
     if (foto != null && mounted) setState(() => _fotoCarnet = foto);
   }
@@ -100,7 +105,10 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
         if (!mounted) return;
         setState(() {
           _isSubmitting = false;
-          _errorMessage = error.message ?? 'No se pudo enviar el código.';
+          _errorMessage = error.code == 'invalid-phone-number'
+              ? 'Ese número no parece válido. Revisalo e intentá de nuevo.'
+              : 'No pudimos enviar el código. Revisá tu conexión y volvé '
+                    'a intentar.';
         });
       },
     );
@@ -129,7 +137,14 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
       }
     } on FirebaseAuthException catch (error) {
       if (mounted) {
-        setState(() => _errorMessage = error.message ?? 'Código inválido.');
+        setState(
+          () => _errorMessage = switch (error.code) {
+            'invalid-verification-code' =>
+              'El código no es correcto. Revisalo e intentá de nuevo.',
+            'session-expired' => 'El código venció. Volvé a pedir uno.',
+            _ => 'No pudimos verificar el código. Probá de nuevo.',
+          },
+        );
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -168,8 +183,13 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
       await repository.guardarCedulaUrl(uid, url);
       await _asignarRolTolerante();
       if (mounted) _volverALaBase(context);
-    } catch (error) {
-      if (mounted) setState(() => _errorMessage = 'No se pudo guardar: $error');
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _errorMessage = 'No pudimos guardar tus datos. Revisá tu '
+              'conexión y volvé a intentar.',
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -271,7 +291,18 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
+              textAlign: TextAlign.center,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => abrirSoporteWhatsapp(
+                ref: ref,
+                app: widget.role == 'cliente' ? 'Cliente' : 'Repartidor',
+                motivo: 'no puedo iniciar sesión ni registrarme',
+              ),
+              icon: const Icon(Icons.chat_outlined, size: 18),
+              label: const Text('¿Sigue fallando? Contactar soporte'),
             ),
           ],
         ],

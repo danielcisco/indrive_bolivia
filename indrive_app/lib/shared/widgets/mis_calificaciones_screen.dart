@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/mis_calificaciones_controller.dart';
+import 'soporte_whatsapp.dart';
 
 /// Calificaciones que recibió el usuario autenticado (sprint extra, Grupo
 /// B) — compartida por Cliente y Repartidor, mismo criterio que
@@ -18,7 +19,12 @@ class MisCalificacionesScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Mis calificaciones')),
       body: estado.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => const SupportErrorView(
+          mensaje: 'No pudimos cargar tus calificaciones. Revisá tu '
+              'conexión y volvé a intentar.',
+          app: 'Cliente/Repartidor',
+          motivo: 'no puedo ver mis calificaciones',
+        ),
         data: (data) {
           if (data.calificaciones.isEmpty) {
             return const Center(

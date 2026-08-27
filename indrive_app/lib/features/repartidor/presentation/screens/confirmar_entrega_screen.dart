@@ -9,6 +9,7 @@ import '../../../../core/tracking/background_location_service.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/widgets/calificacion_dialog.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_entregas_controller.dart';
 
 /// Último paso antes de completar una entrega (Sprint 6.1): el repartidor
@@ -102,8 +103,38 @@ class _ConfirmarEntregaScreenState
           ..pop()
           ..pop();
       }
-    } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+    } on FirebaseException catch (error) {
+      // permission-denied acá casi siempre significa "código incorrecto" —
+      // es la única condición extra que agrega la transición a entregado
+      // más allá de ser el repartidor asignado. Mensaje específico y
+      // accionable en vez de mandar a soporte por algo que el repartidor
+      // puede resolver solo (Sprint 9).
+      if (mounted) {
+        setState(
+          () => _error = error.code == 'permission-denied'
+              ? 'El código no es correcto. Pedile al cliente que te lo repita.'
+              : null,
+        );
+        if (error.code != 'permission-denied') {
+          mostrarErrorConSoporte(
+            context,
+            ref,
+            mensaje: 'No pudimos confirmar la entrega. Probá de nuevo.',
+            app: 'Repartidor',
+            motivo: 'no puedo confirmar una entrega (envío ${widget.envioId})',
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos confirmar la entrega. Probá de nuevo.',
+          app: 'Repartidor',
+          motivo: 'no puedo confirmar una entrega (envío ${widget.envioId})',
+        );
+      }
     } finally {
       if (mounted) setState(() => _procesando = false);
     }

@@ -5,6 +5,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/auth/token_retry.dart';
 import '../domain/entities/perfil_publico.dart';
 
 class UsersRepository {
@@ -89,8 +90,10 @@ class UsersRepository {
   /// cliente nunca escribe `isVerified` directamente (ni las Firestore
   /// Rules ni el token se lo permiten), solo un admin autenticado puede
   /// invocar esta función (validado server-side).
-  Future<void> aprobarKyc(String uid) async {
-    await _functions.httpsCallable('approveKyc').call({'uid': uid});
+  Future<void> aprobarKyc(String uid) {
+    return conReintentoDeToken(
+      () => _functions.httpsCallable('approveKyc').call({'uid': uid}),
+    );
   }
 
   /// Sube la foto de la Cédula a `kyc/{uid}/` (regla ya existente desde
@@ -196,9 +199,11 @@ class UsersRepository {
   /// vía la Cloud Function `establecerEstadoCuenta` — el cliente nunca
   /// puede tocar `isActive` directamente (ver `firestore.rules`).
   Future<void> establecerEstadoCuenta(String uid, {required bool activar}) {
-    return _functions
-        .httpsCallable('establecerEstadoCuenta')
-        .call({'uid': uid, 'activar': activar});
+    return conReintentoDeToken(
+      () => _functions
+          .httpsCallable('establecerEstadoCuenta')
+          .call({'uid': uid, 'activar': activar}),
+    );
   }
 
   /// Calificaciones recibidas por [uid], sin importar de qué envío

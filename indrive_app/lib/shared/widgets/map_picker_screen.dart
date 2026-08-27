@@ -73,9 +73,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       final sugerencias = await buscarSugerencias(query);
       if (!mounted) return;
       setState(() => _sugerencias = sugerencias);
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
-      setState(() => _errorBusqueda = 'No se pudo buscar: $error');
+      setState(
+        () => _errorBusqueda = 'No pudimos buscar direcciones. Podés '
+            'arrastrar el mapa para ubicar el punto a mano.',
+      );
     } finally {
       if (mounted) setState(() => _buscando = false);
     }
@@ -91,9 +94,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       final coordenadas = await obtenerCoordenadas(sugerencia.placeId);
       _centro = coordenadas;
       await _controller?.animateCamera(CameraUpdate.newLatLng(coordenadas));
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
-      setState(() => _errorBusqueda = 'No se pudo ubicar el lugar: $error');
+      setState(
+        () => _errorBusqueda = 'No pudimos ubicar ese lugar. Podés '
+            'arrastrar el mapa para ubicar el punto a mano.',
+      );
     } finally {
       if (mounted) setState(() => _buscando = false);
     }

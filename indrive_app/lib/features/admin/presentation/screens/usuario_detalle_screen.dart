@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/data/providers.dart';
+import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../../domain/usuario_admin.dart';
 import '../providers/gestion_usuarios_controller.dart';
 
@@ -23,7 +24,6 @@ class UsuarioDetalleScreen extends ConsumerStatefulWidget {
 class _UsuarioDetalleScreenState extends ConsumerState<UsuarioDetalleScreen> {
   late bool _isActive = widget.usuario.isActive;
   bool _procesando = false;
-  String? _error;
 
   Future<void> _cambiarEstado() async {
     final activar = !_isActive;
@@ -51,18 +51,25 @@ class _UsuarioDetalleScreenState extends ConsumerState<UsuarioDetalleScreen> {
     );
     if (confirmar != true) return;
 
-    setState(() {
-      _procesando = true;
-      _error = null;
-    });
+    setState(() => _procesando = true);
     try {
       await ref
           .read(usersRepositoryProvider)
           .establecerEstadoCuenta(widget.usuario.uid, activar: activar);
       ref.invalidate(gestionUsuariosControllerProvider);
       if (mounted) setState(() => _isActive = activar);
-    } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+    } catch (_) {
+      if (mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: activar
+              ? 'No pudimos reactivar la cuenta. Probá de nuevo.'
+              : 'No pudimos suspender la cuenta. Probá de nuevo.',
+          app: 'Admin',
+          motivo: 'no puedo cambiar el estado de una cuenta (${widget.usuario.uid})',
+        );
+      }
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
@@ -116,13 +123,6 @@ class _UsuarioDetalleScreenState extends ConsumerState<UsuarioDetalleScreen> {
                 ),
               ),
             ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
           ],
         ),
       ),
