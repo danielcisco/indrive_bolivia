@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/domain/entities/envio.dart';
+import '../../../../shared/widgets/filtro_estado_chips.dart';
 import '../providers/mis_envios_controller.dart';
 import 'crear_envio_screen.dart';
 import 'envio_detalle_screen.dart';
+
+const _opcionesFiltro = <(EnvioStatus?, String)>[
+  (null, 'Todos'),
+  (EnvioStatus.pendienteOfertas, 'Pendientes'),
+  (EnvioStatus.asignado, 'Asignado'),
+  (EnvioStatus.enCurso, 'En curso'),
+  (EnvioStatus.entregado, 'Entregado'),
+  (EnvioStatus.cancelado, 'Cancelado'),
+  (EnvioStatus.expirado, 'Expirado'),
+];
 
 class MisEnviosScreen extends ConsumerWidget {
   const MisEnviosScreen({super.key});
@@ -13,7 +25,19 @@ class MisEnviosScreen extends ConsumerWidget {
     final estado = ref.watch(misEnviosControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis envíos')),
+      appBar: AppBar(
+        title: const Text('Mis envíos'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: FiltroEstadoChips(
+            opciones: _opcionesFiltro,
+            seleccionado: estado.valueOrNull?.filtro,
+            onCambiar: (filtro) => ref
+                .read(misEnviosControllerProvider.notifier)
+                .cambiarFiltro(filtro),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(
           context,
@@ -24,10 +48,13 @@ class MisEnviosScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),
         data: (data) {
-          Future<void> refrescar() async {
-            ref.invalidate(misEnviosControllerProvider);
-            await ref.read(misEnviosControllerProvider.future);
-          }
+          // No usa ref.invalidate(): eso vuelve a construir el provider
+          // desde MisEnviosState.initial() sin filtro, perdiendo el que
+          // el usuario ya eligió. cambiarFiltro(data.filtro) refresca
+          // manteniendo el mismo filtro seleccionado.
+          Future<void> refrescar() => ref
+              .read(misEnviosControllerProvider.notifier)
+              .cambiarFiltro(data.filtro);
 
           if (data.envios.isEmpty) {
             return RefreshIndicator(

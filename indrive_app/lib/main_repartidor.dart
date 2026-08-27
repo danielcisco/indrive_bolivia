@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'core/tracking/background_location_service.dart';
+import 'features/repartidor/presentation/screens/esperando_verificacion_screen.dart';
 import 'features/repartidor/presentation/screens/repartidor_home_screen.dart';
 import 'features/repartidor/presentation/screens/repartidor_login_screen.dart';
 import 'firebase_options.dart';
 import 'shared/data/providers.dart';
 import 'shared/widgets/auth_gate.dart';
+import 'shared/widgets/bienvenida_screen.dart';
 
 Future<void> main() async {
   await bootstrapApp(options: DefaultFirebaseOptions.androidRepartidor);
@@ -33,7 +35,13 @@ class RepartidorApp extends ConsumerWidget {
       themeMode: ThemeMode.system,
       home: AuthGate(
         expectedRole: 'repartidor',
-        loginBuilder: (_) => const RepartidorLoginScreen(),
+        requierePerfilCompleto: true,
+        loginBuilder: (_) => BienvenidaScreen(
+          appLabel: 'Repartidor',
+          destino: (_) => const RepartidorLoginScreen(),
+        ),
+        verificacionPendienteBuilder: (_, onVerificado) =>
+            EsperandoVerificacionScreen(onVerificado: onVerificado),
         homeBuilder: (_) => const RepartidorHomeScreen(),
       ),
     );

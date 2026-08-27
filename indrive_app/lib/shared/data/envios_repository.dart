@@ -153,16 +153,23 @@ class EnviosRepository {
     return query.get();
   }
 
-  /// Envíos del cliente [clienteId], paginado.
+  /// Envíos del cliente [clienteId], paginado — [status] opcional filtra a
+  /// un solo estado (ver `firestore.indexes.json` para el índice
+  /// compuesto que esto necesita).
   Future<QuerySnapshot<Map<String, dynamic>>> listarEnviosDeCliente(
     String clienteId, {
     int limit = 20,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
+    EnvioStatus? status,
   }) {
-    var query = _envios
-        .where('clienteId', isEqualTo: clienteId)
-        .orderBy('createdAt', descending: true)
-        .limit(limit);
+    Query<Map<String, dynamic>> query = _envios.where(
+      'clienteId',
+      isEqualTo: clienteId,
+    );
+    if (status != null) {
+      query = query.where('status', isEqualTo: status.toFirestore());
+    }
+    query = query.orderBy('createdAt', descending: true).limit(limit);
     if (startAfter != null) {
       query = query.startAfterDocument(startAfter);
     }
@@ -291,18 +298,23 @@ class EnviosRepository {
     });
   }
 
-  /// Entregas activas del repartidor [repartidorId] (asignadas o en curso),
-  /// paginado. El filtro de estado se hace en el llamador para no necesitar
-  /// un índice con `whereIn` — el volumen esperado por repartidor es chico.
+  /// Entregas del repartidor [repartidorId], paginado — [status] opcional
+  /// filtra a un solo estado (asignado/en_curso/entregado; ver
+  /// `firestore.indexes.json` para el índice compuesto que esto necesita).
   Future<QuerySnapshot<Map<String, dynamic>>> listarEntregasDeRepartidor(
     String repartidorId, {
     int limit = 20,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
+    EnvioStatus? status,
   }) {
-    var query = _envios
-        .where('repartidorAsignadoId', isEqualTo: repartidorId)
-        .orderBy('createdAt', descending: true)
-        .limit(limit);
+    Query<Map<String, dynamic>> query = _envios.where(
+      'repartidorAsignadoId',
+      isEqualTo: repartidorId,
+    );
+    if (status != null) {
+      query = query.where('status', isEqualTo: status.toFirestore());
+    }
+    query = query.orderBy('createdAt', descending: true).limit(limit);
     if (startAfter != null) {
       query = query.startAfterDocument(startAfter);
     }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/entities/oferta.dart';
+import '../../../../shared/widgets/avatar_circulo.dart';
 import '../../../../shared/widgets/calificacion_dialog.dart';
 import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
@@ -150,6 +151,12 @@ class EnvioDetalleScreen extends ConsumerWidget {
                         label: const Text('Cancelar envío'),
                       ),
                     ],
+                    if (envio.repartidorAsignadoId != null) ...[
+                      const SizedBox(height: 12),
+                      _RepartidorAsignadoCard(
+                        repartidorId: envio.repartidorAsignadoId!,
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     EnvioMapPreview(envio: envio),
                     if (envio.status == EnvioStatus.entregado) ...[
@@ -257,6 +264,34 @@ class EnvioDetalleScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Identidad del repartidor asignado — perfil público (nombre/nick/avatar,
+/// sin datos sensibles) para que el Cliente sepa quién va a hacer la
+/// entrega.
+class _RepartidorAsignadoCard extends ConsumerWidget {
+  const _RepartidorAsignadoCard({required this.repartidorId});
+
+  final String repartidorId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final perfilAsync = ref.watch(perfilPublicoProvider(repartidorId));
+    return perfilAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, _) => const SizedBox.shrink(),
+      data: (perfil) {
+        if (perfil == null) return const SizedBox.shrink();
+        return Card(
+          child: ListTile(
+            leading: AvatarCirculo(avatarId: perfil.avatarId),
+            title: const Text('Tu repartidor'),
+            subtitle: Text('${perfil.nombre} ${perfil.apellido} (@${perfil.nick})'),
+          ),
+        );
+      },
     );
   }
 }

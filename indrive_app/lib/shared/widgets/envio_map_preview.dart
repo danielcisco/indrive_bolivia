@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../domain/entities/envio.dart';
+import 'marcador_repartidor.dart';
 
 /// Mapa pequeño y no interactivo (modo "lite") con los puntos de un envío
 /// — origen y destino siempre, y la posición en vivo del repartidor cuando
@@ -10,13 +11,29 @@ import '../domain/entities/envio.dart';
 /// widget con el marcador en su lugar nuevo — no hay animación suave (el
 /// modo lite renderiza una instantánea), pero se actualiza solo, sin que
 /// el usuario tenga que refrescar.
-class EnvioMapPreview extends StatelessWidget {
+class EnvioMapPreview extends StatefulWidget {
   const EnvioMapPreview({super.key, required this.envio});
 
   final Envio envio;
 
   @override
+  State<EnvioMapPreview> createState() => _EnvioMapPreviewState();
+}
+
+class _EnvioMapPreviewState extends State<EnvioMapPreview> {
+  BitmapDescriptor? _iconoRepartidor;
+
+  @override
+  void initState() {
+    super.initState();
+    iconoRepartidor().then((icono) {
+      if (mounted) setState(() => _iconoRepartidor = icono);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final envio = widget.envio;
     final origen = LatLng(envio.origen.latitude, envio.origen.longitude);
     final destino = LatLng(envio.destino.latitude, envio.destino.longitude);
     final posicionRepartidor = envio.repartidorPosicionActual;
@@ -55,9 +72,11 @@ class EnvioMapPreview extends StatelessWidget {
                   posicionRepartidor.longitude,
                 ),
                 infoWindow: const InfoWindow(title: 'Repartidor'),
-                icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueAzure,
-                ),
+                icon:
+                    _iconoRepartidor ??
+                    BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueAzure,
+                    ),
               ),
           },
         ),

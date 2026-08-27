@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Keys para --dart-define-from-file (buscador de direcciones, Places API):
+# mismo criterio que android/local.properties, nunca se commitea.
+/dart_define.local.json
+
+# Cache local del CLI de Firebase (historial de despliegues a Hosting) —
+# se regenera solo, no aporta nada versionado.
+/.firebase/

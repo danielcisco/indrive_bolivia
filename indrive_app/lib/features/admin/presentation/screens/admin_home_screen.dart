@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/session_status_view.dart';
+import '../../../../shared/widgets/user_profile_header.dart';
 import 'gestion_usuarios_screen.dart';
 import 'kyc_pending_screen.dart';
 import 'live_map_screen.dart';
@@ -64,6 +65,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             onPressed: () => _abrirSesion(context),
           ),
         ],
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(56),
+          child: UserProfileHeader(mostrarRating: false),
+        ),
       ),
       body: Row(
         children: [

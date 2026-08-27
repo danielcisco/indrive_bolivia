@@ -82,6 +82,10 @@ dependencies:
   # por CLAUDE.md, sin necesitar un paquete de compresión aparte.
   image_picker: ^1.1.2
 
+  # Buscador de direcciones (Places Autocomplete) en el picker de mapa:
+  # llamadas REST directas a Places API (New), sin paquete de terceros.
+  http: ^1.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -16,22 +16,37 @@ service cloud.firestore {
 
     // role e isVerified solo los escribe la Cloud Function (Admin SDK),
     // que no pasa por estas reglas. El cliente puede crear su doc inicial
-    // pero nunca fijar esos dos campos por su cuenta. isActive (Sprint
-    // extra, Grupo C) es igual de inmutable para el dueño -si no,
-    // cualquiera podria reactivarse a si mismo escribiendo directo a
-    // Firestore-, pero puede no existir todavia en cuentas que nunca se
-    // suspendieron, por eso usa .get(key, default) en vez de acceso
-    // directo (un acceso directo a una clave ausente rompe la regla para
-    // *todas* las demas escrituras del dueño, no solo esta).
+    // pero nunca fijar esos dos campos por su cuenta. Los tres (role,
+    // isVerified, isActive) usan .get(key, default) en vez de acceso
+    // directo: un acceso directo a una clave ausente rompe la regla para
+    // *todas* las demas escrituras del dueño, no solo esta — y con el
+    // registro nuevo (nombre/nick se guardan ANTES de que la Cloud
+    // Function assignInitialRole fije role/isVerified) hay una ventana
+    // real donde el doc todavia no tiene esos campos. Bug real: esto
+    // rompia guardarCedulaUrl con permission-denied cuando la escritura
+    // caia en esa ventana.
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow create: if isOwner(uid) &&
         !("role" in request.resource.data) &&
         !("isVerified" in request.resource.data);
       allow update: if isOwner(uid) &&
-        request.resource.data.role == resource.data.role &&
-        request.resource.data.isVerified == resource.data.isVerified &&
+        request.resource.data.get('role', null) == resource.data.get('role', null) &&
+        request.resource.data.get('isVerified', null) == resource.data.get('isVerified', null) &&
         request.resource.data.get('isActive', true) == resource.data.get('isActive', true);
+      allow delete: if false;
+    }
+
+    // Copia pública de nombre/nick/avatar (sprint extra de identidad):
+    // users/{uid} tiene cedulaUrl y phoneNumber, sensibles, por eso su
+    // lectura es solo del dueño/admin. Esta colección aparte solo tiene
+    // estos 3 campos, sin nada sensible, así que cualquier usuario
+    // autenticado puede leerla — así el Cliente ve quién es su repartidor
+    // asignado y viceversa sin exponer el resto del perfil.
+    match /perfiles_publicos/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid) &&
+        request.resource.data.keys().hasOnly(['nombre', 'apellido', 'nick', 'avatarId']);
       allow delete: if false;
     }
 

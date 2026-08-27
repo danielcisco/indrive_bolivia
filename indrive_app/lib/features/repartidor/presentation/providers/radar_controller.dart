@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +13,7 @@ const _precisionInicial = 6;
 const _precisionMinima = 3;
 const _minimoResultadosDeseados = 3;
 const _pageSize = 20;
+const _intervaloSondeo = Duration(seconds: 20);
 
 /// Secuencia de prefijos de geohash a probar, del más específico (celda
 /// chica) al más amplio, sin bajar de [precisionMinima]. Función pura
@@ -69,19 +72,47 @@ class RadarState {
 }
 
 /// Radar del repartidor: sondeo adaptativo por prefijo de geohash (no un
-/// stream continuo — se refresca al entrar y con acción explícita del
-/// usuario, tal como exige CLAUDE.md).
-class RadarController extends AsyncNotifier<RadarState> {
+/// stream continuo de Firestore, tal como exige CLAUDE.md) — pero sí
+/// automático: se relanza solo cada [_intervaloSondeo] mientras la
+/// pantalla está abierta, además de al entrar y con refresco manual. Sin
+/// esto, un envío nuevo publicado por el Cliente no aparecía hasta que el
+/// repartidor lo pedía a mano. `autoDispose` para que el timer (y el GPS
+/// que dispara cada sondeo) se corte solo al salir de la pantalla, no
+/// quede sondeando en segundo plano para siempre.
+class RadarController extends AutoDisposeAsyncNotifier<RadarState> {
   final _geoHasher = GeoHasher();
 
   @override
   Future<RadarState> build() {
+    final timer = Timer.periodic(
+      _intervaloSondeo,
+      (_) => _actualizarSilenciosamente(),
+    );
+    ref.onDispose(timer.cancel);
     return _buscar();
   }
 
   Future<void> refrescar() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(_buscar);
+  }
+
+  /// Igual que [refrescar] pero sin pasar por `AsyncLoading` — evita que
+  /// la lista parpadee a una pantalla de carga cada vez que el sondeo
+  /// automático corre solo en segundo plano. Si falla, se ignora: la
+  /// lista se queda con lo último bueno y se reintenta en el próximo tick.
+  Future<void> _actualizarSilenciosamente() async {
+    try {
+      final nuevo = await _buscar();
+      state = AsyncData(nuevo);
+    } catch (_) {
+      // Falla silenciosa a propósito, ver doc del método — cubre tanto
+      // errores de red como el caso raro de que el provider ya se haya
+      // descartado justo cuando este tick estaba a mitad de camino
+      // (el timer se cancela en `ref.onDispose`, así que no debería
+      // volver a dispararse después, pero un tick ya en vuelo sí puede
+      // resolver tarde).
+    }
   }
 
   Future<void> cargarMas() async {
@@ -151,4 +182,6 @@ class RadarController extends AsyncNotifier<RadarState> {
 }
 
 final radarControllerProvider =
-    AsyncNotifierProvider<RadarController, RadarState>(RadarController.new);
+    AsyncNotifierProvider.autoDispose<RadarController, RadarState>(
+      RadarController.new,
+    );

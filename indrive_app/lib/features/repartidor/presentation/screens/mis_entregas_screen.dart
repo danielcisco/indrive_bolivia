@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/domain/entities/envio.dart';
+import '../../../../shared/widgets/filtro_estado_chips.dart';
 import '../providers/mis_entregas_controller.dart';
 import 'entrega_en_curso_screen.dart';
+
+const _opcionesFiltro = <(EnvioStatus?, String)>[
+  (null, 'Todas'),
+  (EnvioStatus.asignado, 'Asignadas'),
+  (EnvioStatus.enCurso, 'En curso'),
+  (EnvioStatus.entregado, 'Entregadas'),
+];
 
 class MisEntregasScreen extends ConsumerWidget {
   const MisEntregasScreen({super.key});
@@ -12,7 +21,19 @@ class MisEntregasScreen extends ConsumerWidget {
     final estado = ref.watch(misEntregasControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis entregas')),
+      appBar: AppBar(
+        title: const Text('Mis entregas'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: FiltroEstadoChips(
+            opciones: _opcionesFiltro,
+            seleccionado: estado.valueOrNull?.filtro,
+            onCambiar: (filtro) => ref
+                .read(misEntregasControllerProvider.notifier)
+                .cambiarFiltro(filtro),
+          ),
+        ),
+      ),
       body: estado.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),

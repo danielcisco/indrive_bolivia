@@ -60,6 +60,24 @@
       ]
     },
     {
+      "collectionGroup": "envios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clienteId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "envios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "repartidorAsignadoId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "calificaciones",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

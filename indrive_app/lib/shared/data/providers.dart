@@ -8,6 +8,7 @@ import '../../core/notifications/fcm_service.dart';
 import '../../core/offline/offline_action_queue.dart';
 import '../domain/entities/calificacion.dart';
 import '../domain/entities/envio.dart';
+import '../domain/entities/perfil_publico.dart';
 import '../domain/value_objects/money.dart';
 import 'envios_repository.dart';
 import 'users_repository.dart';
@@ -18,6 +19,18 @@ final enviosRepositoryProvider = Provider<EnviosRepository>((ref) {
 
 final usersRepositoryProvider = Provider<UsersRepository>((ref) {
   return UsersRepository();
+});
+
+/// uid del usuario autenticado, reactivo a cambios de sesión — los
+/// providers "mi*" de abajo lo watchean en vez de leer
+/// `FirebaseAuth.instance.currentUser!.uid` directo. Bug real que esto
+/// arregla: al cerrar sesión y entrar con OTRA cuenta de prueba dentro del
+/// mismo proceso de la app (sin reiniciarla), esos providers quedaban con
+/// el `Future` ya resuelto de la cuenta anterior (Riverpod no vuelve a
+/// llamar su función solo porque el widget se reconstruye) y el header
+/// seguía mostrando el nombre/rating de la cuenta vieja.
+final authUidProvider = StreamProvider<String?>((ref) {
+  return FirebaseAuth.instance.authStateChanges().map((user) => user?.uid);
 });
 
 /// Instancia única del servicio de notificaciones — se inicializa apenas
@@ -96,7 +109,8 @@ final miCalificacionProvider = FutureProvider.family<Calificacion?, String>((
   ref,
   envioId,
 ) {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+  final uid = ref.watch(authUidProvider).value;
+  if (uid == null) return Future.value(null);
   return ref.watch(enviosRepositoryProvider).obtenerCalificacionDe(envioId, uid);
 });
 
@@ -108,17 +122,36 @@ final miCalificacionProvider = FutureProvider.family<Calificacion?, String>((
 final miRatingProvider = FutureProvider<({double promedio, int total})>((
   ref,
 ) {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+  final uid = ref.watch(authUidProvider).value;
+  if (uid == null) return Future.value((promedio: 0.0, total: 0));
   return ref.watch(usersRepositoryProvider).obtenerMiRating(uid);
+});
+
+/// Perfil (nombre/nick/avatar) del usuario autenticado — alimenta
+/// `UserProfileHeader` en las 3 apps.
+final miPerfilProvider = FutureProvider<PerfilPublico?>((ref) {
+  final uid = ref.watch(authUidProvider).value;
+  if (uid == null) return Future.value(null);
+  return ref.watch(usersRepositoryProvider).obtenerMiPerfil(uid);
+});
+
+/// Perfil público de OTRO usuario — usado en el detalle de un envío para
+/// mostrar la identidad de la contraparte (Cliente↔Repartidor).
+final perfilPublicoProvider = FutureProvider.family<PerfilPublico?, String>((
+  ref,
+  uid,
+) {
+  return ref.watch(usersRepositoryProvider).obtenerPerfilPublico(uid);
 });
 
 final miEstadoKycProvider =
     FutureProvider<({bool isVerified, String? cedulaUrl})>((ref) async {
-      final user = FirebaseAuth.instance.currentUser!;
-      final token = await user.getIdTokenResult();
+      final uid = ref.watch(authUidProvider).value;
+      if (uid == null) return (isVerified: false, cedulaUrl: null);
+      final token = await FirebaseAuth.instance.currentUser!.getIdTokenResult();
       final isVerified = token.claims?['isVerified'] as bool? ?? false;
       final cedulaUrl = await ref
           .watch(usersRepositoryProvider)
-          .obtenerCedulaUrl(user.uid);
+          .obtenerCedulaUrl(uid);
       return (isVerified: isVerified, cedulaUrl: cedulaUrl);
     });

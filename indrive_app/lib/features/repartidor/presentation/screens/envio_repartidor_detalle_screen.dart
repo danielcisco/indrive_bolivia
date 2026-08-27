@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/value_objects/money.dart';
+import '../../../../shared/widgets/avatar_circulo.dart';
 import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
+import '../providers/mis_entregas_controller.dart';
+import 'entrega_en_curso_screen.dart';
 
 /// Detalle de un envío desde el punto de vista del Repartidor: dos
 /// acciones que ya existían en `EnviosRepository` desde Sprint 2.1 sin
@@ -67,7 +70,21 @@ class _EnvioRepartidorDetalleScreenState
       await ref
           .read(enviosRepositoryProvider)
           .aceptarEnvioDirecto(envioId: widget.envioId, repartidorId: uid);
-      if (mounted) Navigator.of(context).pop();
+      // "Mis entregas" no se refresca sola con esto (no es la pantalla que
+      // se muestra a continuación) — sin invalidar, seguiría mostrando la
+      // lista de antes de aceptar si el repartidor vuelve ahí después.
+      ref.invalidate(misEntregasControllerProvider);
+      if (mounted) {
+        // Antes volvía a la lista general ("Mis entregas"); ahora va
+        // directo a la entrega recién aceptada — se salta Radar y este
+        // detalle (popUntil el Home) para no dejarlos apilados debajo.
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EntregaEnCursoScreen(envioId: widget.envioId),
+          ),
+        );
+      }
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {
@@ -103,7 +120,12 @@ class _EnvioRepartidorDetalleScreenState
 
   @override
   Widget build(BuildContext context) {
-    final envioAsync = ref.watch(envioProvider(widget.envioId));
+    // Stream, no fetch puntual (antes usaba envioProvider) — mismo motivo
+    // que el detalle del Cliente: si otro repartidor lo acepta primero o
+    // el envío expira mientras esta pantalla está abierta, se refleja
+    // solo en vez de que el repartidor intente aceptar algo que ya no
+    // está disponible.
+    final envioAsync = ref.watch(envioStreamProvider(widget.envioId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalle del envío')),
@@ -129,6 +151,8 @@ class _EnvioRepartidorDetalleScreenState
                 ),
                 const SizedBox(height: 8),
                 CountdownTimer(expiraEn: envio.expiraEn),
+                const SizedBox(height: 12),
+                _ClienteCard(clienteId: envio.clienteId),
                 const SizedBox(height: 12),
                 EnvioMapPreview(envio: envio),
                 const SizedBox(height: 24),
@@ -173,6 +197,33 @@ class _EnvioRepartidorDetalleScreenState
           );
         },
       ),
+    );
+  }
+}
+
+/// Identidad del cliente — perfil público (nombre/nick/avatar, sin datos
+/// sensibles) para que el Repartidor sepa a quién le va a entregar.
+class _ClienteCard extends ConsumerWidget {
+  const _ClienteCard({required this.clienteId});
+
+  final String clienteId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final perfilAsync = ref.watch(perfilPublicoProvider(clienteId));
+    return perfilAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, _) => const SizedBox.shrink(),
+      data: (perfil) {
+        if (perfil == null) return const SizedBox.shrink();
+        return Card(
+          child: ListTile(
+            leading: AvatarCirculo(avatarId: perfil.avatarId),
+            title: const Text('Cliente'),
+            subtitle: Text('${perfil.nombre} ${perfil.apellido} (@${perfil.nick})'),
+          ),
+        );
+      },
     );
   }
 }

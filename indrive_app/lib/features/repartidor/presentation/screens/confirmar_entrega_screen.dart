@@ -9,6 +9,7 @@ import '../../../../core/tracking/background_location_service.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/widgets/calificacion_dialog.dart';
+import '../providers/mis_entregas_controller.dart';
 
 /// Último paso antes de completar una entrega (Sprint 6.1): el repartidor
 /// registra cómo cobró y, si fue QR, adjunta una foto del comprobante — es
@@ -85,6 +86,9 @@ class _ConfirmarEntregaScreenState
         }
       }
 
+      // Sin esto, "Mis entregas" seguía mostrando el envío como
+      // asignado/en_curso hasta que el repartidor la refrescara a mano.
+      ref.invalidate(misEntregasControllerProvider);
       if (mounted) {
         Navigator.of(context)
           ..pop()

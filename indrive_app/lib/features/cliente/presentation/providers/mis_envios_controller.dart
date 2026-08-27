@@ -13,9 +13,10 @@ class MisEnviosState {
     required this.hasMore,
     required this.isLoadingMore,
     required this.lastDocument,
+    required this.filtro,
   });
 
-  const MisEnviosState.initial()
+  const MisEnviosState.initial({this.filtro})
     : envios = const [],
       hasMore = true,
       isLoadingMore = false,
@@ -25,6 +26,7 @@ class MisEnviosState {
   final bool hasMore;
   final bool isLoadingMore;
   final DocumentSnapshot<Map<String, dynamic>>? lastDocument;
+  final EnvioStatus? filtro;
 
   MisEnviosState copyWith({
     List<Envio>? envios,
@@ -36,16 +38,24 @@ class MisEnviosState {
     hasMore: hasMore ?? this.hasMore,
     isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     lastDocument: lastDocument ?? this.lastDocument,
+    filtro: filtro,
   );
 }
 
-/// Lista paginada de los envíos del cliente autenticado. `cargarMas()` pide
-/// la siguiente página — nunca una query sin cota (regla no negociable de
-/// CLAUDE.md).
+/// Lista paginada de los envíos del cliente autenticado, filtrable por
+/// estado (`null` = todos). `cargarMas()` pide la siguiente página — nunca
+/// una query sin cota (regla no negociable de CLAUDE.md).
 class MisEnviosController extends AsyncNotifier<MisEnviosState> {
   @override
   Future<MisEnviosState> build() {
     return _cargarPagina(const MisEnviosState.initial());
+  }
+
+  Future<void> cambiarFiltro(EnvioStatus? filtro) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => _cargarPagina(MisEnviosState.initial(filtro: filtro)),
+    );
   }
 
   Future<void> cargarMas() async {
@@ -62,6 +72,7 @@ class MisEnviosController extends AsyncNotifier<MisEnviosState> {
       uid,
       limit: _pageSize,
       startAfter: current.lastDocument,
+      status: current.filtro,
     );
     final nuevos = snapshot.docs.map(Envio.fromFirestore).toList();
     return current.copyWith(

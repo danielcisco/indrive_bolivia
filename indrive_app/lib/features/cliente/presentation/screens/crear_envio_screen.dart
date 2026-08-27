@@ -7,6 +7,7 @@ import '../../../../core/location/current_location.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/map_picker_screen.dart';
 import '../providers/crear_envio_controller.dart';
+import 'envio_detalle_screen.dart';
 
 class CrearEnvioScreen extends ConsumerStatefulWidget {
   const CrearEnvioScreen({super.key});
@@ -91,7 +92,7 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
 
     final monto = Money.parseBobString(_montoController.text);
 
-    await ref
+    final idCreado = await ref
         .read(crearEnvioControllerProvider.notifier)
         .crear(
           descripcion: _descripcionController.text.trim(),
@@ -102,7 +103,18 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
 
     if (!mounted) return;
     final estado = ref.read(crearEnvioControllerProvider);
-    if (!estado.hasError) {
+    if (estado.hasError) return;
+    if (idCreado != null) {
+      // Reemplaza esta pantalla por el detalle (no un push encima): así
+      // "atrás" desde el detalle vuelve a "Mis envíos", no al formulario.
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => EnvioDetalleScreen(envioId: idCreado),
+        ),
+      );
+    } else {
+      // Se encoló offline — todavía no existe un documento al que
+      // navegar, se mantiene el comportamiento de volver a la lista.
       Navigator.of(context).pop();
     }
   }

@@ -17,7 +17,10 @@ class CrearEnvioController extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
-  Future<void> crear({
+  /// Devuelve el id del envío nuevo si se escribió directo a Firestore, o
+  /// `null` si se encoló offline (ahí todavía no existe ningún documento
+  /// al que navegar — `CrearEnvioScreen` se queda en la lista en ese caso).
+  Future<String?> crear({
     required String descripcion,
     required GeoPoint origen,
     required GeoPoint destino,
@@ -27,6 +30,7 @@ class CrearEnvioController extends AsyncNotifier<void> {
     final repository = ref.read(enviosRepositoryProvider);
     final queue = ref.read(offlineActionQueueProvider);
 
+    String? idCreado;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final conectividad = await Connectivity().checkConnectivity();
@@ -50,7 +54,7 @@ class CrearEnvioController extends AsyncNotifier<void> {
       }
 
       try {
-        await repository
+        idCreado = await repository
             .crearEnvio(
               clienteId: uid,
               descripcion: descripcion,
@@ -64,6 +68,7 @@ class CrearEnvioController extends AsyncNotifier<void> {
         await queue.enqueue(type: 'crear_envio', payload: payload);
       }
     });
+    return idCreado;
   }
 }
 

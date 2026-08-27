@@ -13,9 +13,10 @@ class MisEntregasState {
     required this.hasMore,
     required this.isLoadingMore,
     required this.lastDocument,
+    required this.filtro,
   });
 
-  const MisEntregasState.initial()
+  const MisEntregasState.initial({this.filtro})
     : entregas = const [],
       hasMore = true,
       isLoadingMore = false,
@@ -25,6 +26,7 @@ class MisEntregasState {
   final bool hasMore;
   final bool isLoadingMore;
   final DocumentSnapshot<Map<String, dynamic>>? lastDocument;
+  final EnvioStatus? filtro;
 
   MisEntregasState copyWith({
     List<Envio>? entregas,
@@ -36,13 +38,16 @@ class MisEntregasState {
     hasMore: hasMore ?? this.hasMore,
     isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     lastDocument: lastDocument ?? this.lastDocument,
+    filtro: filtro,
   );
 }
 
-/// Entregas activas del repartidor autenticado (asignadas o en curso) —
-/// mismo patrón de paginación que `MisEnviosController`/`OfertasController`.
-/// El filtro de estado se hace aquí, no en la query (ver
-/// `EnviosRepository.listarEntregasDeRepartidor`).
+/// Entregas del repartidor autenticado, paginadas y filtrables por estado
+/// (asignado/en_curso/entregado — `null` = todas) — el filtro se aplica en
+/// la query de Firestore (`EnviosRepository.listarEntregasDeRepartidor`),
+/// no en memoria como antes: filtrar después de paginar cortaba la
+/// paginación antes de tiempo porque `hasMore` se calculaba sobre el total
+/// sin filtrar.
 class MisEntregasController extends AsyncNotifier<MisEntregasState> {
   @override
   Future<MisEntregasState> build() {
@@ -50,9 +55,17 @@ class MisEntregasController extends AsyncNotifier<MisEntregasState> {
   }
 
   Future<void> refrescar() async {
+    final filtroActual = state.valueOrNull?.filtro;
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => _cargarPagina(const MisEntregasState.initial()),
+      () => _cargarPagina(MisEntregasState.initial(filtro: filtroActual)),
+    );
+  }
+
+  Future<void> cambiarFiltro(EnvioStatus? filtro) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => _cargarPagina(MisEntregasState.initial(filtro: filtro)),
     );
   }
 
@@ -70,18 +83,12 @@ class MisEntregasController extends AsyncNotifier<MisEntregasState> {
       uid,
       limit: _pageSize,
       startAfter: current.lastDocument,
+      status: current.filtro,
     );
-    final activas = snapshot.docs
-        .map(Envio.fromFirestore)
-        .where(
-          (envio) =>
-              envio.status == EnvioStatus.asignado ||
-              envio.status == EnvioStatus.enCurso,
-        )
-        .toList();
+    final nuevas = snapshot.docs.map(Envio.fromFirestore).toList();
     return current.copyWith(
-      entregas: [...current.entregas, ...activas],
-      hasMore: snapshot.docs.length == _pageSize,
+      entregas: [...current.entregas, ...nuevas],
+      hasMore: nuevas.length == _pageSize,
       isLoadingMore: false,
       lastDocument: snapshot.docs.isNotEmpty
           ? snapshot.docs.last
