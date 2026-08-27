@@ -68,7 +68,7 @@ dependencies:
   # FullScreenIntent tipo "llamada entrante" queda como tarea de
   # seguimiento aparte.
   firebase_messaging: ^16.0.2
-  flutter_local_notifications: ^18.0.1
+  flutter_local_notifications: ^22.3.0
 
   # Selector de mapa para origen/destino (Sprint 4.1a).
   google_maps_flutter: ^2.9.0

@@ -55,7 +55,7 @@ class FcmService {
     // nunca lo delató. `background_location_service.dart` (Sprint 4.1b)
     // depende de que esto ya haya corrido.
     await _localNotifications.initialize(
-      const InitializationSettings(
+      settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       ),
     );
@@ -110,10 +110,10 @@ class FcmService {
     final channelId = message.notification?.android?.channelId ?? kOfertasChannelId;
     final esOfertaUrgente = channelId == kOfertasChannelId;
     await _localNotifications.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      NotificationDetails(
+      id: notification.hashCode,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channelId,
           esOfertaUrgente ? 'Ofertas cercanas' : 'Actualizaciones de tu envío',
