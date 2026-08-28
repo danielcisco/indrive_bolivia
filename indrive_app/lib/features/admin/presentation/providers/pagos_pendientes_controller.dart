@@ -97,7 +97,13 @@ class PagosPendientesController extends AsyncNotifier<PagosPendientesState> {
       limit: _pageSize,
       startAfter: current.lastDocument,
     );
-    final nuevos = snapshot.docs.map(Envio.fromFirestore).toList();
+    // Filtro en memoria (ver el comentario en
+    // EnviosRepository.listarPagosQrPendientes): pagoVerificado ausente
+    // cuenta como pendiente, igual que `false`.
+    final nuevos = snapshot.docs
+        .map(Envio.fromFirestore)
+        .where((envio) => !envio.pagoVerificado)
+        .toList();
     return current.copyWith(
       envios: [...current.envios, ...nuevos],
       hasMore: nuevos.length == _pageSize,

@@ -220,22 +220,22 @@ class UsersRepository {
   }
 
   /// Calificaciones recibidas por [uid], sin importar de qué envío
-  /// vinieron — collection group query sobre la subcolección
-  /// `calificaciones` (vive en `envios/{envioId}/calificaciones/{autorId}`,
-  /// ver `Calificacion`), paginada.
-  Future<QuerySnapshot<Map<String, dynamic>>> obtenerMisCalificaciones(
+  /// vinieron — collection group query en tiempo real sobre la
+  /// subcolección `calificaciones` (vive en
+  /// `envios/{envioId}/calificaciones/{autorId}`, ver `Calificacion`).
+  /// Antes era un fetch puntual (Sprint 13): al calificar recién después
+  /// de entrar a esta pantalla, no aparecía hasta salir y volver a entrar.
+  /// Acotado por `.limit()`, no es el "stream masivo" que CLAUDE.md
+  /// prohíbe.
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamMisCalificaciones(
     String uid, {
-    int limit = 20,
-    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+    int limit = 50,
   }) {
-    var query = _firestore
+    return _firestore
         .collectionGroup('calificaciones')
         .where('paraId', isEqualTo: uid)
         .orderBy('createdAt', descending: true)
-        .limit(limit);
-    if (startAfter != null) {
-      query = query.startAfterDocument(startAfter);
-    }
-    return query.get();
+        .limit(limit)
+        .snapshots();
   }
 }

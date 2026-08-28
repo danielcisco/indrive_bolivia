@@ -1,19 +1,49 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/notifications/fcm_service.dart';
 import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'features/cliente/presentation/screens/cliente_home_screen.dart';
 import 'features/cliente/presentation/screens/cliente_login_screen.dart';
+import 'features/cliente/presentation/screens/envio_detalle_screen.dart';
 import 'firebase_options.dart';
 import 'shared/data/providers.dart';
 import 'shared/widgets/auth_gate.dart';
 import 'shared/widgets/bienvenida_screen.dart';
 import 'shared/widgets/esperando_verificacion_screen.dart';
 
+/// Navegación fuera del árbol de widgets (Sprint 13): al tocar una
+/// notificación sobre un envío (aceptado, contraoferta, recogido), navega
+/// usando esta key en vez de necesitar un `BuildContext` que no tiene
+/// disponible.
+final navigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
   await bootstrapApp(options: DefaultFirebaseOptions.androidCliente);
-  runApp(const ProviderScope(child: ClienteApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        fcmServiceProvider.overrideWith((ref) {
+          final service = FcmService(
+            onEnvioNotificationTap: (envioId) {
+              navigatorKey.currentState?.push(
+                MaterialPageRoute(
+                  builder: (_) => EnvioDetalleScreen(envioId: envioId),
+                ),
+              );
+            },
+          );
+          unawaited(service.initialize());
+          ref.onDispose(service.dispose);
+          return service;
+        }),
+      ],
+      child: const ClienteApp(),
+    ),
+  );
 }
 
 class ClienteApp extends ConsumerWidget {
@@ -26,6 +56,7 @@ class ClienteApp extends ConsumerWidget {
     ref.watch(fcmServiceProvider);
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'inDrive Entregas — Cliente',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

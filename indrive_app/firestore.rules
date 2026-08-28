@@ -209,6 +209,15 @@ service cloud.firestore {
           request.resource.data.repartidorId == resource.data.repartidorId &&
           request.resource.data.montoOfertadoCentavos == resource.data.montoOfertadoCentavos;
 
+        // Mismo dueño, para rechazar en vez de aceptar (Sprint 13) — no
+        // cambia el status del envío padre, solo cierra esta propuesta.
+        allow update: if isSignedIn() &&
+          get(/databases/$(database)/documents/envios/$(envioId)).data.clienteId == request.auth.uid &&
+          resource.data.status == 'pendiente' &&
+          request.resource.data.status == 'rechazada' &&
+          request.resource.data.repartidorId == resource.data.repartidorId &&
+          request.resource.data.montoOfertadoCentavos == resource.data.montoOfertadoCentavos;
+
         allow delete: if false;
       }
 

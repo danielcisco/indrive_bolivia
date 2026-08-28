@@ -25,8 +25,8 @@ class MisCalificacionesScreen extends ConsumerWidget {
           app: 'Cliente/Repartidor',
           motivo: 'no puedo ver mis calificaciones',
         ),
-        data: (data) {
-          if (data.calificaciones.isEmpty) {
+        data: (calificaciones) {
+          if (calificaciones.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -39,26 +39,9 @@ class MisCalificacionesScreen extends ConsumerWidget {
             );
           }
           return ListView.builder(
-            itemCount: data.calificaciones.length + (data.hasMore ? 1 : 0),
+            itemCount: calificaciones.length,
             itemBuilder: (context, index) {
-              if (index >= data.calificaciones.length) {
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Center(
-                    child: data.isLoadingMore
-                        ? const CircularProgressIndicator()
-                        : OutlinedButton(
-                            onPressed: () => ref
-                                .read(
-                                  misCalificacionesControllerProvider.notifier,
-                                )
-                                .cargarMas(),
-                            child: const Text('Cargar más'),
-                          ),
-                  ),
-                );
-              }
-              final calificacion = data.calificaciones[index];
+              final calificacion = calificaciones[index];
               return ListTile(
                 title: Row(
                   children: List.generate(

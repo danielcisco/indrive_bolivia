@@ -32,7 +32,6 @@ class EnvioDetalleScreen extends ConsumerWidget {
             ofertaId: ofertaId,
             repartidorId: repartidorId,
           );
-      ref.invalidate(ofertasControllerProvider(envioId));
       ref.invalidate(misEnviosControllerProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -48,6 +47,28 @@ class EnvioDetalleScreen extends ConsumerWidget {
               'repartidor haya sido asignado justo antes. Probá con otra.',
           app: 'Cliente',
           motivo: 'no puedo aceptar una propuesta de mi envío $envioId',
+        );
+      }
+    }
+  }
+
+  Future<void> _rechazarOferta(
+    BuildContext context,
+    WidgetRef ref,
+    String ofertaId,
+  ) async {
+    try {
+      await ref
+          .read(enviosRepositoryProvider)
+          .rechazarOferta(envioId: envioId, ofertaId: ofertaId);
+    } catch (_) {
+      if (context.mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos rechazar la propuesta. Probá de nuevo.',
+          app: 'Cliente',
+          motivo: 'no puedo rechazar una propuesta de mi envío $envioId',
         );
       }
     }
@@ -237,8 +258,8 @@ class EnvioDetalleScreen extends ConsumerWidget {
                     app: 'Cliente',
                     motivo: 'no puedo ver las propuestas de mi envío',
                   ),
-                  data: (data) {
-                    if (data.ofertas.isEmpty) {
+                  data: (ofertas) {
+                    if (ofertas.isEmpty) {
                       return const Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -251,45 +272,23 @@ class EnvioDetalleScreen extends ConsumerWidget {
                       );
                     }
                     return ListView.builder(
-                      itemCount: data.ofertas.length + (data.hasMore ? 1 : 0),
+                      itemCount: ofertas.length,
                       itemBuilder: (context, index) {
-                        if (index >= data.ofertas.length) {
-                          return Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Center(
-                              child: data.isLoadingMore
-                                  ? const CircularProgressIndicator()
-                                  : OutlinedButton(
-                                      onPressed: () => ref
-                                          .read(
-                                            ofertasControllerProvider(
-                                              envioId,
-                                            ).notifier,
-                                          )
-                                          .cargarMas(),
-                                      child: const Text('Cargar más'),
-                                    ),
-                            ),
-                          );
-                        }
-                        final oferta = data.ofertas[index];
-                        final esAceptable =
+                        final oferta = ofertas[index];
+                        final esAccionable =
                             puedeElegir &&
                             oferta.status == OfertaStatus.pendiente;
-                        return ListTile(
-                          title: Text(oferta.monto.format()),
-                          subtitle: Text('Estado: ${oferta.status.name}'),
-                          trailing: esAceptable
-                              ? FilledButton(
-                                  onPressed: () => _aceptarOferta(
-                                    context,
-                                    ref,
-                                    oferta.id,
-                                    oferta.repartidorId,
-                                  ),
-                                  child: const Text('Aceptar'),
-                                )
-                              : null,
+                        return _OfertaTile(
+                          oferta: oferta,
+                          esAccionable: esAccionable,
+                          onAceptar: () => _aceptarOferta(
+                            context,
+                            ref,
+                            oferta.id,
+                            oferta.repartidorId,
+                          ),
+                          onRechazar: () =>
+                              _rechazarOferta(context, ref, oferta.id),
                         );
                       },
                     );
@@ -300,6 +299,54 @@ class EnvioDetalleScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Una propuesta recibida, con quién la mandó (Sprint 13 — antes solo
+/// mostraba el monto, sin decir de qué repartidor era) y, si todavía se
+/// puede elegir, los botones para aceptarla o rechazarla.
+class _OfertaTile extends ConsumerWidget {
+  const _OfertaTile({
+    required this.oferta,
+    required this.esAccionable,
+    required this.onAceptar,
+    required this.onRechazar,
+  });
+
+  final Oferta oferta;
+  final bool esAccionable;
+  final VoidCallback onAceptar;
+  final VoidCallback onRechazar;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final perfilAsync = ref.watch(perfilPublicoProvider(oferta.repartidorId));
+    final nombreRepartidor = perfilAsync.when(
+      loading: () => 'Cargando...',
+      error: (error, _) => 'Repartidor',
+      data: (perfil) =>
+          perfil == null ? 'Repartidor' : '${perfil.nombre} (@${perfil.nick})',
+    );
+    return ListTile(
+      title: Text(oferta.monto.format()),
+      subtitle: Text('$nombreRepartidor · ${oferta.status.name}'),
+      trailing: esAccionable
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: onRechazar,
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Rechazar',
+                ),
+                FilledButton(
+                  onPressed: onAceptar,
+                  child: const Text('Aceptar'),
+                ),
+              ],
+            )
+          : null,
     );
   }
 }

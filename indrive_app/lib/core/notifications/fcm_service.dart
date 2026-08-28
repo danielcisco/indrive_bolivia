@@ -27,16 +27,16 @@ const String kActualizacionesEnvioChannelId = 'actualizaciones_envio';
 /// de la pantalla de bloqueo, estilo "llamada entrante" — desde Android 14
 /// esto requiere que el usuario otorgue el permiso especial a mano en
 /// Ajustes (no hay diálogo de runtime), no es algo que la app pueda forzar.
-/// Al tocarla, la app pasa a primer plano con el comportamiento estándar
-/// del SO (aterriza donde ya estaba el árbol de widgets); no se conectó un
-/// handler de navegación propio a `RadarScreen` porque `core/` no debe
-/// depender de `features/` — si se necesita, hay que resolverlo inyectando
-/// el callback desde `main_repartidor.dart` vía override del provider.
+/// Al tocarla (Sprint 13), navega a la pantalla del envío vía
+/// [onEnvioNotificationTap] — inyectado desde `main_repartidor.dart`/
+/// `main_cliente.dart` vía override de `fcmServiceProvider`, porque
+/// `core/` no debe depender de `features/` para saber a qué pantalla ir.
 class FcmService {
   FcmService({
     FirebaseMessaging? messaging,
     FirebaseFirestore? firestore,
     FlutterLocalNotificationsPlugin? localNotifications,
+    this.onEnvioNotificationTap,
   }) : _messaging = messaging ?? FirebaseMessaging.instance,
        _firestore = firestore ?? FirebaseFirestore.instance,
        _localNotifications =
@@ -46,8 +46,17 @@ class FcmService {
   final FirebaseFirestore _firestore;
   final FlutterLocalNotificationsPlugin _localNotifications;
 
+  /// Se llama con el `envioId` de la notificación tocada — cada app lo
+  /// inyecta vía override de `fcmServiceProvider` porque `core/` no debe
+  /// depender de `features/` (ver comentario de clase). Cubre los 3
+  /// caminos posibles: la app ya estaba abierta (foreground, notificación
+  /// local propia), estaba en segundo plano (`onMessageOpenedApp`), o
+  /// estaba cerrada del todo (`getInitialMessage`).
+  final void Function(String envioId)? onEnvioNotificationTap;
+
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
+  StreamSubscription<RemoteMessage>? _openedAppSubscription;
 
   Future<void> initialize() async {
     // Requerido antes de crear canales o mostrar notificaciones — Sprint
@@ -58,6 +67,10 @@ class FcmService {
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       ),
+      onDidReceiveNotificationResponse: (response) {
+        final envioId = response.payload;
+        if (envioId != null) onEnvioNotificationTap?.call(envioId);
+      },
     );
     await _crearCanales();
     await _messaging.requestPermission();
@@ -73,6 +86,21 @@ class FcmService {
     _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(
       _mostrarNotificacionLocal,
     );
+
+    // Tocar la notificación con la app en segundo plano (no cerrada).
+    _openedAppSubscription = FirebaseMessaging.onMessageOpenedApp.listen(
+      _alTocarNotificacion,
+    );
+    // Tocar la notificación con la app cerrada del todo — el mensaje que
+    // la abrió no pasa por ninguno de los dos streams de arriba, hay que
+    // pedirlo aparte una sola vez al arrancar.
+    final mensajeInicial = await _messaging.getInitialMessage();
+    if (mensajeInicial != null) _alTocarNotificacion(mensajeInicial);
+  }
+
+  void _alTocarNotificacion(RemoteMessage message) {
+    final envioId = message.data['envioId'] as String?;
+    if (envioId != null) onEnvioNotificationTap?.call(envioId);
   }
 
   /// Crea los dos canales de una — esta misma clase la usan tanto
@@ -113,6 +141,10 @@ class FcmService {
       id: notification.hashCode,
       title: notification.title,
       body: notification.body,
+      // Mismo envioId que traen los mensajes de background/terminada — así
+      // tocar una notificación mostrada en foreground navega igual que
+      // tocarla desde la bandeja del sistema.
+      payload: message.data['envioId'] as String?,
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channelId,
@@ -137,5 +169,6 @@ class FcmService {
   Future<void> dispose() async {
     await _tokenRefreshSubscription?.cancel();
     await _foregroundMessageSubscription?.cancel();
+    await _openedAppSubscription?.cancel();
   }
 }

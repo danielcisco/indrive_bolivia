@@ -229,21 +229,38 @@ class EnviosRepository {
     return query.get();
   }
 
-  /// Ofertas de un envío, paginado.
-  Future<QuerySnapshot<Map<String, dynamic>>> listarOfertas(
+  /// Ofertas de un envío, en tiempo real (Sprint 13 — antes era un fetch
+  /// puntual sin paginar más allá de la primera página, así que una
+  /// contraoferta nueva no aparecía hasta que el Cliente saliera y
+  /// volviera a entrar a la pantalla). Acotado por `.limit()`, no es el
+  /// "stream masivo" que CLAUDE.md prohíbe: en la escala real de
+  /// Villazón, un envío no va a recibir decenas de propuestas
+  /// compitiendo, así que se prioriza verlas todas en vivo por sobre
+  /// paginar.
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamOfertas(
     String envioId, {
-    int limit = 20,
-    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+    int limit = 50,
   }) {
-    var query = _envios
+    return _envios
         .doc(envioId)
         .collection('ofertas')
         .orderBy('createdAt', descending: true)
-        .limit(limit);
-    if (startAfter != null) {
-      query = query.startAfterDocument(startAfter);
-    }
-    return query.get();
+        .limit(limit)
+        .snapshots();
+  }
+
+  /// El cliente dueño del envío rechaza una propuesta pendiente (Sprint
+  /// 13) — no toca el status del envío padre, solo cierra esa oferta
+  /// puntual para que dejen de competir por ella.
+  Future<void> rechazarOferta({
+    required String envioId,
+    required String ofertaId,
+  }) {
+    return _envios
+        .doc(envioId)
+        .collection('ofertas')
+        .doc(ofertaId)
+        .update({'status': OfertaStatus.rechazada.toFirestore()});
   }
 
   /// Envía una contraoferta. Rechaza localmente si el envío ya venció más
@@ -450,10 +467,17 @@ class EnviosRepository {
     int limit = 20,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
   }) {
+    // Sin filtro por pagoVerificado acá a propósito (bug real, Sprint 13):
+    // `marcarEntregado` nunca escribe ese campo (las Rules se lo prohíben
+    // al repartidor — solo Admin puede fijarlo, ver `verificarPago`), así
+    // que en un envío recién entregado el campo está AUSENTE, no en
+    // `false`. `.where('pagoVerificado', isEqualTo: false)` no matchea
+    // "ausente", así que esta pantalla nunca mostraba nada. El filtro se
+    // hace en memoria en el controller sobre esta misma página (ya
+    // acotada por `.limit()`), no agregando una query sin cota.
     var query = _envios
         .where('status', isEqualTo: EnvioStatus.entregado.toFirestore())
         .where('metodoPago', isEqualTo: MetodoPago.qr.toFirestore())
-        .where('pagoVerificado', isEqualTo: false)
         .orderBy('createdAt', descending: true)
         .limit(limit);
     if (startAfter != null) {

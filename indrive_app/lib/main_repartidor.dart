@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/notifications/fcm_service.dart';
 import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'core/tracking/background_location_service.dart';
+import 'features/repartidor/presentation/screens/envio_repartidor_detalle_screen.dart';
 import 'features/repartidor/presentation/screens/repartidor_home_screen.dart';
 import 'features/repartidor/presentation/screens/repartidor_login_screen.dart';
 import 'firebase_options.dart';
@@ -12,10 +16,36 @@ import 'shared/widgets/auth_gate.dart';
 import 'shared/widgets/bienvenida_screen.dart';
 import 'shared/widgets/esperando_verificacion_screen.dart';
 
+/// Navegación fuera del árbol de widgets (Sprint 13): al tocar una
+/// notificación de envío nuevo, `FcmService` navega usando esta key en vez
+/// de necesitar un `BuildContext` que no tiene disponible.
+final navigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
   await bootstrapApp(options: DefaultFirebaseOptions.androidRepartidor);
   await initializeBackgroundLocationService();
-  runApp(const ProviderScope(child: RepartidorApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        fcmServiceProvider.overrideWith((ref) {
+          final service = FcmService(
+            onEnvioNotificationTap: (envioId) {
+              navigatorKey.currentState?.push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      EnvioRepartidorDetalleScreen(envioId: envioId),
+                ),
+              );
+            },
+          );
+          unawaited(service.initialize());
+          ref.onDispose(service.dispose);
+          return service;
+        }),
+      ],
+      child: const RepartidorApp(),
+    ),
+  );
 }
 
 class RepartidorApp extends ConsumerWidget {
@@ -29,6 +59,7 @@ class RepartidorApp extends ConsumerWidget {
     ref.watch(fcmServiceProvider);
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'inDrive Entregas — Repartidor',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
