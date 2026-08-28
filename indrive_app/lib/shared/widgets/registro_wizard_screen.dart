@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -173,7 +174,15 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
   Future<void> _finalizar() async {
     setState(() => _procesando = true);
     try {
-      final uid = ref.read(authUidProvider).value;
+      // FirebaseAuth.instance.currentUser directo, no authUidProvider: a
+      // esta altura (todavía dentro del registro, antes de llegar a
+      // Home) ese provider nunca fue observado por nadie más, así que su
+      // primer `ref.read()` lo encuentra en loading con `.value == null`
+      // — tiraba "Sesión no encontrada" sin haber subido ni guardado
+      // nada. Bug real reportado: el wizard fallaba siempre en el último
+      // paso y, como no llegó a escribir nombre/nick, al reabrir la app
+      // el usuario caía en el formulario corto viejo (CompletarPerfilScreen).
+      final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) throw StateError('Sesión no encontrada.');
       final repository = ref.read(usersRepositoryProvider);
 
@@ -272,7 +281,8 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
         ),
       );
       await widget.onCompletado();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('RegistroWizardScreen._finalizar falló: $error\n$stackTrace');
       if (mounted) {
         setState(
           () => _error = 'No pudimos guardar tu registro. Revisá tu '
