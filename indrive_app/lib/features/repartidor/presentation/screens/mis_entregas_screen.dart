@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/domain/entities/envio.dart';
-import '../../../../shared/widgets/estado_envio_chip.dart';
+import '../../../../shared/widgets/envio_historial_card.dart';
 import '../../../../shared/widgets/filtro_estado_chips.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_entregas_controller.dart';
@@ -102,12 +102,26 @@ class _MisEntregasScreenState extends ConsumerState<MisEntregasScreen> {
                     ),
                   );
                 }
+
+                // Historial agrupado por fecha (Sprint 21), mismo criterio
+                // que mis_envios_screen.dart.
+                final entradas = <Object>[];
+                String? fechaAnterior;
+                for (final envio in data.entregas) {
+                  final fecha = formatearFechaCorta(envio.createdAt);
+                  if (fecha != fechaAnterior) {
+                    entradas.add(fecha);
+                    fechaAnterior = fecha;
+                  }
+                  entradas.add(envio);
+                }
+
                 return RefreshIndicator(
                   onRefresh: refrescar,
                   child: ListView.builder(
-                    itemCount: data.entregas.length + (data.hasMore ? 1 : 0),
+                    itemCount: entradas.length + (data.hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
-                      if (index >= data.entregas.length) {
+                      if (index >= entradas.length) {
                         return Padding(
                           padding: const EdgeInsets.all(16),
                           child: Center(
@@ -125,32 +139,34 @@ class _MisEntregasScreenState extends ConsumerState<MisEntregasScreen> {
                           ),
                         );
                       }
-                      final envio = data.entregas[index];
+                      final entrada = entradas[index];
+                      if (entrada is String) {
+                        return FechaGrupoHeader(fecha: entrada);
+                      }
+                      final envio = entrada as Envio;
                       final esRecienAsignado =
                           envio.id == widget.envioIdRecienAsignado;
-                      return Container(
-                        color: esRecienAsignado
-                            ? Theme.of(
-                                context,
-                              ).colorScheme.secondaryContainer.withValues(alpha: 0.5)
-                            : null,
-                        child: ListTile(
-                          leading: esRecienAsignado
-                              ? Icon(
-                                  Icons.fiber_new,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                )
-                              : null,
-                          title: Text(envio.descripcion),
-                          subtitle: Text(envio.categoria.etiqueta),
-                          trailing: EstadoEnvioChip(status: envio.status),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  EntregaEnCursoScreen(envioId: envio.id),
+                      return Stack(
+                        children: [
+                          EnvioHistorialCard(
+                            envio: envio,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EntregaEnCursoScreen(envioId: envio.id),
+                              ),
                             ),
                           ),
-                        ),
+                          if (esRecienAsignado)
+                            Positioned(
+                              top: 8,
+                              right: 24,
+                              child: Icon(
+                                Icons.fiber_new,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
+                        ],
                       );
                     },
                   ),

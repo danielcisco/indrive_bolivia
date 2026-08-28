@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/domain/entities/envio.dart';
-import '../../../../shared/widgets/estado_envio_chip.dart';
+import '../../../../shared/widgets/envio_historial_card.dart';
 import '../../../../shared/widgets/filtro_estado_chips.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_envios_controller.dart';
@@ -85,12 +85,28 @@ class MisEnviosScreen extends ConsumerWidget {
               ),
             );
           }
+
+          // Historial agrupado por fecha (Sprint 21): una entrada de
+          // encabezado (String) antes de la primera card de cada día
+          // distinto — los envíos ya llegan ordenados por createdAt
+          // descendente, así que alcanza con comparar contra el anterior.
+          final entradas = <Object>[];
+          String? fechaAnterior;
+          for (final envio in data.envios) {
+            final fecha = formatearFechaCorta(envio.createdAt);
+            if (fecha != fechaAnterior) {
+              entradas.add(fecha);
+              fechaAnterior = fecha;
+            }
+            entradas.add(envio);
+          }
+
           return RefreshIndicator(
             onRefresh: refrescar,
             child: ListView.builder(
-              itemCount: data.envios.length + (data.hasMore ? 1 : 0),
+              itemCount: entradas.length + (data.hasMore ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index >= data.envios.length) {
+                if (index >= entradas.length) {
                   return Padding(
                     padding: const EdgeInsets.all(16),
                     child: Center(
@@ -105,14 +121,13 @@ class MisEnviosScreen extends ConsumerWidget {
                     ),
                   );
                 }
-                final envio = data.envios[index];
-                return ListTile(
-                  title: Text(envio.descripcion),
-                  subtitle: Text(
-                    '${envio.categoria.etiqueta} · '
-                    '${envio.montoOfertadoInicial.format()}',
-                  ),
-                  trailing: EstadoEnvioChip(status: envio.status),
+                final entrada = entradas[index];
+                if (entrada is String) {
+                  return FechaGrupoHeader(fecha: entrada);
+                }
+                final envio = entrada as Envio;
+                return EnvioHistorialCard(
+                  envio: envio,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => EnvioDetalleScreen(envioId: envio.id),
