@@ -335,7 +335,11 @@ async function enviarNotificacionAUsuario(
   uid: string,
   title: string,
   body: string,
-  envioId: string
+  envioId: string,
+  // Viaja en el payload junto a envioId para que el cliente (Sprint 14)
+  // pueda decidir a qué pantalla navegar segun el tipo de aviso, no
+  // siempre la misma - ver FcmService.onEnvioNotificationTap.
+  tipo?: string
 ): Promise<void> {
   const userSnap = await admin.firestore().collection("users").doc(uid).get();
   const token = userSnap.data()?.fcmToken as string | undefined;
@@ -344,7 +348,7 @@ async function enviarNotificacionAUsuario(
   await admin.messaging().send({
     token,
     notification: { title, body },
-    data: { envioId },
+    data: tipo ? { envioId, tipo } : { envioId },
     android: {
       priority: "high",
       notification: {
@@ -381,6 +385,39 @@ export const notificarAceptacionDirecta = onDocumentUpdated(
       "¡Tu envío fue aceptado!",
       `Un repartidor aceptó "${descripcion}" directamente.`,
       event.params.envioId
+    );
+  }
+);
+
+/**
+ * Avisa al Repartidor cuando el Cliente elige su contraoferta (Sprint 14)
+ * - antes de esto, la unica forma de enterarse era abrir la app y
+ * encontrarse el envio ya asignado en "Mis entregas" por casualidad. Es
+ * el complemento de notificarAceptacionDirecta: esa avisa al Cliente
+ * cuando el Repartidor toma directo, esta avisa al Repartidor cuando el
+ * Cliente elige su propuesta.
+ */
+export const notificarOfertaAceptada = onDocumentUpdated(
+  "envios/{envioId}",
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+
+    const fueContraofertaAceptada =
+      before.ofertaAceptadaId == null && after.ofertaAceptadaId != null;
+    if (!fueContraofertaAceptada) return;
+
+    const repartidorId = after.repartidorAsignadoId as string | undefined;
+    const descripcion = (after.descripcion as string | undefined) ?? "un envío";
+    if (!repartidorId) return;
+
+    await enviarNotificacionAUsuario(
+      repartidorId,
+      "¡Te asignaron un envío!",
+      `El cliente aceptó tu propuesta para "${descripcion}".`,
+      event.params.envioId,
+      "oferta_aceptada"
     );
   }
 );

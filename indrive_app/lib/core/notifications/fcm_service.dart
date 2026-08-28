@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -46,13 +47,17 @@ class FcmService {
   final FirebaseFirestore _firestore;
   final FlutterLocalNotificationsPlugin _localNotifications;
 
-  /// Se llama con el `envioId` de la notificación tocada — cada app lo
-  /// inyecta vía override de `fcmServiceProvider` porque `core/` no debe
-  /// depender de `features/` (ver comentario de clase). Cubre los 3
-  /// caminos posibles: la app ya estaba abierta (foreground, notificación
-  /// local propia), estaba en segundo plano (`onMessageOpenedApp`), o
-  /// estaba cerrada del todo (`getInitialMessage`).
-  final void Function(String envioId)? onEnvioNotificationTap;
+  /// Se llama con el `envioId` de la notificación tocada y, si la Cloud
+  /// Function que la mandó lo incluyó, un `tipo` (ej. `oferta_aceptada`)
+  /// — cada app lo inyecta vía override de `fcmServiceProvider` porque
+  /// `core/` no debe depender de `features/` (ver comentario de clase).
+  /// El `tipo` es lo que le permite a cada app decidir a qué pantalla ir
+  /// (Sprint 14): no todos los avisos de un envío deberían aterrizar en
+  /// el mismo lugar. Cubre los 3 caminos posibles: la app ya estaba
+  /// abierta (foreground, notificación local propia), estaba en segundo
+  /// plano (`onMessageOpenedApp`), o estaba cerrada del todo
+  /// (`getInitialMessage`).
+  final void Function(String envioId, String? tipo)? onEnvioNotificationTap;
 
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
@@ -68,8 +73,13 @@ class FcmService {
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       ),
       onDidReceiveNotificationResponse: (response) {
-        final envioId = response.payload;
-        if (envioId != null) onEnvioNotificationTap?.call(envioId);
+        final payload = response.payload;
+        if (payload == null) return;
+        final data = jsonDecode(payload) as Map<String, dynamic>;
+        final envioId = data['envioId'] as String?;
+        if (envioId != null) {
+          onEnvioNotificationTap?.call(envioId, data['tipo'] as String?);
+        }
       },
     );
     await _crearCanales();
@@ -100,7 +110,9 @@ class FcmService {
 
   void _alTocarNotificacion(RemoteMessage message) {
     final envioId = message.data['envioId'] as String?;
-    if (envioId != null) onEnvioNotificationTap?.call(envioId);
+    if (envioId != null) {
+      onEnvioNotificationTap?.call(envioId, message.data['tipo'] as String?);
+    }
   }
 
   /// Crea los dos canales de una — esta misma clase la usan tanto
@@ -141,10 +153,13 @@ class FcmService {
       id: notification.hashCode,
       title: notification.title,
       body: notification.body,
-      // Mismo envioId que traen los mensajes de background/terminada — así
-      // tocar una notificación mostrada en foreground navega igual que
-      // tocarla desde la bandeja del sistema.
-      payload: message.data['envioId'] as String?,
+      // Mismo envioId/tipo que traen los mensajes de background/terminada
+      // — así tocar una notificación mostrada en foreground navega igual
+      // que tocarla desde la bandeja del sistema.
+      payload: jsonEncode({
+        'envioId': message.data['envioId'],
+        'tipo': message.data['tipo'],
+      }),
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channelId,

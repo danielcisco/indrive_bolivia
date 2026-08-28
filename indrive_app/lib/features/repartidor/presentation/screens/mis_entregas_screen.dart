@@ -14,11 +14,24 @@ const _opcionesFiltro = <(EnvioStatus?, String)>[
   (EnvioStatus.entregado, 'Entregadas'),
 ];
 
-class MisEntregasScreen extends ConsumerWidget {
-  const MisEntregasScreen({super.key});
+class MisEntregasScreen extends ConsumerStatefulWidget {
+  const MisEntregasScreen({super.key, this.envioIdRecienAsignado});
+
+  /// Presente cuando se llega acá por la notificación de "te asignaron un
+  /// envío" (Sprint 14, contraoferta aceptada) — resalta esa entrega en
+  /// la lista y muestra un aviso arriba, para que quede claro por qué
+  /// apareció algo nuevo sin que el repartidor hiciera nada él mismo.
+  final String? envioIdRecienAsignado;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MisEntregasScreen> createState() => _MisEntregasScreenState();
+}
+
+class _MisEntregasScreenState extends ConsumerState<MisEntregasScreen> {
+  late bool _mostrarAviso = widget.envioIdRecienAsignado != null;
+
+  @override
+  Widget build(BuildContext context) {
     final estado = ref.watch(misEntregasControllerProvider);
 
     return Scaffold(
@@ -35,76 +48,117 @@ class MisEntregasScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: estado.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => const SupportErrorView(
-          mensaje: 'No pudimos cargar tus entregas. Revisá tu conexión y '
-              'volvé a intentar.',
-          app: 'Repartidor',
-          motivo: 'no puedo ver mis entregas',
-        ),
-        data: (data) {
-          Future<void> refrescar() =>
-              ref.read(misEntregasControllerProvider.notifier).refrescar();
-
-          if (data.entregas.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: refrescar,
-              child: ListView(
-                children: const [
-                  Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.local_shipping_outlined, size: 48),
-                          SizedBox(height: 8),
-                          Text('No tienes entregas activas por ahora.'),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+      body: Column(
+        children: [
+          if (_mostrarAviso)
+            MaterialBanner(
+              leading: const Icon(Icons.celebration_outlined),
+              content: const Text(
+                'El cliente aceptó tu propuesta — te asignaron el envío '
+                'resaltado abajo.',
               ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: refrescar,
-            child: ListView.builder(
-              itemCount: data.entregas.length + (data.hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index >= data.entregas.length) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Center(
-                      child: data.isLoadingMore
-                          ? const CircularProgressIndicator()
-                          : OutlinedButton(
-                              onPressed: () => ref
-                                  .read(misEntregasControllerProvider.notifier)
-                                  .cargarMas(),
-                              child: const Text('Cargar más'),
+              actions: [
+                TextButton(
+                  onPressed: () => setState(() => _mostrarAviso = false),
+                  child: const Text('Entendido'),
+                ),
+              ],
+            ),
+          Expanded(
+            child: estado.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => const SupportErrorView(
+                mensaje:
+                    'No pudimos cargar tus entregas. Revisá tu conexión y '
+                    'volvé a intentar.',
+                app: 'Repartidor',
+                motivo: 'no puedo ver mis entregas',
+              ),
+              data: (data) {
+                Future<void> refrescar() => ref
+                    .read(misEntregasControllerProvider.notifier)
+                    .refrescar();
+
+                if (data.entregas.isEmpty) {
+                  return RefreshIndicator(
+                    onRefresh: refrescar,
+                    child: ListView(
+                      children: const [
+                        Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.local_shipping_outlined, size: 48),
+                                SizedBox(height: 8),
+                                Text('No tienes entregas activas por ahora.'),
+                              ],
                             ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }
-                final envio = data.entregas[index];
-                return ListTile(
-                  title: Text(envio.descripcion),
-                  subtitle: Text(
-                    '${envio.categoria.etiqueta} · ${envio.status.name}',
-                  ),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => EntregaEnCursoScreen(envioId: envio.id),
-                    ),
+                return RefreshIndicator(
+                  onRefresh: refrescar,
+                  child: ListView.builder(
+                    itemCount: data.entregas.length + (data.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index >= data.entregas.length) {
+                        return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Center(
+                            child: data.isLoadingMore
+                                ? const CircularProgressIndicator()
+                                : OutlinedButton(
+                                    onPressed: () => ref
+                                        .read(
+                                          misEntregasControllerProvider
+                                              .notifier,
+                                        )
+                                        .cargarMas(),
+                                    child: const Text('Cargar más'),
+                                  ),
+                          ),
+                        );
+                      }
+                      final envio = data.entregas[index];
+                      final esRecienAsignado =
+                          envio.id == widget.envioIdRecienAsignado;
+                      return Container(
+                        color: esRecienAsignado
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.secondaryContainer.withValues(alpha: 0.5)
+                            : null,
+                        child: ListTile(
+                          leading: esRecienAsignado
+                              ? Icon(
+                                  Icons.fiber_new,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                )
+                              : null,
+                          title: Text(envio.descripcion),
+                          subtitle: Text(
+                            '${envio.categoria.etiqueta} · ${envio.status.name}',
+                          ),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  EntregaEnCursoScreen(envioId: envio.id),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

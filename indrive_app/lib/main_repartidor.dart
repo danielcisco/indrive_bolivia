@@ -8,6 +8,7 @@ import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'core/tracking/background_location_service.dart';
 import 'features/repartidor/presentation/screens/envio_repartidor_detalle_screen.dart';
+import 'features/repartidor/presentation/screens/mis_entregas_screen.dart';
 import 'features/repartidor/presentation/screens/repartidor_home_screen.dart';
 import 'features/repartidor/presentation/screens/repartidor_login_screen.dart';
 import 'firebase_options.dart';
@@ -29,7 +30,22 @@ Future<void> main() async {
       overrides: [
         fcmServiceProvider.overrideWith((ref) {
           final service = FcmService(
-            onEnvioNotificationTap: (envioId) {
+            onEnvioNotificationTap: (envioId, tipo) {
+              // "oferta_aceptada" (Sprint 14): el envío pasó a estar
+              // asignado a este repartidor por decisión del Cliente, no
+              // por una acción propia — `EnvioRepartidorDetalleScreen`
+              // asume un envío todavía pendiente (muestra "Aceptar
+              // directo"/contraoferta) y no tiene sentido acá. Va a "Mis
+              // entregas" con el envío resaltado en su lugar.
+              if (tipo == 'oferta_aceptada') {
+                navigatorKey.currentState?.push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        MisEntregasScreen(envioIdRecienAsignado: envioId),
+                  ),
+                );
+                return;
+              }
               navigatorKey.currentState?.push(
                 MaterialPageRoute(
                   builder: (_) =>

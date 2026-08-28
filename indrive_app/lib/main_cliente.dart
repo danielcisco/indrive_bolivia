@@ -28,7 +28,7 @@ Future<void> main() async {
       overrides: [
         fcmServiceProvider.overrideWith((ref) {
           final service = FcmService(
-            onEnvioNotificationTap: (envioId) {
+            onEnvioNotificationTap: (envioId, _) {
               navigatorKey.currentState?.push(
                 MaterialPageRoute(
                   builder: (_) => EnvioDetalleScreen(envioId: envioId),
