@@ -50,6 +50,13 @@ class _CountdownTimerState extends State<CountdownTimer> {
     super.dispose();
   }
 
+  // Escala de urgencia antes de vencer, no solo después (Sprint 16) — un
+  // texto que se mantiene neutro hasta último momento no avisa a tiempo
+  // de que la subasta está por cerrarse.
+  static const _umbralAmbar = Duration(minutes: 5);
+  static const _umbralRojo = Duration(minutes: 1);
+  static const _ambar = Color(0xFF8A5A00);
+
   @override
   Widget build(BuildContext context) {
     if (widget.expiraEn == null) {
@@ -72,6 +79,17 @@ class _CountdownTimerState extends State<CountdownTimer> {
       2,
       '0',
     );
-    return Text('Tiempo restante: $minutos:$segundos');
+    final Color? color = _restante <= _umbralRojo
+        ? Theme.of(context).colorScheme.error
+        : _restante <= _umbralAmbar
+        ? _ambar
+        : null;
+    return Text(
+      'Tiempo restante: $minutos:$segundos',
+      style: TextStyle(
+        color: color,
+        fontWeight: color != null ? FontWeight.bold : null,
+      ),
+    );
   }
 }

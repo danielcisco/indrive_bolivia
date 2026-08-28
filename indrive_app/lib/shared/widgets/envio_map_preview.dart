@@ -63,6 +63,9 @@ class _EnvioMapPreviewState extends State<EnvioMapPreview> {
               markerId: const MarkerId('destino'),
               position: destino,
               infoWindow: const InfoWindow(title: 'Destino'),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueRed,
+              ),
             ),
             if (posicionRepartidor != null)
               Marker(

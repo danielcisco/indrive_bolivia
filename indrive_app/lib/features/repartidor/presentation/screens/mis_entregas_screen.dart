@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/domain/entities/envio.dart';
+import '../../../../shared/widgets/estado_envio_chip.dart';
 import '../../../../shared/widgets/filtro_estado_chips.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_entregas_controller.dart';
@@ -141,9 +142,8 @@ class _MisEntregasScreenState extends ConsumerState<MisEntregasScreen> {
                                 )
                               : null,
                           title: Text(envio.descripcion),
-                          subtitle: Text(
-                            '${envio.categoria.etiqueta} · ${envio.status.name}',
-                          ),
+                          subtitle: Text(envio.categoria.etiqueta),
+                          trailing: EstadoEnvioChip(status: envio.status),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) =>

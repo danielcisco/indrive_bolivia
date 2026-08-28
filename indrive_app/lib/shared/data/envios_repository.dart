@@ -118,6 +118,51 @@ class EnviosRepository {
     return snapshot.data()?['codigoEntrega'] as String?;
   }
 
+  /// Envío activo más reciente del Cliente (Sprint 16) — alimenta la card
+  /// de "estado activo" del Home, para que no tenga que entrar a "Mis
+  /// envíos" solo para saber si tiene algo en curso. Mismo índice
+  /// compuesto que ya usa `listarEnviosDeCliente` (clienteId+status+
+  /// createdAt) — `whereIn` sobre un campo ya indexado no pide uno nuevo.
+  Stream<Envio?> streamEnvioActivoDeCliente(String clienteId) {
+    return _envios
+        .where('clienteId', isEqualTo: clienteId)
+        .where(
+          'status',
+          whereIn: [
+            EnvioStatus.pendienteOfertas.toFirestore(),
+            EnvioStatus.asignado.toFirestore(),
+            EnvioStatus.enCurso.toFirestore(),
+          ],
+        )
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.isEmpty
+              ? null
+              : Envio.fromFirestore(snapshot.docs.first),
+        );
+  }
+
+  /// Misma idea que [streamEnvioActivoDeCliente] pero para el Repartidor —
+  /// mismo índice compuesto que ya usa `listarEntregasDeRepartidor`.
+  Stream<Envio?> streamEntregaActivaDeRepartidor(String repartidorId) {
+    return _envios
+        .where('repartidorAsignadoId', isEqualTo: repartidorId)
+        .where(
+          'status',
+          whereIn: [EnvioStatus.asignado.toFirestore(), EnvioStatus.enCurso.toFirestore()],
+        )
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.isEmpty
+              ? null
+              : Envio.fromFirestore(snapshot.docs.first),
+        );
+  }
+
   /// Sube la foto del paquete (opcional, sprint de paridad con el flujo
   /// real) — mismo patrón que `subirFotoCedula`: el uid del cliente va en
   /// el path para que la regla de Storage valide el dueño directo, sin

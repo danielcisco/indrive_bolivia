@@ -79,6 +79,38 @@ Future<List<SugerenciaLugar>> buscarSugerencias(String query) async {
       .toList();
 }
 
+/// Dirección aproximada de un punto (Sprint 16) — para mostrar algo legible
+/// ("C. Sebastián Pagador, Villazón") en vez de latitud/longitud crudas.
+/// Usa la Geocoding API clásica (reverse geocoding no es parte de Places
+/// API New): requiere habilitarla aparte en Google Cloud Console, mismo
+/// proyecto y misma key que ya usa `buscarSugerencias`. Devuelve `null` si
+/// falla — quien llama cae a mostrar coordenadas, no bloquea nada.
+Future<String?> obtenerDireccionAproximada(LatLng punto) async {
+  if (_mapsApiKey.isEmpty) return null;
+  try {
+    final respuesta = await http.get(
+      Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json'
+        '?latlng=${punto.latitude},${punto.longitude}'
+        '&result_type=street_address|route|neighborhood'
+        '&key=$_mapsApiKey',
+      ),
+      headers: {
+        'X-Android-Package': _androidPackage,
+        'X-Android-Cert': _androidCert,
+      },
+    );
+    if (respuesta.statusCode != 200) return null;
+    final cuerpo = jsonDecode(respuesta.body) as Map<String, dynamic>;
+    final resultados = cuerpo['results'] as List<dynamic>? ?? [];
+    if (resultados.isEmpty) return null;
+    return (resultados.first as Map<String, dynamic>)['formatted_address']
+        as String?;
+  } catch (_) {
+    return null;
+  }
+}
+
 /// Obtiene las coordenadas del lugar [placeId] elegido por el usuario.
 Future<LatLng> obtenerCoordenadas(String placeId) async {
   final respuesta = await http.get(

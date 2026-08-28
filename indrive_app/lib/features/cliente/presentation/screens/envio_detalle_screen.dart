@@ -9,6 +9,7 @@ import '../../../../shared/widgets/avatar_circulo.dart';
 import '../../../../shared/widgets/calificacion_dialog.dart';
 import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
+import '../../../../shared/widgets/estado_envio_chip.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_envios_controller.dart';
 import '../providers/ofertas_controller.dart';
@@ -180,7 +181,9 @@ class EnvioDetalleScreen extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text('Categoría: ${envio.categoria.etiqueta}'),
-                    Text('Estado: ${envio.status.name}'),
+                    const SizedBox(height: 4),
+                    EstadoEnvioChip(status: envio.status),
+                    const SizedBox(height: 4),
                     Text(
                       'Monto inicial: ${envio.montoOfertadoInicial.format()}',
                     ),

@@ -106,6 +106,22 @@ final envioStreamProvider = StreamProvider.family<Envio?, String>((
   return ref.watch(enviosRepositoryProvider).streamEnvio(envioId);
 });
 
+/// Envío/entrega activa del usuario autenticado, en tiempo real (Sprint
+/// 16) — alimenta la card de estado en el Home de Cliente/Repartidor.
+final miEnvioActivoProvider = StreamProvider<Envio?>((ref) {
+  final uid = ref.watch(authUidProvider).value;
+  if (uid == null) return Stream.value(null);
+  return ref.watch(enviosRepositoryProvider).streamEnvioActivoDeCliente(uid);
+});
+
+final miEntregaActivaProvider = StreamProvider<Envio?>((ref) {
+  final uid = ref.watch(authUidProvider).value;
+  if (uid == null) return Stream.value(null);
+  return ref
+      .watch(enviosRepositoryProvider)
+      .streamEntregaActivaDeRepartidor(uid);
+});
+
 /// Envíos `en_curso` en tiempo real para el mapa en vivo del panel Admin
 /// (Sprint 5.1). Ver `EnviosRepository.streamEnviosEnCurso` para el porqué
 /// este stream acotado no viola la regla de "no streams masivos".

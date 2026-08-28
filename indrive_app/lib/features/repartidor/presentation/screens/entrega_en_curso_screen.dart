@@ -7,6 +7,7 @@ import '../../../../core/tracking/battery_optimization.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
+import '../../../../shared/widgets/estado_envio_chip.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import 'confirmar_entrega_screen.dart';
 
@@ -164,7 +165,7 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                Text('Estado: ${envio.status.name}'),
+                EstadoEnvioChip(status: envio.status),
                 const SizedBox(height: 12),
                 EnvioMapPreview(envio: envio),
                 const SizedBox(height: 24),

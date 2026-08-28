@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/location/current_location.dart';
+import '../../../../core/location/places_service.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/map_picker_screen.dart';
@@ -28,6 +29,8 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
 
   GeoPoint? _origen;
   GeoPoint? _destino;
+  String? _direccionOrigen;
+  String? _direccionDestino;
   String? _errorUbicacion;
   CategoriaPaquete _categoria = CategoriaPaquete.documentos;
   XFile? _foto;
@@ -65,7 +68,11 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
       ),
     );
     if (resultado != null && mounted) {
-      setState(() => _origen = resultado);
+      setState(() {
+        _origen = resultado;
+        _direccionOrigen = null;
+      });
+      _resolverDireccion(resultado, esOrigen: true);
     }
   }
 
@@ -82,8 +89,28 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
       ),
     );
     if (resultado != null && mounted) {
-      setState(() => _destino = resultado);
+      setState(() {
+        _destino = resultado;
+        _direccionDestino = null;
+      });
+      _resolverDireccion(resultado, esOrigen: false);
     }
+  }
+
+  /// Best-effort: si la geocodificación inversa falla, `_formatearPunto`
+  /// cae a mostrar las coordenadas — nunca bloquea publicar el envío.
+  Future<void> _resolverDireccion(GeoPoint punto, {required bool esOrigen}) async {
+    final direccion = await obtenerDireccionAproximada(
+      LatLng(punto.latitude, punto.longitude),
+    );
+    if (!mounted || direccion == null) return;
+    setState(() {
+      if (esOrigen) {
+        _direccionOrigen = direccion;
+      } else {
+        _direccionDestino = direccion;
+      }
+    });
   }
 
   Future<void> _tomarFoto() async {
@@ -139,10 +166,13 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
     }
   }
 
-  String _formatearPunto(GeoPoint? punto) {
+  String _formatearPunto(GeoPoint? punto, String? direccion) {
     if (punto == null) return 'sin definir';
-    return '${punto.latitude.toStringAsFixed(5)}, '
-        '${punto.longitude.toStringAsFixed(5)}';
+    // Coordenadas como respaldo si la geocodificación inversa todavía no
+    // resolvió o falló — nunca deja al usuario sin saber qué eligió.
+    return direccion ??
+        '${punto.latitude.toStringAsFixed(5)}, '
+            '${punto.longitude.toStringAsFixed(5)}';
   }
 
   @override
@@ -166,6 +196,9 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
+          // Sprint 16: retroalimentación en cuanto el usuario toca un campo
+          // inválido, no solo al tocar "Publicar envío".
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: ListView(
             children: [
               const Text(
@@ -217,7 +250,7 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              Text('Origen: ${_formatearPunto(_origen)}'),
+              Text('Origen: ${_formatearPunto(_origen, _direccionOrigen)}'),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: _elegirOrigen,
@@ -225,7 +258,7 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                 label: const Text('Elegir origen en el mapa'),
               ),
               const SizedBox(height: 16),
-              Text('Destino: ${_formatearPunto(_destino)}'),
+              Text('Destino: ${_formatearPunto(_destino, _direccionDestino)}'),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: _elegirDestino,
