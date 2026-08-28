@@ -13,16 +13,23 @@ class UsuarioKycPendiente {
     required this.role,
     required this.phoneNumber,
     required this.createdAt,
-    required this.cedulaUrl,
+    required this.nombre,
+    required this.apellido,
+    required this.nick,
+    required this.fechaNacimiento,
     required this.fotoPersonalUrl,
+    required this.cedulaUrl,
     required this.numeroLicencia,
+    required this.fechaExpiracionLicencia,
     required this.licenciaFrenteUrl,
     required this.licenciaDorsoUrl,
     required this.selfieLicenciaUrl,
     required this.tipoVehiculo,
     required this.marcaVehiculo,
     required this.modeloVehiculo,
+    required this.colorVehiculo,
     required this.placaVehiculo,
+    required this.anioVehiculo,
     required this.fotoVehiculoUrl,
     required this.tarjetaCirculacionUrl,
     required this.soatUrl,
@@ -37,16 +44,23 @@ class UsuarioKycPendiente {
       role: data['role'] as String? ?? 'sin rol',
       phoneNumber: data['phoneNumber'] as String?,
       createdAt: data['createdAt'] as Timestamp?,
-      cedulaUrl: data['cedulaUrl'] as String?,
+      nombre: data['nombre'] as String?,
+      apellido: data['apellido'] as String?,
+      nick: data['nick'] as String?,
+      fechaNacimiento: data['fechaNacimiento'] as Timestamp?,
       fotoPersonalUrl: data['fotoPersonalUrl'] as String?,
+      cedulaUrl: data['cedulaUrl'] as String?,
       numeroLicencia: data['numeroLicencia'] as String?,
+      fechaExpiracionLicencia: data['fechaExpiracionLicencia'] as Timestamp?,
       licenciaFrenteUrl: data['licenciaFrenteUrl'] as String?,
       licenciaDorsoUrl: data['licenciaDorsoUrl'] as String?,
       selfieLicenciaUrl: data['selfieLicenciaUrl'] as String?,
       tipoVehiculo: data['tipoVehiculo'] as String?,
       marcaVehiculo: data['marcaVehiculo'] as String?,
       modeloVehiculo: data['modeloVehiculo'] as String?,
+      colorVehiculo: data['colorVehiculo'] as String?,
       placaVehiculo: data['placaVehiculo'] as String?,
+      anioVehiculo: data['anioVehiculo'] as int?,
       fotoVehiculoUrl: data['fotoVehiculoUrl'] as String?,
       tarjetaCirculacionUrl: data['tarjetaCirculacionUrl'] as String?,
       soatUrl: data['soatUrl'] as String?,
@@ -61,21 +75,29 @@ class UsuarioKycPendiente {
   final String? phoneNumber;
   final Timestamp? createdAt;
 
+  /// Datos del wizard de registro (Sprints 18-20) — todos null en cuentas
+  /// de antes de esos sprints, que nunca pasaron por este flujo.
+  final String? nombre;
+  final String? apellido;
+  final String? nick;
+  final Timestamp? fechaNacimiento;
+  final String? fotoPersonalUrl;
+
   /// Foto subida por el usuario (diferido de KYC, seguimiento del Sprint
   /// 5.1) — null si todavía no subió nada.
   final String? cedulaUrl;
 
-  /// Datos del wizard de registro (Sprints 18-20) — todos null en cuentas
-  /// de antes de esos sprints, que nunca pasaron por este flujo.
-  final String? fotoPersonalUrl;
   final String? numeroLicencia;
+  final Timestamp? fechaExpiracionLicencia;
   final String? licenciaFrenteUrl;
   final String? licenciaDorsoUrl;
   final String? selfieLicenciaUrl;
   final String? tipoVehiculo;
   final String? marcaVehiculo;
   final String? modeloVehiculo;
+  final String? colorVehiculo;
   final String? placaVehiculo;
+  final int? anioVehiculo;
   final String? fotoVehiculoUrl;
   final String? tarjetaCirculacionUrl;
   final String? soatUrl;

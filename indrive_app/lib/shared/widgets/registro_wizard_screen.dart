@@ -14,11 +14,26 @@ import 'selector_con_buscador.dart';
 
 enum _Paso { personal, documento, licencia, vehiculo, soat }
 
+/// Un campo individual dentro de un [_Paso] ("formulario") — el wizard
+/// avanza de a un campo por vez con "Siguiente"; recién al llenar el
+/// último campo del formulario el botón pasa a decir "Continuar" (o
+/// "Finalizar" en el último formulario).
+class _Campo {
+  const _Campo({required this.builder, required this.validar});
+  final Widget Function() builder;
+  final String? Function() validar;
+}
+
 /// Wizard de registro en varios pasos (Sprints 18-20) — reemplaza el
 /// formulario único que tenía `PhoneLoginView`. Cliente recorre 2 pasos
 /// (información personal + Cédula); Repartidor recorre 5 (suma licencia
 /// de conducir, datos de vehículo, y SOAT opcional) — el pasajero nunca
 /// carga datos de vehículo, coherente con el flujo real de inDrive.
+///
+/// Cada paso muestra sus campos de a uno (sprint extra: antes mostraba
+/// todos los campos del paso juntos en una sola pantalla) — "Siguiente"
+/// avanza al próximo campo del mismo paso; al llenar el último campo pasa
+/// a "Continuar" (o "Finalizar" en el último paso).
 ///
 /// [onCompletado] lo llama recién después de que el usuario cierra la
 /// pantalla de agradecimiento — `PhoneLoginView` la usa para asignar el
@@ -44,6 +59,7 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
       : [_Paso.personal, _Paso.documento];
 
   int _indice = 0;
+  int _indiceCampo = 0;
   bool _procesando = false;
   String? _error;
 
@@ -99,74 +115,330 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
     return edad >= 18;
   }
 
-  String? _validarPaso(_Paso paso) {
+  String _nombrePaso(_Paso paso) => switch (paso) {
+    _Paso.personal => 'Información personal',
+    _Paso.documento => 'Documento de identidad',
+    _Paso.licencia => 'Licencia de conducir',
+    _Paso.vehiculo => 'Información del vehículo',
+    _Paso.soat => 'SOAT (opcional)',
+  };
+
+  /// Recalculado en cada build (no cacheado): los campos de vehículo
+  /// dependen de `_tipoVehiculo`, que puede cambiar entre una llamada y
+  /// la otra.
+  List<_Campo> _camposDe(_Paso paso) {
     switch (paso) {
       case _Paso.personal:
-        if (_fotoPersonal == null) return 'Sacate una foto personal.';
-        if (_nombreController.text.trim().isEmpty) return 'Completa tu nombre.';
-        if (_apellidoController.text.trim().isEmpty) {
-          return 'Completa tu apellido.';
-        }
-        if (_nickController.text.trim().isEmpty) return 'Completa tu nick.';
-        final nacimiento = _fechaNacimiento;
-        if (nacimiento == null) return 'Elegí tu fecha de nacimiento.';
-        if (!_esMayorDeEdad(nacimiento)) {
-          return 'Tenés que ser mayor de 18 años para registrarte.';
-        }
-        return null;
+        return [
+          _Campo(
+            builder: () => _campoFoto(
+              etiquetaCampo: 'Tu foto',
+              tituloInstrucciones: 'Foto personal',
+              icono: Icons.face_retouching_natural,
+              recomendaciones: const [
+                'Que se te vea la cara con claridad.',
+                'Buena luz, sin gorra ni lentes de sol.',
+                'Sin filtros.',
+              ],
+              foto: _fotoPersonal,
+              onCambiar: (f) => setState(() => _fotoPersonal = f),
+            ),
+            validar: () =>
+                _fotoPersonal == null ? 'Sacate una foto personal.' : null,
+          ),
+          _Campo(
+            builder: () => _campoTexto(
+              etiquetaCampo: 'Nombre',
+              controller: _nombreController,
+              capitalizacion: TextCapitalization.words,
+            ),
+            validar: () => _nombreController.text.trim().isEmpty
+                ? 'Completa tu nombre.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoTexto(
+              etiquetaCampo: 'Apellido',
+              controller: _apellidoController,
+              capitalizacion: TextCapitalization.words,
+            ),
+            validar: () => _apellidoController.text.trim().isEmpty
+                ? 'Completa tu apellido.'
+                : null,
+          ),
+          _Campo(
+            builder: () =>
+                _campoTexto(etiquetaCampo: 'Nick', controller: _nickController),
+            validar: () =>
+                _nickController.text.trim().isEmpty ? 'Completa tu nick.' : null,
+          ),
+          _Campo(
+            builder: () => _campoFecha(
+              etiquetaCampo: 'Fecha de nacimiento',
+              valor: _fechaNacimiento,
+              inicial: DateTime(DateTime.now().year - 25),
+              primeraFecha: DateTime(1930),
+              ultimaFecha: DateTime.now(),
+              onCambiar: (f) => setState(() => _fechaNacimiento = f),
+            ),
+            validar: () {
+              final nacimiento = _fechaNacimiento;
+              if (nacimiento == null) return 'Elegí tu fecha de nacimiento.';
+              if (!_esMayorDeEdad(nacimiento)) {
+                return 'Tenés que ser mayor de 18 años para registrarte.';
+              }
+              return null;
+            },
+          ),
+        ];
       case _Paso.documento:
-        if (_fotoCedula == null) return 'Sacá una foto de tu Cédula.';
-        return null;
+        return [
+          _Campo(
+            builder: () => _campoFoto(
+              etiquetaCampo: 'Cédula de Identidad',
+              descripcion:
+                  'Sacá una foto clara del frente de tu Cédula de Identidad. '
+                  'Un administrador la va a revisar antes de aprobar tu '
+                  'cuenta.',
+              tituloInstrucciones: 'Cédula de Identidad',
+              icono: Icons.badge_outlined,
+              recomendaciones: const [
+                'Foto clara, sin capturas de pantalla ni fotocopias.',
+                'Sin filtros, todos los datos deben verse bien.',
+                'El documento completo dentro del cuadro.',
+              ],
+              foto: _fotoCedula,
+              onCambiar: (f) => setState(() => _fotoCedula = f),
+            ),
+            validar: () =>
+                _fotoCedula == null ? 'Sacá una foto de tu Cédula.' : null,
+          ),
+        ];
       case _Paso.licencia:
-        if (_numeroLicenciaController.text.trim().isEmpty) {
-          return 'Completa el número de tu licencia.';
-        }
-        if (_fechaExpiracionLicencia == null) {
-          return 'Elegí la fecha de expiración de tu licencia.';
-        }
-        if (_licenciaFrente == null || _licenciaDorso == null || _selfieLicencia == null) {
-          return 'Faltan fotos de tu licencia.';
-        }
-        return null;
+        const recomendacionesLicencia = [
+          'Foto clara, sin capturas de pantalla ni fotocopias.',
+          'Sin filtros, tu cara y todos los detalles deben verse bien.',
+        ];
+        return [
+          _Campo(
+            builder: () => _campoFoto(
+              etiquetaCampo: 'Licencia de conducir (frente)',
+              tituloInstrucciones: 'Licencia de conducir',
+              icono: Icons.credit_card,
+              recomendaciones: recomendacionesLicencia,
+              foto: _licenciaFrente,
+              onCambiar: (f) => setState(() => _licenciaFrente = f),
+            ),
+            validar: () => _licenciaFrente == null
+                ? 'Sacá una foto del frente de tu licencia.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoFoto(
+              etiquetaCampo: 'Parte de atrás de la licencia',
+              tituloInstrucciones: 'Licencia de conducir',
+              icono: Icons.credit_card,
+              recomendaciones: recomendacionesLicencia,
+              foto: _licenciaDorso,
+              onCambiar: (f) => setState(() => _licenciaDorso = f),
+            ),
+            validar: () => _licenciaDorso == null
+                ? 'Sacá una foto del dorso de tu licencia.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoFoto(
+              etiquetaCampo: 'Selfie con tu licencia',
+              tituloInstrucciones: 'Licencia de conducir',
+              icono: Icons.credit_card,
+              recomendaciones: recomendacionesLicencia,
+              foto: _selfieLicencia,
+              onCambiar: (f) => setState(() => _selfieLicencia = f),
+            ),
+            validar: () => _selfieLicencia == null
+                ? 'Sacate una selfie con tu licencia.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoTexto(
+              etiquetaCampo: 'Número de licencia',
+              controller: _numeroLicenciaController,
+            ),
+            validar: () => _numeroLicenciaController.text.trim().isEmpty
+                ? 'Completa el número de tu licencia.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoFecha(
+              etiquetaCampo: 'Fecha de expiración',
+              valor: _fechaExpiracionLicencia,
+              inicial: DateTime.now(),
+              primeraFecha: DateTime.now(),
+              ultimaFecha: DateTime.now().add(const Duration(days: 365 * 20)),
+              onCambiar: (f) => setState(() => _fechaExpiracionLicencia = f),
+            ),
+            validar: () => _fechaExpiracionLicencia == null
+                ? 'Elegí la fecha de expiración de tu licencia.'
+                : null,
+          ),
+        ];
       case _Paso.vehiculo:
-        if (_tipoVehiculo == null) return 'Elegí el tipo de vehículo.';
-        if (_marcaVehiculo == null) return 'Elegí la marca de tu vehículo.';
-        if (_modeloController.text.trim().isEmpty) return 'Completa el modelo.';
-        if (_colorVehiculo == null) return 'Elegí el color de tu vehículo.';
-        if (_placaController.text.trim().isEmpty) return 'Completa la placa.';
-        if (int.tryParse(_anioController.text.trim()) == null) {
-          return 'Completa el año de fabricación.';
-        }
-        if (_fotoVehiculo == null || _tarjetaCirculacion == null) {
-          return 'Faltan fotos del vehículo.';
-        }
-        return null;
+        const recomendacionesVehiculo = [
+          'Foto clara, sin capturas de pantalla ni fotocopias.',
+          'Que se vea el vehículo completo, o el documento entero.',
+        ];
+        final marcas = _tipoVehiculo == 'auto' ? marcasAuto : marcasMoto;
+        return [
+          _Campo(
+            builder: _campoTipoVehiculo,
+            validar: () =>
+                _tipoVehiculo == null ? 'Elegí el tipo de vehículo.' : null,
+          ),
+          _Campo(
+            builder: () => _campoSelector(
+              etiquetaCampo: 'Marca del vehículo',
+              valor: _marcaVehiculo,
+              onElegir: () async {
+                final elegida = await mostrarSelectorConBuscador(
+                  context,
+                  titulo: 'Marca del vehículo',
+                  opciones: marcas,
+                );
+                if (elegida != null) setState(() => _marcaVehiculo = elegida);
+              },
+            ),
+            validar: () => _marcaVehiculo == null
+                ? 'Elegí la marca de tu vehículo.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoTexto(
+              etiquetaCampo: 'Modelo del vehículo',
+              controller: _modeloController,
+            ),
+            validar: () => _modeloController.text.trim().isEmpty
+                ? 'Completa el modelo.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoSelector(
+              etiquetaCampo: 'Color del vehículo',
+              valor: _colorVehiculo,
+              onElegir: () async {
+                final elegido = await mostrarSelectorColorVehiculo(context);
+                if (elegido != null) setState(() => _colorVehiculo = elegido);
+              },
+            ),
+            validar: () => _colorVehiculo == null
+                ? 'Elegí el color de tu vehículo.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoTexto(
+              etiquetaCampo: 'Número de placas',
+              controller: _placaController,
+              capitalizacion: TextCapitalization.characters,
+            ),
+            validar: () =>
+                _placaController.text.trim().isEmpty ? 'Completa la placa.' : null,
+          ),
+          _Campo(
+            builder: () => _campoTexto(
+              etiquetaCampo: 'Año de manufactura',
+              controller: _anioController,
+              teclado: TextInputType.number,
+            ),
+            validar: () => int.tryParse(_anioController.text.trim()) == null
+                ? 'Completa el año de fabricación.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoFoto(
+              etiquetaCampo: 'Foto del vehículo',
+              tituloInstrucciones: 'Vehículo',
+              icono: Icons.two_wheeler,
+              recomendaciones: recomendacionesVehiculo,
+              foto: _fotoVehiculo,
+              onCambiar: (f) => setState(() => _fotoVehiculo = f),
+            ),
+            validar: () => _fotoVehiculo == null
+                ? 'Sacá una foto de tu vehículo.'
+                : null,
+          ),
+          _Campo(
+            builder: () => _campoFoto(
+              etiquetaCampo: 'Tarjeta de circulación',
+              tituloInstrucciones: 'Vehículo',
+              icono: Icons.two_wheeler,
+              recomendaciones: recomendacionesVehiculo,
+              foto: _tarjetaCirculacion,
+              onCambiar: (f) => setState(() => _tarjetaCirculacion = f),
+            ),
+            validar: () => _tarjetaCirculacion == null
+                ? 'Sacá una foto de tu tarjeta de circulación.'
+                : null,
+          ),
+        ];
       case _Paso.soat:
-        return null; // Opcional, sin validación.
+        return [
+          _Campo(
+            builder: () => _campoFoto(
+              etiquetaCampo: 'Foto del SOAT',
+              descripcion:
+                  'Solo aplica en Bolivia. Si todavía no lo tenés, podés '
+                  'saltar este paso y subirlo más adelante desde tu perfil.',
+              tituloInstrucciones: 'SOAT',
+              icono: Icons.shield_outlined,
+              recomendaciones: const [
+                'Foto clara, sin capturas de pantalla ni fotocopias.',
+                'Que se vean todos los datos del documento.',
+              ],
+              foto: _soat,
+              onCambiar: (f) => setState(() => _soat = f),
+            ),
+            validar: () => null, // Opcional, sin validación.
+          ),
+        ];
     }
   }
 
   Future<void> _avanzar() async {
-    final error = _validarPaso(_pasos[_indice]);
+    final campos = _camposDe(_pasos[_indice]);
+    final error = campos[_indiceCampo].validar();
     if (error != null) {
       setState(() => _error = error);
       return;
     }
     setState(() => _error = null);
-    if (_indice < _pasos.length - 1) {
-      setState(() => _indice++);
-    } else {
-      await _finalizar();
+    if (_indiceCampo < campos.length - 1) {
+      setState(() => _indiceCampo++);
+      return;
     }
+    if (_indice < _pasos.length - 1) {
+      setState(() {
+        _indice++;
+        _indiceCampo = 0;
+      });
+      return;
+    }
+    await _finalizar();
   }
 
   void _retroceder() {
+    if (_indiceCampo > 0) {
+      setState(() {
+        _indiceCampo--;
+        _error = null;
+      });
+      return;
+    }
     if (_indice == 0) {
       Navigator.of(context).pop();
       return;
     }
     setState(() {
       _indice--;
+      _indiceCampo = _camposDe(_pasos[_indice]).length - 1;
       _error = null;
     });
   }
@@ -297,30 +569,34 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
   @override
   Widget build(BuildContext context) {
     final paso = _pasos[_indice];
+    final campos = _camposDe(paso);
+    final esUltimoCampoDelPaso = _indiceCampo == campos.length - 1;
+    final esUltimoPaso = _indice == _pasos.length - 1;
+    final etiquetaBoton = _procesando
+        ? 'Guardando...'
+        : !esUltimoCampoDelPaso
+        ? 'Siguiente'
+        : (esUltimoPaso ? 'Finalizar' : 'Continuar');
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: _procesando ? null : _retroceder,
         ),
-        title: Text('${_indice + 1} de ${_pasos.length}'),
+        title: Text(_nombrePaso(paso)),
       ),
       body: Column(
         children: [
           LinearProgressIndicator(
-            value: (_indice + 1) / _pasos.length,
+            value: (_indiceCampo + 1) / campos.length,
             minHeight: 4,
           ),
           Expanded(
             child: SingleChildScrollView(
+              key: ValueKey('$_indice-$_indiceCampo'),
               padding: const EdgeInsets.all(24),
-              child: switch (paso) {
-                _Paso.personal => _pasoPersonal(),
-                _Paso.documento => _pasoDocumento(),
-                _Paso.licencia => _pasoLicencia(),
-                _Paso.vehiculo => _pasoVehiculo(),
-                _Paso.soat => _pasoSoat(),
-              },
+              child: campos[_indiceCampo].builder(),
             ),
           ),
           if (_error != null)
@@ -338,11 +614,7 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _procesando ? null : _avanzar,
-                child: Text(
-                  _procesando
-                      ? 'Guardando...'
-                      : (_indice == _pasos.length - 1 ? 'Finalizar' : 'Siguiente'),
-                ),
+                child: Text(etiquetaBoton),
               ),
             ),
           ),
@@ -351,77 +623,62 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
     );
   }
 
-  Widget _tituloPaso(String texto) => Padding(
+  Widget _titulo(String texto) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: Text(texto, style: Theme.of(context).textTheme.headlineSmall),
   );
 
-  Widget _pasoPersonal() {
+  Widget _campoTexto({
+    required String etiquetaCampo,
+    required TextEditingController controller,
+    TextCapitalization capitalizacion = TextCapitalization.none,
+    TextInputType? teclado,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _tituloPaso('Información personal'),
-        Center(
-          child: _fotoPersonal == null
-              ? OutlinedButton.icon(
-                  onPressed: () async {
-                    final foto = await mostrarInstruccionesYTomarFoto(
-                      context,
-                      titulo: 'Foto personal',
-                      icono: Icons.face_retouching_natural,
-                      recomendaciones: const [
-                        'Que se te vea la cara con claridad.',
-                        'Buena luz, sin gorra ni lentes de sol.',
-                        'Sin filtros.',
-                      ],
-                    );
-                    if (foto != null) setState(() => _fotoPersonal = foto);
-                  },
-                  icon: const Icon(Icons.add_a_photo_outlined),
-                  label: const Text('Foto personal'),
-                )
-              : PreviewFotoTomada(
-                  foto: _fotoPersonal!,
-                  onRepetir: () => setState(() => _fotoPersonal = null),
-                ),
-        ),
-        const SizedBox(height: 24),
+        _titulo(etiquetaCampo),
         TextField(
-          controller: _nombreController,
-          decoration: const InputDecoration(labelText: 'Nombre'),
-          textCapitalization: TextCapitalization.words,
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: etiquetaCampo),
+          textCapitalization: capitalizacion,
+          keyboardType: teclado,
         ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _apellidoController,
-          decoration: const InputDecoration(labelText: 'Apellido'),
-          textCapitalization: TextCapitalization.words,
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _nickController,
-          decoration: const InputDecoration(labelText: 'Nick'),
-        ),
-        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _campoFecha({
+    required String etiquetaCampo,
+    required DateTime? valor,
+    required DateTime inicial,
+    required DateTime primeraFecha,
+    required DateTime ultimaFecha,
+    required ValueChanged<DateTime> onCambiar,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _titulo(etiquetaCampo),
         InkWell(
           onTap: () async {
-            final hoy = DateTime.now();
             final elegida = await showDatePicker(
               context: context,
-              initialDate: DateTime(hoy.year - 25),
-              firstDate: DateTime(1930),
-              lastDate: hoy,
+              initialDate: valor ?? inicial,
+              firstDate: primeraFecha,
+              lastDate: ultimaFecha,
             );
-            if (elegida != null) setState(() => _fechaNacimiento = elegida);
+            if (elegida != null) onCambiar(elegida);
           },
           child: InputDecorator(
-            decoration: const InputDecoration(labelText: 'Fecha de nacimiento'),
+            decoration: InputDecoration(labelText: etiquetaCampo),
             child: Text(
-              _fechaNacimiento == null
+              valor == null
                   ? 'dd/mm/aaaa'
-                  : '${_fechaNacimiento!.day.toString().padLeft(2, '0')}/'
-                        '${_fechaNacimiento!.month.toString().padLeft(2, '0')}/'
-                        '${_fechaNacimiento!.year}',
+                  : '${valor.day.toString().padLeft(2, '0')}/'
+                        '${valor.month.toString().padLeft(2, '0')}/'
+                        '${valor.year}',
             ),
           ),
         ),
@@ -429,131 +686,31 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
     );
   }
 
-  Widget _pasoDocumento() {
+  Widget _campoSelector({
+    required String etiquetaCampo,
+    required String? valor,
+    required VoidCallback onElegir,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _tituloPaso('Documento de identidad'),
-        const Text(
-          'Sacá una foto clara del frente de tu Cédula de Identidad. Un '
-          'administrador la va a revisar antes de aprobar tu cuenta.',
-        ),
-        const SizedBox(height: 16),
-        Center(
-          child: _fotoCedula == null
-              ? OutlinedButton.icon(
-                  onPressed: () async {
-                    final foto = await mostrarInstruccionesYTomarFoto(
-                      context,
-                      titulo: 'Cédula de Identidad',
-                      icono: Icons.badge_outlined,
-                      recomendaciones: const [
-                        'Foto clara, sin capturas de pantalla ni fotocopias.',
-                        'Sin filtros, todos los datos deben verse bien.',
-                        'El documento completo dentro del cuadro.',
-                      ],
-                    );
-                    if (foto != null) setState(() => _fotoCedula = foto);
-                  },
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Tomar foto de tu Cédula'),
-                )
-              : PreviewFotoTomada(
-                  foto: _fotoCedula!,
-                  onRepetir: () => setState(() => _fotoCedula = null),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _pasoLicencia() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _tituloPaso('Licencia de conducir'),
-        _filaFoto(
-          etiqueta: 'Licencia de conducir (frente)',
-          foto: _licenciaFrente,
-          onTomar: () => _tomarFotoLicencia('frente'),
-        ),
-        const SizedBox(height: 12),
-        _filaFoto(
-          etiqueta: 'Parte de atrás de la licencia',
-          foto: _licenciaDorso,
-          onTomar: () => _tomarFotoLicencia('dorso'),
-        ),
-        const SizedBox(height: 12),
-        _filaFoto(
-          etiqueta: 'Selfie con la licencia',
-          foto: _selfieLicencia,
-          onTomar: () => _tomarFotoLicencia('selfie'),
-        ),
-        const SizedBox(height: 24),
-        TextField(
-          controller: _numeroLicenciaController,
-          decoration: const InputDecoration(labelText: 'Número de licencia'),
-        ),
-        const SizedBox(height: 16),
+        _titulo(etiquetaCampo),
         InkWell(
-          onTap: () async {
-            final hoy = DateTime.now();
-            final elegida = await showDatePicker(
-              context: context,
-              initialDate: hoy,
-              firstDate: hoy,
-              lastDate: hoy.add(const Duration(days: 365 * 20)),
-            );
-            if (elegida != null) {
-              setState(() => _fechaExpiracionLicencia = elegida);
-            }
-          },
+          onTap: onElegir,
           child: InputDecorator(
-            decoration: const InputDecoration(labelText: 'Fecha de expiración'),
-            child: Text(
-              _fechaExpiracionLicencia == null
-                  ? 'dd/mm/aaaa'
-                  : '${_fechaExpiracionLicencia!.day.toString().padLeft(2, '0')}/'
-                        '${_fechaExpiracionLicencia!.month.toString().padLeft(2, '0')}/'
-                        '${_fechaExpiracionLicencia!.year}',
-            ),
+            decoration: InputDecoration(labelText: etiquetaCampo),
+            child: Text(valor ?? 'Elegir'),
           ),
         ),
       ],
     );
   }
 
-  Future<void> _tomarFotoLicencia(String tipo) async {
-    final foto = await mostrarInstruccionesYTomarFoto(
-      context,
-      titulo: 'Licencia de conducir',
-      icono: Icons.credit_card,
-      recomendaciones: const [
-        'Foto clara, sin capturas de pantalla ni fotocopias.',
-        'Sin filtros, tu cara y todos los detalles deben verse bien.',
-      ],
-    );
-    if (foto == null || !mounted) return;
-    setState(() {
-      switch (tipo) {
-        case 'frente':
-          _licenciaFrente = foto;
-        case 'dorso':
-          _licenciaDorso = foto;
-        case 'selfie':
-          _selfieLicencia = foto;
-      }
-    });
-  }
-
-  Widget _pasoVehiculo() {
-    final marcas = _tipoVehiculo == 'auto' ? marcasAuto : marcasMoto;
+  Widget _campoTipoVehiculo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _tituloPaso('Información del vehículo'),
-        const Text('Tipo de vehículo'),
-        const SizedBox(height: 8),
+        _titulo('Tipo de vehículo'),
         Wrap(
           spacing: 8,
           children: [
@@ -575,131 +732,46 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        _filaFoto(
-          etiqueta: 'Foto del vehículo',
-          foto: _fotoVehiculo,
-          onTomar: () => _tomarFotoVehiculo('vehiculo'),
-        ),
-        const SizedBox(height: 12),
-        _filaFoto(
-          etiqueta: 'Tarjeta de circulación',
-          foto: _tarjetaCirculacion,
-          onTomar: () => _tomarFotoVehiculo('tarjeta'),
-        ),
-        const SizedBox(height: 24),
-        InkWell(
-          onTap: () async {
-            final elegida = await mostrarSelectorConBuscador(
-              context,
-              titulo: 'Marca del vehículo',
-              opciones: marcas,
-            );
-            if (elegida != null) setState(() => _marcaVehiculo = elegida);
-          },
-          child: InputDecorator(
-            decoration: const InputDecoration(labelText: 'Marca del vehículo'),
-            child: Text(_marcaVehiculo ?? 'Elegir marca'),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _modeloController,
-          decoration: const InputDecoration(labelText: 'Modelo del vehículo'),
-        ),
-        const SizedBox(height: 16),
-        InkWell(
-          onTap: () async {
-            final elegido = await mostrarSelectorColorVehiculo(context);
-            if (elegido != null) setState(() => _colorVehiculo = elegido);
-          },
-          child: InputDecorator(
-            decoration: const InputDecoration(labelText: 'Color del vehículo'),
-            child: Text(_colorVehiculo ?? 'Elegir color'),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _placaController,
-          textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(labelText: 'Número de placas'),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _anioController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Año de manufactura'),
-        ),
       ],
     );
   }
 
-  Future<void> _tomarFotoVehiculo(String tipo) async {
-    final foto = await mostrarInstruccionesYTomarFoto(
-      context,
-      titulo: 'Vehículo',
-      icono: Icons.two_wheeler,
-      recomendaciones: const [
-        'Foto clara, sin capturas de pantalla ni fotocopias.',
-        'Que se vea el vehículo completo, o el documento entero.',
-      ],
-    );
-    if (foto == null || !mounted) return;
-    setState(() {
-      if (tipo == 'vehiculo') {
-        _fotoVehiculo = foto;
-      } else {
-        _tarjetaCirculacion = foto;
-      }
-    });
-  }
-
-  Widget _pasoSoat() {
+  Widget _campoFoto({
+    required String etiquetaCampo,
+    required String tituloInstrucciones,
+    required IconData icono,
+    required List<String> recomendaciones,
+    required XFile? foto,
+    required ValueChanged<XFile?> onCambiar,
+    String? descripcion,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _tituloPaso('SOAT (opcional)'),
-        const Text(
-          'Solo aplica en Bolivia. Si todavía no lo tenés, podés saltar '
-          'este paso y subirlo más adelante desde tu perfil.',
-        ),
-        const SizedBox(height: 16),
-        _filaFoto(
-          etiqueta: 'Foto del SOAT',
-          foto: _soat,
-          onTomar: () async {
-            final foto = await mostrarInstruccionesYTomarFoto(
-              context,
-              titulo: 'SOAT',
-              icono: Icons.shield_outlined,
-              recomendaciones: const [
-                'Foto clara, sin capturas de pantalla ni fotocopias.',
-                'Que se vean todos los datos del documento.',
-              ],
-            );
-            if (foto != null) setState(() => _soat = foto);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _filaFoto({
-    required String etiqueta,
-    required XFile? foto,
-    required VoidCallback onTomar,
-  }) {
-    return Row(
-      children: [
-        Expanded(child: Text(etiqueta)),
-        if (foto != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.file(File(foto.path), width: 48, height: 48, fit: BoxFit.cover),
-          ),
-        IconButton(
-          onPressed: onTomar,
-          icon: Icon(foto == null ? Icons.add_a_photo_outlined : Icons.refresh),
+        _titulo(etiquetaCampo),
+        if (descripcion != null) ...[
+          Text(descripcion),
+          const SizedBox(height: 16),
+        ],
+        Center(
+          child: foto == null
+              ? OutlinedButton.icon(
+                  onPressed: () async {
+                    final nueva = await mostrarInstruccionesYTomarFoto(
+                      context,
+                      titulo: tituloInstrucciones,
+                      icono: icono,
+                      recomendaciones: recomendaciones,
+                    );
+                    if (nueva != null) onCambiar(nueva);
+                  },
+                  icon: const Icon(Icons.add_a_photo_outlined),
+                  label: const Text('Tomar foto'),
+                )
+              : PreviewFotoTomada(
+                  foto: foto,
+                  onRepetir: () => onCambiar(null),
+                ),
         ),
       ],
     );

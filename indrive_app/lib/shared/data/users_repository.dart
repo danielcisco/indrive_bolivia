@@ -70,24 +70,23 @@ class UsersRepository {
   }
 
   /// Clientes y repartidores con KYC pendiente (`isVerified == false`),
-  /// paginado — alimenta la pantalla de Verificación de identidad del
-  /// panel Admin (Sprint 5.1; ampliado a Cliente en el Sprint 10 — antes
-  /// solo mostraba repartidores, dejando pasar cuentas Cliente sin
-  /// revisión). `whereIn` con los 2 roles usa el mismo índice compuesto
-  /// que ya existía para `role == 'repartidor'`.
-  Future<QuerySnapshot<Map<String, dynamic>>> listarUsuariosPendientesKyc({
-    int limit = 20,
-    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  /// en tiempo real (sprint extra) — antes era un fetch puntual que
+  /// nunca se refrescaba solo: una cuenta recién registrada no aparecía
+  /// hasta que el Admin recargara la pantalla a mano (bug real
+  /// reportado). Acotado por `.limit()`, no el "stream masivo" que
+  /// CLAUDE.md prohíbe — en la escala real de Villazón el Admin aprueba
+  /// apenas aparecen, nunca deberían acumularse decenas en espera.
+  /// `whereIn` con los 2 roles usa el mismo índice compuesto que ya
+  /// existía para `role == 'repartidor'`.
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamUsuariosPendientesKyc({
+    int limit = 50,
   }) {
-    var query = _users
+    return _users
         .where('role', whereIn: ['cliente', 'repartidor'])
         .where('isVerified', isEqualTo: false)
         .orderBy('createdAt', descending: true)
-        .limit(limit);
-    if (startAfter != null) {
-      query = query.startAfterDocument(startAfter);
-    }
-    return query.get();
+        .limit(limit)
+        .snapshots();
   }
 
   /// Aprueba el KYC de [uid] vía la Cloud Function `approveKyc` — el
