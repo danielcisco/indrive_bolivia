@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../../core/tracking/background_location_service.dart';
 import '../../../../core/tracking/battery_optimization.dart';
@@ -26,6 +27,51 @@ class EntregaEnCursoScreen extends ConsumerStatefulWidget {
 
 class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
   bool _procesando = false;
+
+  /// Bug real (Sprint 15): nada en la app pedía nunca el permiso de
+  /// ubicación "todo el tiempo" antes de arrancar el tracking — solo se
+  /// pedía "mientras se usa la app" (una sola vez, desde Radar/el picker
+  /// de origen). Sin ese permiso el stream de posición del Foreground
+  /// Service simplemente no emitía nada, sin ningún error visible: el
+  /// repartidor confirmaba la recogida con normalidad, pero
+  /// `repartidorPosicionActual` nunca se escribía, así que ni el Cliente
+  /// ni el Admin veían el ícono en el mapa. Android no ofrece "todo el
+  /// tiempo" en el diálogo de permiso normal desde Android 11 — hay que
+  /// mandar al usuario a Ajustes a mano.
+  Future<bool> _confirmarPermisoUbicacion() async {
+    var permiso = await Geolocator.checkPermission();
+    if (permiso == LocationPermission.denied) {
+      permiso = await Geolocator.requestPermission();
+    }
+    if (permiso == LocationPermission.always) return true;
+    if (!mounted) return true;
+    final continuar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ubicación en segundo plano'),
+        content: const Text(
+          'Para que el cliente vea dónde estás mientras vas en camino, '
+          'la app necesita el permiso de ubicación "Permitir todo el '
+          'tiempo" — Android no lo pide directo, hay que activarlo a '
+          'mano en Ajustes → Permisos → Ubicación.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Ahora no'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await Geolocator.openAppSettings();
+              if (context.mounted) Navigator.of(context).pop(true);
+            },
+            child: const Text('Abrir Ajustes'),
+          ),
+        ],
+      ),
+    );
+    return continuar ?? true;
+  }
 
   Future<bool> _confirmarOnboardingBateria() async {
     if (await BatteryOptimization.estaExcluida()) return true;
@@ -60,6 +106,7 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
   Future<void> _iniciarViaje() async {
     setState(() => _procesando = true);
     try {
+      await _confirmarPermisoUbicacion();
       await _confirmarOnboardingBateria();
       await ref.read(enviosRepositoryProvider).iniciarViaje(widget.envioId);
       await iniciarTracking(widget.envioId);
