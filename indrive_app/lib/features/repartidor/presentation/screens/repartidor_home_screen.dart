@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/data/providers.dart';
+import '../../../../shared/widgets/battery_optimization_prompt.dart';
 import '../../../../shared/widgets/envio_activo_card.dart';
 import '../../../../shared/widgets/estado_verificacion_screen.dart';
 import '../../../../shared/widgets/mis_calificaciones_screen.dart';
@@ -59,6 +60,7 @@ class RepartidorHomeScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            const BatteryOptimizationPrompt(),
             entregaActiva.when(
               loading: () => const SizedBox.shrink(),
               error: (error, _) => const SizedBox.shrink(),

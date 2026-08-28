@@ -200,6 +200,16 @@ class EnvioDetalleScreen extends ConsumerWidget {
                     Text('Categoría: ${envio.categoria.etiqueta}'),
                     const SizedBox(height: 4),
                     EstadoEnvioChip(status: envio.status),
+                    // Arriba de todo lo demás, antes del mapa (sprint
+                    // extra): quedaba enterrado a mitad de una pantalla
+                    // larga con mapa incluido — el cliente tenía que
+                    // deslizar para encontrarlo justo en el momento en
+                    // que el repartidor se lo está pidiendo.
+                    if (envio.status == EnvioStatus.asignado ||
+                        envio.status == EnvioStatus.enCurso) ...[
+                      const SizedBox(height: 12),
+                      _CodigoEntregaCard(envioId: envioId),
+                    ],
                     const SizedBox(height: 4),
                     Text(
                       'Monto inicial: ${envio.montoOfertadoInicial.format()}',
@@ -229,11 +239,6 @@ class EnvioDetalleScreen extends ConsumerWidget {
                       _RepartidorAsignadoCard(
                         repartidorId: envio.repartidorAsignadoId!,
                       ),
-                    ],
-                    if (envio.status == EnvioStatus.asignado ||
-                        envio.status == EnvioStatus.enCurso) ...[
-                      const SizedBox(height: 12),
-                      _CodigoEntregaCard(envioId: envioId),
                     ],
                     const SizedBox(height: 12),
                     EnvioMapPreview(envio: envio),
@@ -395,16 +400,56 @@ class _CodigoEntregaCard extends ConsumerWidget {
       error: (error, _) => const SizedBox.shrink(),
       data: (codigo) {
         if (codigo == null) return const SizedBox.shrink();
+        // Fondo de color + dígitos grandes (no un ListTile más entre
+        // otros): antes se mezclaba visualmente con el resto de la
+        // pantalla y quedaba fácil de pasar por alto sin querer.
         return Card(
-          child: ListTile(
-            leading: const Icon(Icons.pin_outlined),
-            title: const Text('Código de entrega'),
-            subtitle: const Text(
-              'Dáselo al repartidor solo cuando recibas el paquete.',
-            ),
-            trailing: Text(
-              codigo,
-              style: Theme.of(context).textTheme.headlineSmall,
+          color: Theme.of(context).colorScheme.primaryContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.pin_outlined,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  size: 32,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Código de entrega',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
+                            ),
+                      ),
+                      Text(
+                        'Dáselo al repartidor solo cuando recibas el '
+                        'paquete.',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  codigo,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
             ),
           ),
         );
