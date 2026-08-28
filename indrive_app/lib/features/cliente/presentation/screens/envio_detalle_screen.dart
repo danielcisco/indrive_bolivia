@@ -128,16 +128,33 @@ class EnvioDetalleScreen extends ConsumerWidget {
       tituloParaQuien: 'el repartidor',
     );
     if (resultado == null) return;
-    await ref
-        .read(enviosRepositoryProvider)
-        .crearCalificacion(
-          envioId: envioId,
-          autorId: FirebaseAuth.instance.currentUser!.uid,
-          paraId: repartidorId,
-          estrellas: resultado.estrellas,
-          comentario: resultado.comentario,
+    try {
+      await ref
+          .read(enviosRepositoryProvider)
+          .crearCalificacion(
+            envioId: envioId,
+            autorId: FirebaseAuth.instance.currentUser!.uid,
+            paraId: repartidorId,
+            estrellas: resultado.estrellas,
+            comentario: resultado.comentario,
+          );
+      ref.invalidate(miCalificacionProvider(envioId));
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Gracias por calificar.')));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos guardar tu calificación. Probá de nuevo.',
+          app: 'Cliente',
+          motivo: 'no puedo calificar el envío $envioId',
         );
-    ref.invalidate(miCalificacionProvider(envioId));
+      }
+    }
   }
 
   @override

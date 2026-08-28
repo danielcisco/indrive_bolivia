@@ -2,8 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/auth/phone_auth_repository.dart';
 import '../data/providers.dart';
-import 'completar_perfil_screen.dart';
+import 'registro_wizard_screen.dart';
 
 /// Builder de la pantalla de "verificación pendiente" — recibe
 /// [onVerificado] para que esa pantalla le avise a `AuthGate` que vuelva a
@@ -23,13 +24,18 @@ typedef VerificacionPendienteBuilder =
 ///
 /// Si [requierePerfilCompleto] es true (Cliente/Repartidor, no Admin),
 /// también exige `nombre`/`nick` en `users/{uid}` antes de mostrar Home.
-/// En el camino feliz `PhoneLoginView` ya los pide en la misma pantalla de
-/// login para cuentas nuevas y este gate ni se nota — pero es la única
-/// red de seguridad real contra la carrera entre `authStateChanges()`
-/// (dispara apenas se confirma el código SMS) y el paso de nombre/nick
-/// (que corre después, en la misma función async): sin este gate, esa
-/// carrera podía mandar a Home sin haber guardado nombre/nick ni haber
-/// terminado de asignar el rol.
+/// En el camino feliz `PhoneLoginView` ya los pide dentro de
+/// `RegistroWizardScreen` para cuentas nuevas y este gate ni se nota —
+/// pero es la única red de seguridad real contra dos escenarios: la
+/// carrera entre `authStateChanges()` (dispara apenas se confirma el
+/// código SMS) y el guardado de nombre/nick (que corre después, en la
+/// misma función async); y un wizard interrumpido a mitad de camino (red,
+/// app cerrada) que dejó el registro sin terminar. En ambos casos, en vez
+/// de mostrar Home a medio registrar, este gate vuelve a mostrar el mismo
+/// wizard — no un formulario corto aparte — así el usuario retoma
+/// exactamente los mismos pasos (foto, fecha de nacimiento, Cédula y,
+/// para Repartidor, licencia/vehículo) en vez de terminar en Home con
+/// datos de KYC incompletos.
 ///
 /// [verificacionPendienteBuilder] (solo Repartidor): si el claim
 /// `isVerified` es false, se muestra esa pantalla en vez de Home — antes,
@@ -126,8 +132,14 @@ class _AuthGateState extends ConsumerState<AuthGate> {
                   );
                 }
                 if (perfilSnapshot.data == false) {
-                  return CompletarPerfilScreen(
-                    onCompletado: () => _refrescarPerfil(user.uid),
+                  return RegistroWizardScreen(
+                    role: widget.expectedRole,
+                    onCompletado: () async {
+                      await PhoneAuthRepository().assignInitialRole(
+                        widget.expectedRole,
+                      );
+                      _refrescarPerfil(user.uid);
+                    },
                   );
                 }
                 final isVerified =

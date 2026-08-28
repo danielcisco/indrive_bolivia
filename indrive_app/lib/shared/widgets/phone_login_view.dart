@@ -1,4 +1,3 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -53,19 +52,6 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
     _phoneController.dispose();
     _codeController.dispose();
     super.dispose();
-  }
-
-  /// `assignInitialRole` rechaza la llamada si el uid ya tiene rol — pasa
-  /// si el usuario alcanzó a tocar "Continuar" dos veces (la primera ya
-  /// había funcionado) o si reintenta tras un error de red a mitad de
-  /// camino. En ese caso el resultado final es el que queríamos de todas
-  /// formas (rol asignado), así que no es un error real para el usuario.
-  Future<void> _asignarRolTolerante() async {
-    try {
-      await _repository.assignInitialRole(widget.role);
-    } on FirebaseFunctionsException catch (error) {
-      if (error.code != 'already-exists') rethrow;
-    }
   }
 
   /// Vuelve a la ruta base (donde vive `AuthGate`) para que el Home que ya
@@ -125,7 +111,7 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
               builder: (_) => RegistroWizardScreen(
                 role: widget.role,
                 onCompletado: () async {
-                  await _asignarRolTolerante();
+                  await _repository.assignInitialRole(widget.role);
                   if (mounted) _volverALaBase(context);
                 },
               ),
@@ -133,7 +119,7 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
           );
         }
       } else {
-        await _asignarRolTolerante();
+        await _repository.assignInitialRole(widget.role);
         if (mounted) _volverALaBase(context);
       }
     } on FirebaseAuthException catch (error) {

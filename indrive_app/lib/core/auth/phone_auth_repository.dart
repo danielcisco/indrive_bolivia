@@ -44,11 +44,20 @@ class PhoneAuthRepository {
     return _auth.signInWithCredential(credential);
   }
 
-  /// Se llama una sola vez, justo después del primer login exitoso.
-  /// La Cloud Function rechaza la llamada si el usuario ya tiene un rol.
+  /// Se llama justo después del primer login exitoso — tolerante a
+  /// reintentos: la Cloud Function rechaza la llamada si el uid ya tiene
+  /// un rol asignado (`already-exists`), lo cual pasa si el usuario
+  /// alcanzó a completar este paso dos veces (la primera ya había
+  /// funcionado) o si `AuthGate` reintenta el registro tras una falla a
+  /// mitad de camino. En ese caso el resultado final es el que queríamos
+  /// de todas formas (rol asignado), así que no es un error real.
   Future<void> assignInitialRole(String role) async {
     final callable = _functions.httpsCallable('assignInitialRole');
-    await callable.call<Map<String, dynamic>>({'role': role});
+    try {
+      await callable.call<Map<String, dynamic>>({'role': role});
+    } on FirebaseFunctionsException catch (error) {
+      if (error.code != 'already-exists') rethrow;
+    }
     await _auth.currentUser?.getIdTokenResult(true);
   }
 }

@@ -2,7 +2,8 @@
  * Script puntual de limpieza (no se despliega junto a las Cloud
  * Functions): borra TODOS los usuarios/repartidores de prueba — Auth,
  * `users/`, `perfiles_publicos/`, la colección `envios/` completa (con
- * sus subcolecciones), y los archivos de Storage bajo `kyc/`,
+ * sus subcolecciones, incluidas las calificaciones), y los archivos de
+ * Storage bajo `kyc/`, `personal/`, `licencia/`, `vehiculo/`,
  * `comprobantes/` y `paquetes/` — salvo la cuenta indicada en
  * `--preservar`.
  *
@@ -86,25 +87,35 @@ async function borrarEnviosCompleto() {
 async function borrarStorage(uidPreservado: string) {
   const bucket = admin.storage().bucket();
 
-  const [archivosKyc] = await bucket.getFiles({ prefix: "kyc/" });
-  const kycABorrar = archivosKyc.filter(
-    (f) => !f.name.startsWith(`kyc/${uidPreservado}/`)
+  // kyc/, personal/, licencia/ y vehiculo/ están organizados por
+  // {uid}/... (mismo patrón), así que a todos se les aplica el mismo
+  // filtro de preservación; comprobantes/ y paquetes/ están organizados
+  // por {envioId}/{uid}/... y ya se borran completos junto con envios/.
+  const prefijosPorUid = ["kyc/", "personal/", "licencia/", "vehiculo/"];
+  const archivosPorUid = await Promise.all(
+    prefijosPorUid.map((prefix) => bucket.getFiles({ prefix }))
   );
+  const aBorrarPorUid = archivosPorUid.flatMap(([archivos], i) =>
+    archivos.filter(
+      (f) => !f.name.startsWith(`${prefijosPorUid[i]}${uidPreservado}/`)
+    )
+  );
+
   const [archivosComprobantes] = await bucket.getFiles({
     prefix: "comprobantes/",
   });
   const [archivosPaquetes] = await bucket.getFiles({ prefix: "paquetes/" });
 
   const total =
-    kycABorrar.length + archivosComprobantes.length + archivosPaquetes.length;
+    aBorrarPorUid.length + archivosComprobantes.length + archivosPaquetes.length;
   console.log(
     `Storage: ${dryRun ? "[dry-run] " : ""}borrando ${total} archivos ` +
-      `(kyc/: ${kycABorrar.length}, comprobantes/: ${archivosComprobantes.length}, paquetes/: ${archivosPaquetes.length})...`
+      `(kyc/personal/licencia/vehiculo: ${aBorrarPorUid.length}, comprobantes/: ${archivosComprobantes.length}, paquetes/: ${archivosPaquetes.length})...`
   );
   if (!dryRun) {
     await Promise.all(
-      [...kycABorrar, ...archivosComprobantes, ...archivosPaquetes].map((f) =>
-        f.delete()
+      [...aBorrarPorUid, ...archivosComprobantes, ...archivosPaquetes].map(
+        (f) => f.delete()
       )
     );
   }

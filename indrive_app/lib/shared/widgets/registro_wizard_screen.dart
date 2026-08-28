@@ -180,8 +180,8 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
       // primer `ref.read()` lo encuentra en loading con `.value == null`
       // — tiraba "Sesión no encontrada" sin haber subido ni guardado
       // nada. Bug real reportado: el wizard fallaba siempre en el último
-      // paso y, como no llegó a escribir nombre/nick, al reabrir la app
-      // el usuario caía en el formulario corto viejo (CompletarPerfilScreen).
+      // paso y, como no llegó a escribir nombre/nick, `AuthGate` volvía a
+      // mostrar el wizard desde cero en el siguiente lanzamiento.
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) throw StateError('Sesión no encontrada.');
       final repository = ref.read(usersRepositoryProvider);

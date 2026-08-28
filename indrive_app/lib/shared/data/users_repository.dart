@@ -242,7 +242,7 @@ class UsersRepository {
   }
 
   /// Fetch puntual del propio perfil (privado, `users/{uid}`) — decide si
-  /// `AuthGate` todavía tiene que mostrar `CompletarPerfilScreen`, y
+  /// `AuthGate` todavía tiene que retomar `RegistroWizardScreen`, y
   /// alimenta el header con nombre/nick/avatar.
   Future<PerfilPublico?> obtenerMiPerfil(String uid) async {
     final snapshot = await _users.doc(uid).get();

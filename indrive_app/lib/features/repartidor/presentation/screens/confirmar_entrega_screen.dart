@@ -84,13 +84,29 @@ class _ConfirmarEntregaScreenState
             tituloParaQuien: 'el cliente',
           );
           if (resultado != null) {
-            await repository.crearCalificacion(
-              envioId: widget.envioId,
-              autorId: FirebaseAuth.instance.currentUser!.uid,
-              paraId: envio.clienteId,
-              estrellas: resultado.estrellas,
-              comentario: resultado.comentario,
-            );
+            // Try/catch propio: la entrega ya se confirmó arriba, así que
+            // un fallo acá (calificar es opcional) no debe impedir salir
+            // de esta pantalla ni mezclarse con el catch de FirebaseException
+            // de abajo, que interpreta permission-denied como "código
+            // incorrecto" — antes esta llamada caía ahí y mostraba ese
+            // mensaje engañoso aunque el código hubiera sido correcto.
+            try {
+              await repository.crearCalificacion(
+                envioId: widget.envioId,
+                autorId: FirebaseAuth.instance.currentUser!.uid,
+                paraId: envio.clienteId,
+                estrellas: resultado.estrellas,
+                comentario: resultado.comentario,
+              );
+            } catch (_) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No pudimos guardar tu calificación.'),
+                  ),
+                );
+              }
+            }
           }
         }
       }

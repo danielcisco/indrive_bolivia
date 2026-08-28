@@ -10,7 +10,8 @@ import 'mis_calificaciones_screen.dart';
 /// Header compartido por las 3 Home: avatar elegible (tocar abre un grid
 /// de íconos predefinidos, sin subir fotos), nombre/nick del usuario
 /// logueado (o su teléfono/email si todavía no los completó — caso de
-/// Admin, que no pasa por `CompletarPerfilScreen`) y, si [mostrarRating]
+/// Admin, que no pasa por el gate de perfil completo de `AuthGate`) y, si
+/// [mostrarRating]
 /// es true, su clasificación (⭐ promedio) al lado, que navega a
 /// `MisCalificacionesScreen` al tocarla. Admin no recibe calificaciones,
 /// así que su instancia pasa `mostrarRating: false` — y por eso también
