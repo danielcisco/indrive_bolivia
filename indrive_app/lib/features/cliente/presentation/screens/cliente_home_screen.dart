@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/widgets/envio_activo_card.dart';
+import '../../../../shared/widgets/estado_verificacion_screen.dart';
 import '../../../../shared/widgets/mis_calificaciones_screen.dart';
 import '../../../../shared/widgets/session_status_view.dart';
 import '../../../../shared/widgets/user_profile_header.dart';
@@ -82,6 +83,16 @@ class ClienteHomeScreen extends ConsumerWidget {
               ),
               icon: const Icon(Icons.star_outline),
               label: const Text('Mis calificaciones'),
+            ),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const EstadoVerificacionScreen(role: 'cliente'),
+                ),
+              ),
+              icon: const Icon(Icons.verified_outlined),
+              label: const Text('Mi verificación'),
             ),
             const SizedBox(height: 8),
             SizedBox(
