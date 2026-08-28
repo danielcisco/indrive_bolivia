@@ -131,6 +131,94 @@ class UsersRepository {
     return snapshot.data()?['cedulaUrl'] as String?;
   }
 
+  /// Foto personal (selfie de perfil, Sprint 18) — distinta de la Cédula:
+  /// esta es de identidad visual entre Cliente/Repartidor, no un
+  /// documento de KYC. Mismo patrón de Storage que `subirFotoCedula`.
+  Future<String> subirFotoPersonal({
+    required String uid,
+    required File archivo,
+  }) async {
+    final ref = _storage.ref('personal/$uid/${const Uuid().v4()}.jpg');
+    await ref.putFile(archivo, SettableMetadata(contentType: 'image/jpeg'));
+    return ref.getDownloadURL();
+  }
+
+  /// Datos personales del wizard de registro (Sprint 18): fecha de
+  /// nacimiento + foto personal. Escritura directa a `users/{uid}` (no
+  /// via `_guardarPerfil`: estos campos no son públicos, no deben
+  /// aparecer en `perfiles_publicos/{uid}`).
+  Future<void> guardarDatosPersonales(
+    String uid, {
+    required DateTime fechaNacimiento,
+    required String fotoPersonalUrl,
+  }) {
+    return _users.doc(uid).set({
+      'fechaNacimiento': Timestamp.fromDate(fechaNacimiento),
+      'fotoPersonalUrl': fotoPersonalUrl,
+    }, SetOptions(merge: true));
+  }
+
+  /// Foto de un documento de Repartidor (licencia o vehículo, Sprint 20)
+  /// — [carpeta] es `licencia` o `vehiculo`, [tipo] identifica cuál de
+  /// las fotos de esa carpeta es (`frente`, `dorso`, `selfie`,
+  /// `vehiculo`, `tarjeta`, `soat`). Mismo patrón que `subirFotoCedula`.
+  Future<String> subirFotoDocumento({
+    required String carpeta,
+    required String uid,
+    required String tipo,
+    required File archivo,
+  }) async {
+    final ref = _storage.ref('$carpeta/$uid/$tipo.jpg');
+    await ref.putFile(archivo, SettableMetadata(contentType: 'image/jpeg'));
+    return ref.getDownloadURL();
+  }
+
+  /// Datos de licencia de conducir del Repartidor (Sprint 20).
+  Future<void> guardarDatosLicencia(
+    String uid, {
+    required String numeroLicencia,
+    required DateTime fechaExpiracion,
+    required String licenciaFrenteUrl,
+    required String licenciaDorsoUrl,
+    required String selfieLicenciaUrl,
+  }) {
+    return _users.doc(uid).set({
+      'numeroLicencia': numeroLicencia,
+      'fechaExpiracionLicencia': Timestamp.fromDate(fechaExpiracion),
+      'licenciaFrenteUrl': licenciaFrenteUrl,
+      'licenciaDorsoUrl': licenciaDorsoUrl,
+      'selfieLicenciaUrl': selfieLicenciaUrl,
+    }, SetOptions(merge: true));
+  }
+
+  /// Datos de vehículo del Repartidor (Sprint 20) — `soatUrl` es
+  /// opcional (solo aplica en Bolivia, y aun así no se exige para poder
+  /// operar).
+  Future<void> guardarDatosVehiculo(
+    String uid, {
+    required String tipoVehiculo,
+    required String marcaVehiculo,
+    required String modeloVehiculo,
+    required String colorVehiculo,
+    required String placaVehiculo,
+    required int anioVehiculo,
+    required String fotoVehiculoUrl,
+    required String tarjetaCirculacionUrl,
+    String? soatUrl,
+  }) {
+    return _users.doc(uid).set({
+      'tipoVehiculo': tipoVehiculo,
+      'marcaVehiculo': marcaVehiculo,
+      'modeloVehiculo': modeloVehiculo,
+      'colorVehiculo': colorVehiculo,
+      'placaVehiculo': placaVehiculo,
+      'anioVehiculo': anioVehiculo,
+      'fotoVehiculoUrl': fotoVehiculoUrl,
+      'tarjetaCirculacionUrl': tarjetaCirculacionUrl,
+      'soatUrl': ?soatUrl,
+    }, SetOptions(merge: true));
+  }
+
   /// Guarda el avatar elegido (uno de `kAvatares`, ver
   /// `lib/shared/domain/avatares.dart`) — en `users/{uid}` y su copia
   /// pública a la vez, ver `_guardarPerfil`.

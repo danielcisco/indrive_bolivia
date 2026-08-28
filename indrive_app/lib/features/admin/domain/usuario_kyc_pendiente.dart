@@ -14,6 +14,18 @@ class UsuarioKycPendiente {
     required this.phoneNumber,
     required this.createdAt,
     required this.cedulaUrl,
+    required this.fotoPersonalUrl,
+    required this.numeroLicencia,
+    required this.licenciaFrenteUrl,
+    required this.licenciaDorsoUrl,
+    required this.selfieLicenciaUrl,
+    required this.tipoVehiculo,
+    required this.marcaVehiculo,
+    required this.modeloVehiculo,
+    required this.placaVehiculo,
+    required this.fotoVehiculoUrl,
+    required this.tarjetaCirculacionUrl,
+    required this.soatUrl,
   });
 
   factory UsuarioKycPendiente.fromFirestore(
@@ -26,6 +38,18 @@ class UsuarioKycPendiente {
       phoneNumber: data['phoneNumber'] as String?,
       createdAt: data['createdAt'] as Timestamp?,
       cedulaUrl: data['cedulaUrl'] as String?,
+      fotoPersonalUrl: data['fotoPersonalUrl'] as String?,
+      numeroLicencia: data['numeroLicencia'] as String?,
+      licenciaFrenteUrl: data['licenciaFrenteUrl'] as String?,
+      licenciaDorsoUrl: data['licenciaDorsoUrl'] as String?,
+      selfieLicenciaUrl: data['selfieLicenciaUrl'] as String?,
+      tipoVehiculo: data['tipoVehiculo'] as String?,
+      marcaVehiculo: data['marcaVehiculo'] as String?,
+      modeloVehiculo: data['modeloVehiculo'] as String?,
+      placaVehiculo: data['placaVehiculo'] as String?,
+      fotoVehiculoUrl: data['fotoVehiculoUrl'] as String?,
+      tarjetaCirculacionUrl: data['tarjetaCirculacionUrl'] as String?,
+      soatUrl: data['soatUrl'] as String?,
     );
   }
 
@@ -40,4 +64,19 @@ class UsuarioKycPendiente {
   /// Foto subida por el usuario (diferido de KYC, seguimiento del Sprint
   /// 5.1) — null si todavía no subió nada.
   final String? cedulaUrl;
+
+  /// Datos del wizard de registro (Sprints 18-20) — todos null en cuentas
+  /// de antes de esos sprints, que nunca pasaron por este flujo.
+  final String? fotoPersonalUrl;
+  final String? numeroLicencia;
+  final String? licenciaFrenteUrl;
+  final String? licenciaDorsoUrl;
+  final String? selfieLicenciaUrl;
+  final String? tipoVehiculo;
+  final String? marcaVehiculo;
+  final String? modeloVehiculo;
+  final String? placaVehiculo;
+  final String? fotoVehiculoUrl;
+  final String? tarjetaCirculacionUrl;
+  final String? soatUrl;
 }

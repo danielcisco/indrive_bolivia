@@ -1,14 +1,11 @@
-import 'dart:io';
-
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../core/auth/phone_auth_repository.dart';
-import '../data/providers.dart';
+import 'registro_wizard_screen.dart';
 import 'soporte_whatsapp.dart';
 
 /// Países que operan esta app (Sprint 17): Villazón es una ciudad de
@@ -28,10 +25,10 @@ const _paises = [
   _Pais(bandera: '🇦🇷', prefijo: '+54', nombre: 'Argentina'),
 ];
 
-/// UI de 3 pasos (teléfono -> código SMS -> nombre/nick solo si es
-/// registro nuevo) reutilizada por Cliente y Repartidor: la única
-/// diferencia entre ambos es el [role] que se envía a la Cloud Function
-/// tras el login.
+/// Teléfono -> código SMS -> wizard de registro si es cuenta nueva
+/// (`RegistroWizardScreen`, Sprints 18-20) reutilizada por Cliente y
+/// Repartidor: la única diferencia entre ambos es el [role] que se envía
+/// a la Cloud Function tras el login.
 class PhoneLoginView extends ConsumerStatefulWidget {
   const PhoneLoginView({super.key, required this.role});
 
@@ -45,24 +42,16 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
   final _repository = PhoneAuthRepository();
   final _phoneController = TextEditingController();
   final _codeController = TextEditingController();
-  final _nombreController = TextEditingController();
-  final _apellidoController = TextEditingController();
-  final _nickController = TextEditingController();
 
   _Pais _pais = _paises.first;
   String? _verificationId;
-  bool _esRegistroNuevo = false;
   bool _isSubmitting = false;
   String? _errorMessage;
-  XFile? _fotoCarnet;
 
   @override
   void dispose() {
     _phoneController.dispose();
     _codeController.dispose();
-    _nombreController.dispose();
-    _apellidoController.dispose();
-    _nickController.dispose();
     super.dispose();
   }
 
@@ -80,24 +69,11 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
   }
 
   /// Vuelve a la ruta base (donde vive `AuthGate`) para que el Home que ya
-  /// está listo debajo se vea — `BienvenidaScreen`/esta pantalla se
-  /// alcanzan con `Navigator.push`, así que nada las saca solas del medio
-  /// cuando el login termina.
+  /// está listo debajo se vea — `BienvenidaScreen`/esta pantalla/el wizard
+  /// se alcanzan con `Navigator.push`, así que nada las saca solas del
+  /// medio cuando el login termina.
   void _volverALaBase(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
-  Future<void> _tomarFotoCarnet() async {
-    // imageQuality/maxWidth más altos que una foto de paquete: acá lo que
-    // importa es que el Admin pueda leer el número de Cédula ampliando la
-    // imagen, no solo confirmar que algo llegó entero (Sprint 9).
-    final foto = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-      imageQuality: 90,
-      maxWidth: 1920,
-      preferredCameraDevice: CameraDevice.rear,
-    );
-    if (foto != null && mounted) setState(() => _fotoCarnet = foto);
   }
 
   Future<void> _sendCode() async {
@@ -140,10 +116,22 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
         smsCode: _codeController.text.trim(),
       );
       if (credencial.additionalUserInfo?.isNewUser == true) {
-        // Primera vez que este teléfono se autentica: pide nombre/nick acá
-        // mismo (paso 3) antes de asignar el rol, en vez de una pantalla
-        // aparte después — así solo se pregunta al momento de registrarse.
-        if (mounted) setState(() => _esRegistroNuevo = true);
+        // Primera vez que este teléfono se autentica: el wizard pide el
+        // resto de los datos (Sprints 18-20) y recién al final asigna el
+        // rol y vuelve a la base — no antes.
+        if (mounted) {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => RegistroWizardScreen(
+                role: widget.role,
+                onCompletado: () async {
+                  await _asignarRolTolerante();
+                  if (mounted) _volverALaBase(context);
+                },
+              ),
+            ),
+          );
+        }
       } else {
         await _asignarRolTolerante();
         if (mounted) _volverALaBase(context);
@@ -164,50 +152,6 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
     }
   }
 
-  Future<void> _completarRegistro() async {
-    final nombre = _nombreController.text.trim();
-    final apellido = _apellidoController.text.trim();
-    final nick = _nickController.text.trim();
-    final foto = _fotoCarnet;
-    if (nombre.isEmpty || apellido.isEmpty || nick.isEmpty || foto == null) {
-      setState(
-        () => _errorMessage =
-            'Completa nombre, apellido, nick y la foto de tu carnet.',
-      );
-      return;
-    }
-    setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
-    });
-    try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      final repository = ref.read(usersRepositoryProvider);
-      final url = await repository.subirFotoCedula(
-        uid: uid,
-        archivo: File(foto.path),
-      );
-      await repository.actualizarPerfil(
-        uid,
-        nombre: nombre,
-        apellido: apellido,
-        nick: nick,
-      );
-      await repository.guardarCedulaUrl(uid, url);
-      await _asignarRolTolerante();
-      if (mounted) _volverALaBase(context);
-    } catch (_) {
-      if (mounted) {
-        setState(
-          () => _errorMessage = 'No pudimos guardar tus datos. Revisá tu '
-              'conexión y volvé a intentar.',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final awaitingCode = _verificationId != null;
@@ -216,55 +160,7 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (_esRegistroNuevo) ...[
-            const Text(
-              'Contanos cómo te llamás y sacá una foto de tu Cédula de '
-              'Identidad — así el Cliente y el Repartidor pueden '
-              'identificarse entre sí.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _nombreController,
-              decoration: const InputDecoration(labelText: 'Nombres'),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _apellidoController,
-              decoration: const InputDecoration(labelText: 'Apellidos'),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _nickController,
-              decoration: const InputDecoration(labelText: 'Nick'),
-            ),
-            const SizedBox(height: 16),
-            if (_fotoCarnet != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(File(_fotoCarnet!.path), height: 180),
-              ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _tomarFotoCarnet,
-              icon: const Icon(Icons.camera_alt),
-              label: Text(
-                _fotoCarnet == null ? 'Tomar foto de tu Cédula' : 'Repetir foto',
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: (_isSubmitting || _fotoCarnet == null)
-                    ? null
-                    : _completarRegistro,
-                icon: const Icon(Icons.check_outlined),
-                label: Text(_isSubmitting ? 'Guardando...' : 'Continuar'),
-              ),
-            ),
-          ] else if (!awaitingCode) ...[
+          if (!awaitingCode) ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

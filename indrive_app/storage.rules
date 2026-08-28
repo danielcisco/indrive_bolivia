@@ -55,6 +55,30 @@ service firebase.storage {
         request.resource.contentType.matches('image/.*');
     }
 
+    // Foto personal (Sprint 18), licencia y datos de vehículo (Sprint 20)
+    // del wizard de registro — mismo patrón que /kyc/{uid}/: solo el
+    // dueño sube/lee las suyas, Admin lee para revisar antes de aprobar.
+    match /personal/{uid}/{allPaths=**} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    match /licencia/{uid}/{allPaths=**} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    match /vehiculo/{uid}/{allPaths=**} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

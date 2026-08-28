@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../shared/data/providers.dart';
+import '../../../../shared/widgets/pantalla_instrucciones_foto.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 
 /// Diferido de KYC (seguimiento del Sprint 5.1): el repartidor sube una
@@ -24,14 +25,15 @@ class _SubirCedulaScreenState extends ConsumerState<SubirCedulaScreen> {
   bool _procesando = false;
 
   Future<void> _tomarFoto() async {
-    // imageQuality/maxWidth más altos que una foto de paquete: acá lo que
-    // importa es que el Admin pueda leer el número de Cédula ampliando la
-    // imagen, no solo confirmar que algo llegó entero (Sprint 9).
-    final foto = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-      imageQuality: 90,
-      maxWidth: 1920,
-      preferredCameraDevice: CameraDevice.rear,
+    final foto = await mostrarInstruccionesYTomarFoto(
+      context,
+      titulo: 'Cédula de Identidad',
+      icono: Icons.badge_outlined,
+      recomendaciones: const [
+        'Foto clara, sin capturas de pantalla ni fotocopias.',
+        'Sin filtros, todos los datos deben verse bien.',
+        'El documento completo dentro del cuadro.',
+      ],
     );
     if (foto != null && mounted) setState(() => _foto = foto);
   }

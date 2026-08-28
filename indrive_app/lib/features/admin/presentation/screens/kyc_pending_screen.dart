@@ -127,6 +127,62 @@ class KycPendingScreen extends ConsumerWidget {
                         )
                       else
                         const Text('Todavía no subió la foto de su Cédula.'),
+                      if (usuario.role == 'repartidor') ...[
+                        const SizedBox(height: 12),
+                        const Divider(height: 1),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Licencia y vehículo',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          usuario.numeroLicencia != null
+                              ? 'Licencia N° ${usuario.numeroLicencia}'
+                              : 'Todavía no cargó su licencia.',
+                        ),
+                        if (usuario.marcaVehiculo != null)
+                          Text(
+                            '${usuario.tipoVehiculo == 'auto' ? 'Auto' : 'Moto'} '
+                            '${usuario.marcaVehiculo} ${usuario.modeloVehiculo ?? ''} '
+                            '· Placa ${usuario.placaVehiculo ?? '—'}',
+                          ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 100,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              for (final MapEntry(key: titulo, value: url)
+                                  in {
+                                    'Licencia (frente)': usuario.licenciaFrenteUrl,
+                                    'Licencia (dorso)': usuario.licenciaDorsoUrl,
+                                    'Selfie licencia': usuario.selfieLicenciaUrl,
+                                    'Vehículo': usuario.fotoVehiculoUrl,
+                                    'Tarjeta circulación':
+                                        usuario.tarjetaCirculacionUrl,
+                                    'SOAT': usuario.soatUrl,
+                                  }.entries)
+                                if (url != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Tooltip(
+                                        message: titulo,
+                                        child: Image.network(
+                                          url,
+                                          width: 100,
+                                          height: 100,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
