@@ -164,11 +164,17 @@ class EnvioDetalleScreen extends ConsumerWidget {
           final puedeElegir = envio.status == EnvioStatus.pendienteOfertas;
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              // SingleChildScrollView (no solo Padding): en horizontal, el
+              // alto disponible se achica mucho y este bloque (foto +
+              // mapa + varias cards) no entraba más — desbordaba por
+              // abajo en vez de scrollear. En vertical, donde ya entraba
+              // sin problema, esto no cambia nada.
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     Text(
                       envio.descripcion,
                       style: Theme.of(context).textTheme.titleMedium,
@@ -245,7 +251,8 @@ class EnvioDetalleScreen extends ConsumerWidget {
                         },
                       ),
                     ],
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const Divider(height: 1),
