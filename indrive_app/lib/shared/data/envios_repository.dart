@@ -30,36 +30,15 @@ class EnviosRepository {
   CollectionReference<Map<String, dynamic>> get _envios =>
       _firestore.collection('envios');
 
-  /// Crea un envío con un ID nuevo. `expiraEn` NO se fija aquí: lo calcula
-  /// server-side la Cloud Function `setEnvioExpiration` a partir de
-  /// `createdAt`.
-  Future<String> crearEnvio({
-    required String clienteId,
-    required String descripcion,
-    required GeoPoint origen,
-    required GeoPoint destino,
-    required Money montoOfertadoInicial,
-    required CategoriaPaquete categoria,
-    String? fotoPaqueteUrl,
-  }) async {
-    final ref = _envios.doc();
-    await crearEnvioConId(
-      ref.id,
-      clienteId: clienteId,
-      descripcion: descripcion,
-      origen: origen,
-      destino: destino,
-      montoOfertadoInicial: montoOfertadoInicial,
-      categoria: categoria,
-      fotoPaqueteUrl: fotoPaqueteUrl,
-    );
-    return ref.id;
-  }
-
-  /// Igual que [crearEnvio] pero con un ID fijado por el llamador — usado
-  /// por la cola offline (`OfflineActionQueue`), que pasa el UUIDv4 de la
-  /// acción como `id`. Al usar `.set()` en vez de `.add()`, reintentar tras
-  /// un fallo de red sobreescribe el mismo documento en vez de duplicarlo.
+  /// Crea un envío con un ID fijado por el llamador — lo usa tanto
+  /// `CrearEnvioController` (necesita el id ANTES de crear el documento,
+  /// para poder subir la foto del paquete a `paquetes/{envioId}/...` con
+  /// ese mismo id) como la cola offline (`OfflineActionQueue`), que pasa
+  /// el UUIDv4 de la acción como `id`. Al usar `.set()` en vez de
+  /// `.add()`, reintentar tras un fallo de red sobreescribe el mismo
+  /// documento en vez de duplicarlo. `expiraEn` NO se fija aquí: lo
+  /// calcula server-side la Cloud Function `setEnvioExpiration` a partir
+  /// de `createdAt`.
   ///
   /// El código de entrega (4 dígitos) se genera acá y se escribe en el
   /// mismo batch, en `envios/{id}/privado/entrega` — no en el documento
@@ -77,6 +56,7 @@ class EnviosRepository {
     required Money montoOfertadoInicial,
     required CategoriaPaquete categoria,
     String? fotoPaqueteUrl,
+    bool esFragil = false,
   }) {
     final origenGeohash = _geoHasher.encode(
       origen.longitude,
@@ -96,6 +76,7 @@ class EnviosRepository {
         montoOfertadoInicial: montoOfertadoInicial,
         categoria: categoria,
         fotoPaqueteUrl: fotoPaqueteUrl,
+        esFragil: esFragil,
       ),
     );
     batch.set(_envios.doc(id).collection('privado').doc('entrega'), {
@@ -213,21 +194,6 @@ class EnviosRepository {
         .where('status', isEqualTo: EnvioStatus.enCurso.toFirestore())
         .limit(limit)
         .snapshots();
-  }
-
-  /// Envíos abiertos a ofertas, paginado (nunca una query sin cota).
-  Future<QuerySnapshot<Map<String, dynamic>>> listarEnviosPendientes({
-    int limit = 20,
-    DocumentSnapshot<Map<String, dynamic>>? startAfter,
-  }) {
-    var query = _envios
-        .where('status', isEqualTo: EnvioStatus.pendienteOfertas.toFirestore())
-        .orderBy('createdAt', descending: true)
-        .limit(limit);
-    if (startAfter != null) {
-      query = query.startAfterDocument(startAfter);
-    }
-    return query.get();
   }
 
   /// Envíos pendientes cuyo `origenGeohash` cae dentro del rango de
@@ -502,33 +468,30 @@ class EnviosRepository {
   /// (ver `firestore.rules`).
   Future<void> verificarPago(String envioId) {
     return conReintentoDeToken(
-      () => _envios.doc(envioId).update({'pagoVerificado': true}),
+      () => _envios.doc(envioId).update({
+        'pagoVerificado': true,
+        // Sprint extra: historial de pagos QR en Admin.
+        'fechaVerificacionPago': FieldValue.serverTimestamp(),
+      }),
     );
   }
 
-  /// Envíos entregados con pago QR todavía sin verificar, paginado —
-  /// alimenta `PagosPendientesScreen` del panel Admin (Sprint 6.1).
-  Future<QuerySnapshot<Map<String, dynamic>>> listarPagosQrPendientes({
-    int limit = 20,
-    DocumentSnapshot<Map<String, dynamic>>? startAfter,
-  }) {
-    // Sin filtro por pagoVerificado acá a propósito (bug real, Sprint 13):
-    // `marcarEntregado` nunca escribe ese campo (las Rules se lo prohíben
-    // al repartidor — solo Admin puede fijarlo, ver `verificarPago`), así
-    // que en un envío recién entregado el campo está AUSENTE, no en
-    // `false`. `.where('pagoVerificado', isEqualTo: false)` no matchea
-    // "ausente", así que esta pantalla nunca mostraba nada. El filtro se
-    // hace en memoria en el controller sobre esta misma página (ya
-    // acotada por `.limit()`), no agregando una query sin cota.
-    var query = _envios
+  /// Envíos entregados con pago QR, en tiempo real (sprint extra:
+  /// historial de pagos en Admin) — antes era un fetch puntual
+  /// (`listarPagosQrPendientes`, mismo bug de staleness ya corregido en
+  /// KYC) que nunca se refrescaba solo. Trae pendientes Y verificados
+  /// juntos (acotado por `.limit()`); la pantalla los separa en memoria
+  /// por `pagoVerificado` para las pestañas "Pendientes"/"Historial" — un
+  /// pago recién entregado no tiene ese campo (las Rules se lo prohíben
+  /// al repartidor, solo Admin puede fijarlo vía `verificarPago`), así
+  /// que "ausente" cuenta como pendiente, igual que `false`.
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamPagosQr({int limit = 50}) {
+    return _envios
         .where('status', isEqualTo: EnvioStatus.entregado.toFirestore())
         .where('metodoPago', isEqualTo: MetodoPago.qr.toFirestore())
         .orderBy('createdAt', descending: true)
-        .limit(limit);
-    if (startAfter != null) {
-      query = query.startAfterDocument(startAfter);
-    }
-    return query.get();
+        .limit(limit)
+        .snapshots();
   }
 
   CollectionReference<Map<String, dynamic>> _calificaciones(String envioId) =>

@@ -71,17 +71,13 @@ final offlineActionQueueProvider = Provider<OfflineActionQueue>((ref) {
       categoria: CategoriaPaquete.fromFirestore(
         payload['categoria'] as String? ?? 'documentos',
       ),
+      esFragil: payload['esFragil'] as bool? ?? false,
     );
   });
 
   queue.startListening();
   ref.onDispose(queue.dispose);
   return queue;
-});
-
-/// Fetch puntual de un envío por id.
-final envioProvider = FutureProvider.family<Envio?, String>((ref, envioId) {
-  return ref.watch(enviosRepositoryProvider).obtenerEnvio(envioId);
 });
 
 /// Código de entrega del envío [envioId] (Sprint 8.2) — solo resuelve un

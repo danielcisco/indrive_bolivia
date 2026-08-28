@@ -137,6 +137,24 @@ class UsersRepository {
         .snapshots();
   }
 
+  /// Clientes y repartidores YA verificados, en tiempo real (sprint
+  /// extra: historial de KYC en Admin) — mismo índice compuesto que
+  /// `streamUsuariosPendientesKyc` (`role`+`isVerified`+`createdAt`), solo
+  /// que acá `isVerified` es `true`. Ordenado por `createdAt` (no por
+  /// `fechaVerificacion`, que no tiene índice compuesto propio y no vale
+  /// la pena crear uno nuevo solo para esto) — la fecha de verificación
+  /// igual se muestra en cada tarjeta, solo no determina el orden.
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamUsuariosVerificadosRecientes({
+    int limit = 50,
+  }) {
+    return _users
+        .where('role', whereIn: ['cliente', 'repartidor'])
+        .where('isVerified', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .snapshots();
+  }
+
   /// Aprueba el KYC de [uid] vía la Cloud Function `approveKyc` — el
   /// cliente nunca escribe `isVerified` directamente (ni las Firestore
   /// Rules ni el token se lo permiten), solo un admin autenticado puede

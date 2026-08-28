@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/location/current_location.dart';
 import '../../../../core/location/places_service.dart';
 import '../../../../shared/domain/entities/envio.dart';
+import '../../../../shared/domain/precio_sugerido.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/map_picker_screen.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
@@ -33,7 +35,28 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
   String? _direccionDestino;
   String? _errorUbicacion;
   CategoriaPaquete _categoria = CategoriaPaquete.documentos;
+  bool _esFragil = false;
   XFile? _foto;
+
+  /// Recalculada en cada build (función pura, sin costo real) una vez
+  /// que hay origen y destino — mismo criterio que el resto de esta
+  /// pantalla de no cachear derivados que son baratos de recalcular.
+  SugerenciaPrecio? get _sugerencia {
+    final origen = _origen;
+    final destino = _destino;
+    if (origen == null || destino == null) return null;
+    final distanciaMetros = Geolocator.distanceBetween(
+      origen.latitude,
+      origen.longitude,
+      destino.latitude,
+      destino.longitude,
+    );
+    return calcularPrecioSugerido(
+      distanciaMetros: distanciaMetros,
+      categoria: _categoria,
+      esFragil: _esFragil,
+    );
+  }
 
   @override
   void dispose() {
@@ -145,6 +168,7 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
           destino: destino,
           montoOfertadoInicial: monto,
           categoria: _categoria,
+          esFragil: _esFragil,
           foto: _foto != null ? File(_foto!.path) : null,
         );
 
@@ -206,20 +230,105 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                 style: TextStyle(fontStyle: FontStyle.italic),
               ),
               const SizedBox(height: 16),
-              const Text('Categoría'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
+              DropdownButtonFormField<CategoriaPaquete>(
+                initialValue: _categoria,
+                decoration: const InputDecoration(labelText: 'Categoría'),
+                items: [
                   for (final opcion in CategoriaPaquete.values)
-                    ChoiceChip(
-                      label: Text(opcion.etiqueta),
-                      selected: _categoria == opcion,
-                      onSelected: (_) => setState(() => _categoria = opcion),
+                    DropdownMenuItem(
+                      value: opcion,
+                      child: Text(opcion.etiquetaConPeso),
                     ),
                 ],
+                onChanged: (opcion) {
+                  if (opcion != null) setState(() => _categoria = opcion);
+                },
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text('Envío frágil'),
+                subtitle: const Text('El repartidor lo va a manejar con más cuidado.'),
+                value: _esFragil,
+                onChanged: (valor) => setState(() => _esFragil = valor ?? false),
               ),
               const SizedBox(height: 16),
+              Text('Origen: ${_formatearPunto(_origen, _direccionOrigen)}'),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _elegirOrigen,
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Elegir origen en el mapa'),
+              ),
+              const SizedBox(height: 16),
+              Text('Destino: ${_formatearPunto(_destino, _direccionDestino)}'),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _elegirDestino,
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Elegir destino en el mapa'),
+              ),
+              if (_errorUbicacion != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _errorUbicacion!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+              if (_sugerencia case final sugerencia?) ...[
+                const SizedBox(height: 16),
+                Card(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Precio sugerido',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Referencia, no una tarifa fija — vos elegís cuánto '
+                          'ofertar.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => setState(
+                                () => _montoController.text = sugerencia.moto
+                                    .bob
+                                    .toStringAsFixed(2),
+                              ),
+                              icon: const Icon(Icons.two_wheeler, size: 18),
+                              label: Text('Moto: ${sugerencia.moto.format()}'),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () => setState(
+                                () => _montoController.text = sugerencia.auto
+                                    .bob
+                                    .toStringAsFixed(2),
+                              ),
+                              icon: const Icon(
+                                Icons.directions_car,
+                                size: 18,
+                              ),
+                              label: Text('Auto: ${sugerencia.auto.format()}'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _descripcionController,
                 decoration: const InputDecoration(
@@ -249,30 +358,6 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                   }
                 },
               ),
-              const SizedBox(height: 24),
-              Text('Origen: ${_formatearPunto(_origen, _direccionOrigen)}'),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _elegirOrigen,
-                icon: const Icon(Icons.map_outlined),
-                label: const Text('Elegir origen en el mapa'),
-              ),
-              const SizedBox(height: 16),
-              Text('Destino: ${_formatearPunto(_destino, _direccionDestino)}'),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _elegirDestino,
-                icon: const Icon(Icons.map_outlined),
-                label: const Text('Elegir destino en el mapa'),
-              ),
-              if (_errorUbicacion != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    _errorUbicacion!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
-                ),
               const SizedBox(height: 24),
               const Text('Foto del paquete (opcional)'),
               const SizedBox(height: 8),

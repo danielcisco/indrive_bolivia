@@ -20,3 +20,15 @@ final kycPendingControllerProvider =
                 snapshot.docs.map(UsuarioKycPendiente.fromFirestore).toList(),
           );
     });
+
+/// Cuentas ya verificadas, en tiempo real (sprint extra: pestaña
+/// "Historial" de `KycPendingScreen`).
+final kycHistorialProvider = StreamProvider<List<UsuarioKycPendiente>>((ref) {
+  return ref
+      .watch(usersRepositoryProvider)
+      .streamUsuariosVerificadosRecientes()
+      .map(
+        (snapshot) =>
+            snapshot.docs.map(UsuarioKycPendiente.fromFirestore).toList(),
+      );
+});

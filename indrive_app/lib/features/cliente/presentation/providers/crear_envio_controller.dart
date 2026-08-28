@@ -33,6 +33,7 @@ class CrearEnvioController extends AsyncNotifier<void> {
     required GeoPoint destino,
     required Money montoOfertadoInicial,
     required CategoriaPaquete categoria,
+    bool esFragil = false,
     File? foto,
   }) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -60,6 +61,7 @@ class CrearEnvioController extends AsyncNotifier<void> {
         'destinoLng': destino.longitude,
         'montoCentavos': montoOfertadoInicial.centavos,
         'categoria': categoria.toFirestore(),
+        'esFragil': esFragil,
       };
 
       if (!hayConexion) {
@@ -86,6 +88,7 @@ class CrearEnvioController extends AsyncNotifier<void> {
               montoOfertadoInicial: montoOfertadoInicial,
               categoria: categoria,
               fotoPaqueteUrl: fotoPaqueteUrl,
+              esFragil: esFragil,
             )
             .timeout(const Duration(seconds: 10));
         idCreado = id;

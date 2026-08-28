@@ -63,6 +63,18 @@ enum CategoriaPaquete {
     CategoriaPaquete.paqueteMediano => 'Paquete mediano',
     CategoriaPaquete.encomiendaMercado => 'Encomienda de mercado',
   };
+
+  /// Peso máximo de referencia (sprint extra) — no se valida server-side
+  /// (nadie pesa el paquete), es solo la guía que se muestra en el
+  /// desplegable del formulario para que el cliente elija bien.
+  double get pesoMaximoKg => switch (this) {
+    CategoriaPaquete.documentos => 1,
+    CategoriaPaquete.paqueteChico => 5,
+    CategoriaPaquete.paqueteMediano => 15,
+    CategoriaPaquete.encomiendaMercado => 30,
+  };
+
+  String get etiquetaConPeso => '$etiqueta (hasta ${pesoMaximoKg.toStringAsFixed(0)} kg)';
 }
 
 enum MetodoPago {
@@ -107,6 +119,8 @@ class Envio {
     required this.pagoVerificado,
     required this.categoria,
     required this.fotoPaqueteUrl,
+    required this.esFragil,
+    required this.fechaVerificacionPago,
   });
 
   factory Envio.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -141,6 +155,8 @@ class Envio {
           ? CategoriaPaquete.fromFirestore(data['categoria'] as String)
           : CategoriaPaquete.documentos,
       fotoPaqueteUrl: data['fotoPaqueteUrl'] as String?,
+      esFragil: data['esFragil'] as bool? ?? false,
+      fechaVerificacionPago: data['fechaVerificacionPago'] as Timestamp?,
     );
   }
 
@@ -193,6 +209,15 @@ class Envio {
   /// bloquea la publicación) o si no había conexión al crear.
   final String? fotoPaqueteUrl;
 
+  /// Marca "frágil, manejar con cuidado" (sprint extra) — solo
+  /// informativo para el repartidor, no cambia precio ni matching.
+  final bool esFragil;
+
+  /// Cuándo un Admin verificó el pago QR (sprint extra: historial de
+  /// pagos) — null si nunca se verificó, sin importar [pagoVerificado]
+  /// (cuentas de antes de este campo).
+  final Timestamp? fechaVerificacionPago;
+
   /// Datos para `collection('envios').add(...)` al crear. No incluye
   /// `expiraEn` (lo fija la Cloud Function) ni `repartidorAsignadoId`
   /// (empieza null).
@@ -205,6 +230,7 @@ class Envio {
     required Money montoOfertadoInicial,
     required CategoriaPaquete categoria,
     String? fotoPaqueteUrl,
+    bool esFragil = false,
   }) => {
     'clienteId': clienteId,
     'status': EnvioStatus.pendienteOfertas.toFirestore(),
@@ -218,5 +244,6 @@ class Envio {
     'createdAt': FieldValue.serverTimestamp(),
     'categoria': categoria.toFirestore(),
     'fotoPaqueteUrl': ?fotoPaqueteUrl,
+    'esFragil': esFragil,
   };
 }

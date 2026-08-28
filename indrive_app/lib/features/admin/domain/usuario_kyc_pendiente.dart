@@ -33,6 +33,7 @@ class UsuarioKycPendiente {
     required this.fotoVehiculoUrl,
     required this.tarjetaCirculacionUrl,
     required this.soatUrl,
+    required this.fechaVerificacion,
   });
 
   factory UsuarioKycPendiente.fromFirestore(
@@ -64,6 +65,7 @@ class UsuarioKycPendiente {
       fotoVehiculoUrl: data['fotoVehiculoUrl'] as String?,
       tarjetaCirculacionUrl: data['tarjetaCirculacionUrl'] as String?,
       soatUrl: data['soatUrl'] as String?,
+      fechaVerificacion: data['fechaVerificacion'] as Timestamp?,
     );
   }
 
@@ -101,4 +103,9 @@ class UsuarioKycPendiente {
   final String? fotoVehiculoUrl;
   final String? tarjetaCirculacionUrl;
   final String? soatUrl;
+
+  /// Cuándo un Admin aprobó esta cuenta (sprint extra: historial) — null
+  /// si nunca se verificó, o si se verificó antes de que existiera este
+  /// campo.
+  final Timestamp? fechaVerificacion;
 }

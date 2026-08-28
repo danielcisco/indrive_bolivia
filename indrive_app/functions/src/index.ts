@@ -123,6 +123,10 @@ export const approveKyc = onCall(async (request) => {
       {
         isVerified: true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        // Campo dedicado (sprint extra: historial de KYC en Admin), no
+        // reusa updatedAt -- ese campo lo puede tocar cualquier otra
+        // escritura futura y dejaria de significar "cuando se aprobo".
+        fechaVerificacion: admin.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true }
     );

@@ -185,6 +185,14 @@ class _EnvioRepartidorDetalleScreenState
                   Text(
                     'Oferta inicial: ${envio.montoOfertadoInicial.format()}',
                   ),
+                  if (envio.esFragil) ...[
+                    const SizedBox(height: 8),
+                    Chip(
+                      avatar: const Icon(Icons.warning_amber_outlined, size: 18),
+                      label: const Text('Frágil — manejar con cuidado'),
+                      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                    ),
+                  ],
                   if (envio.fotoPaqueteUrl != null) ...[
                     const SizedBox(height: 8),
                     ClipRRect(

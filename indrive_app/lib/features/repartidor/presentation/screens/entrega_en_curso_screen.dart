@@ -169,6 +169,14 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
                   ),
                   const SizedBox(height: 8),
                   EstadoEnvioChip(status: envio.status),
+                  if (envio.esFragil) ...[
+                    const SizedBox(height: 8),
+                    Chip(
+                      avatar: const Icon(Icons.warning_amber_outlined, size: 18),
+                      label: const Text('Frágil — manejar con cuidado'),
+                      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   EnvioMapPreview(envio: envio),
                   const SizedBox(height: 24),
