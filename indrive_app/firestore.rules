@@ -50,6 +50,20 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Posición aproximada de repartidores "disponibles" (sprint extra:
+    // mapa en el Home de Cliente) — colección aparte de users/{uid} a
+    // propósito, mismo criterio que perfiles_publicos/: solo posición +
+    // tipo de vehículo, nada de teléfono/nombre/documentos, para que
+    // cualquier Cliente autenticado pueda verla sin exponer el resto del
+    // perfil del repartidor. El propio repartidor la escribe al
+    // prender/apagar el switch de disponibilidad; se borra al apagarlo.
+    match /repartidores_disponibles/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(uid) &&
+        request.resource.data.keys().hasOnly(['posicion', 'tipoVehiculo', 'updatedAt']);
+      allow delete: if isOwner(uid);
+    }
+
     function isVerifiedRepartidor() {
       return isSignedIn() &&
         request.auth.token.role == 'repartidor' &&

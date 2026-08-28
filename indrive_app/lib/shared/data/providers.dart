@@ -122,6 +122,13 @@ final miEntregaActivaProvider = StreamProvider<Envio?>((ref) {
       .streamEntregaActivaDeRepartidor(uid);
 });
 
+/// Repartidores disponibles en tiempo real (sprint extra) — alimenta el
+/// mapa del Home de Cliente.
+final repartidoresDisponiblesProvider =
+    StreamProvider<QuerySnapshot<Map<String, dynamic>>>((ref) {
+      return ref.watch(usersRepositoryProvider).streamRepartidoresDisponibles();
+    });
+
 /// Envíos `en_curso` en tiempo real para el mapa en vivo del panel Admin
 /// (Sprint 5.1). Ver `EnviosRepository.streamEnviosEnCurso` para el porqué
 /// este stream acotado no viola la regla de "no streams masivos".

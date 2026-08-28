@@ -29,6 +29,9 @@ class UsersRepository {
   CollectionReference<Map<String, dynamic>> get _perfilesPublicos =>
       _firestore.collection('perfiles_publicos');
 
+  CollectionReference<Map<String, dynamic>> get _repartidoresDisponibles =>
+      _firestore.collection('repartidores_disponibles');
+
   /// Escribe [campos] en `users/{uid}` Y en `perfiles_publicos/{uid}` a la
   /// vez, en un solo batch atómico — evita que las dos copias del perfil
   /// (privada y pública) queden desincronizadas si una escritura falla y
@@ -67,6 +70,51 @@ class UsersRepository {
   Future<bool> obtenerDisponibilidad(String uid) async {
     final snapshot = await _users.doc(uid).get();
     return snapshot.data()?['disponible'] as bool? ?? true;
+  }
+
+  /// Fetch puntual del tipo de vehículo ya cargado en el registro (Sprint
+  /// 20) — lo necesita `publicarDisponibilidad` para elegir el ícono
+  /// correcto en el mapa del Cliente.
+  Future<String?> obtenerTipoVehiculo(String uid) async {
+    final snapshot = await _users.doc(uid).get();
+    return snapshot.data()?['tipoVehiculo'] as String?;
+  }
+
+  /// Publica la posición aproximada del repartidor en
+  /// `repartidores_disponibles/{uid}` (sprint extra: mapa en el Home de
+  /// Cliente) — se llama al prender el switch de disponibilidad y de
+  /// nuevo cada vez que se vuelve a abrir el Home ya disponible, para que
+  /// la posición no quede demasiado vieja sin necesidad de un stream de
+  /// ubicación en vivo (CLAUDE.md prohíbe streams crudos de GPS fuera de
+  /// una entrega en curso).
+  Future<void> publicarDisponibilidad(
+    String uid, {
+    required GeoPoint posicion,
+    required String? tipoVehiculo,
+  }) {
+    return _repartidoresDisponibles.doc(uid).set({
+      'posicion': posicion,
+      'tipoVehiculo': tipoVehiculo ?? 'moto',
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Se llama al apagar el switch de disponibilidad — sin esto, un
+  /// repartidor que se desconecta seguiría apareciendo en el mapa del
+  /// Cliente en una posición vieja.
+  Future<void> retirarDisponibilidad(String uid) {
+    return _repartidoresDisponibles.doc(uid).delete();
+  }
+
+  /// Repartidores disponibles en tiempo real, para el mapa del Home de
+  /// Cliente — acotado por `.limit()`. Sin filtro geográfico por ahora:
+  /// en la escala real de Villazón el total de repartidores conectados a
+  /// la vez es chico, no hace falta el sondeo adaptativo por geohash que
+  /// sí necesita el radar de envíos (volumen mucho mayor).
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamRepartidoresDisponibles({
+    int limit = 100,
+  }) {
+    return _repartidoresDisponibles.limit(limit).snapshots();
   }
 
   /// Clientes y repartidores con KYC pendiente (`isVerified == false`),

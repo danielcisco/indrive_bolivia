@@ -1,6 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/auth/cerrar_sesion.dart';
 import 'estado_verificacion_screen.dart';
 import 'mis_calificaciones_screen.dart';
 import 'seguridad_screen.dart';
@@ -69,7 +69,7 @@ List<Widget> tilesComunesDeHomeDrawer(
       title: const Text('Cerrar sesión'),
       onTap: () {
         Navigator.of(context).pop();
-        FirebaseAuth.instance.signOut();
+        cerrarSesionYBorrarBloqueo();
       },
     ),
   ];

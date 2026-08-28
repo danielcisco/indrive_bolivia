@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/auth/cerrar_sesion.dart';
 import '../data/providers.dart';
 import 'pantalla_instrucciones_foto.dart';
 import 'soporte_whatsapp.dart';
@@ -194,7 +195,7 @@ class _EsperandoVerificacionScreenState
                 ],
                 const SizedBox(height: 16),
                 OutlinedButton(
-                  onPressed: FirebaseAuth.instance.signOut,
+                  onPressed: cerrarSesionYBorrarBloqueo,
                   child: const Text('Cerrar sesión'),
                 ),
               ],

@@ -17,6 +17,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Foto del comprobante QR al confirmar entrega (Sprint 6.1). -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Bloqueo local con huella/Face (sprint extra) — solo activa el
+         sensor que el fabricante ya expone al SO, no agrega hardware. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <application
         android:label="indrive_app"
         android:name="${applicationName}"

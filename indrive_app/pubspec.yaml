@@ -87,6 +87,14 @@ dependencies:
   http: ^1.2.2
   url_launcher: ^6.3.2
 
+  # Bloqueo local con huella/PIN encima de la sesión de Firebase ya
+  # persistida (sprint extra) — local_auth pide huella/Face ID al SO;
+  # flutter_secure_storage guarda el hash del PIN de respaldo (Keystore/
+  # Keychain, no SharedPreferences: es un secreto, no una preferencia).
+  local_auth: ^2.3.0
+  flutter_secure_storage: ^9.2.2
+  crypto: ^3.0.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

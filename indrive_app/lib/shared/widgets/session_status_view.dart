@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/auth/cerrar_sesion.dart';
+
 /// Muestra rol/verificación leídos del ID token y un botón de cerrar
 /// sesión. Compartido por las 3 pantallas Home.
 ///
@@ -79,7 +81,7 @@ class _SessionStatusViewState extends State<SessionStatusView> {
                 child: const Text('Reintentar'),
               ),
             OutlinedButton(
-              onPressed: FirebaseAuth.instance.signOut,
+              onPressed: cerrarSesionYBorrarBloqueo,
               child: const Text('Cerrar sesión'),
             ),
           ],

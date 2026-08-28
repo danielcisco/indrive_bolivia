@@ -3,7 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/auth/cerrar_sesion.dart';
 import '../../core/auth/phone_auth_repository.dart';
+import 'app_lock_gate.dart';
 import 'registro_wizard_screen.dart';
 
 /// Builder de la pantalla de "verificación pendiente" — recibe
@@ -143,7 +145,10 @@ class _AuthGateState extends ConsumerState<AuthGate> {
                     () => setState(() {}),
                   );
                 }
-                return widget.homeBuilder(context);
+                // Bloqueo local con huella/PIN (sprint extra) — solo acá,
+                // no en el bypass de Admin de más arriba: es un gate
+                // pensado para el celular, no para el panel web.
+                return AppLockGate(child: widget.homeBuilder(context));
               },
             );
           },
@@ -182,7 +187,7 @@ class _RoleMismatchScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               OutlinedButton(
-                onPressed: FirebaseAuth.instance.signOut,
+                onPressed: cerrarSesionYBorrarBloqueo,
                 child: const Text('Cerrar sesión'),
               ),
             ],
