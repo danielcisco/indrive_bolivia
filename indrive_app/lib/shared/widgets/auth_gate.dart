@@ -1,9 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/phone_auth_repository.dart';
-import '../data/providers.dart';
 import 'registro_wizard_screen.dart';
 
 /// Builder de la pantalla de "verificación pendiente" — recibe
@@ -63,27 +63,6 @@ class AuthGate extends ConsumerStatefulWidget {
 }
 
 class _AuthGateState extends ConsumerState<AuthGate> {
-  Future<bool>? _perfilCompletoFuture;
-  String? _uidDelPerfilVerificado;
-
-  Future<bool> _perfilEstaCompleto(String uid) async {
-    final perfil = await ref.read(usersRepositoryProvider).obtenerMiPerfil(uid);
-    return perfil != null &&
-        perfil.nombre.isNotEmpty &&
-        perfil.apellido.isNotEmpty &&
-        perfil.nick.isNotEmpty;
-  }
-
-  void _refrescarPerfil(String uid) {
-    // Body en bloque (no flecha): `setState` exige un callback que
-    // devuelva void. `() => _x = _perfilEstaCompleto(uid)` es una
-    // asignación que "devuelve" el Future asignado, así que Flutter
-    // rechazaba ese closure en runtime — este fue el bug real reportado.
-    setState(() {
-      _perfilCompletoFuture = _perfilEstaCompleto(uid);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -119,27 +98,39 @@ class _AuthGateState extends ConsumerState<AuthGate> {
             if (!widget.requierePerfilCompleto) {
               return widget.homeBuilder(context);
             }
-            if (_uidDelPerfilVerificado != user.uid) {
-              _uidDelPerfilVerificado = user.uid;
-              _perfilCompletoFuture = _perfilEstaCompleto(user.uid);
-            }
-            return FutureBuilder<bool>(
-              future: _perfilCompletoFuture,
+            // Stream, no Future cacheado: el wizard corre en una ruta
+            // aparte (empujada por PhoneLoginView, no por este fallback),
+            // así que un Future capturado una sola vez por uid quedaba
+            // stale para siempre — al volver acá con popUntil(isFirst)
+            // este gate seguía mostrando "incompleto" con los datos de
+            // ANTES del registro y volvía a construir el wizard desde
+            // cero. Un stream sobre el documento se autoactualiza apenas
+            // se escribe cualquier campo, sin depender de que alguien
+            // recuerde refrescarlo a mano.
+            return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .snapshots(),
               builder: (context, perfilSnapshot) {
                 if (!perfilSnapshot.hasData) {
                   return const Scaffold(
                     body: Center(child: CircularProgressIndicator()),
                   );
                 }
-                if (perfilSnapshot.data == false) {
+                final datos = perfilSnapshot.data!.data();
+                final perfilCompleto =
+                    datos != null &&
+                    (datos['nombre'] as String?)?.isNotEmpty == true &&
+                    (datos['apellido'] as String?)?.isNotEmpty == true &&
+                    (datos['nick'] as String?)?.isNotEmpty == true;
+                if (!perfilCompleto) {
                   return RegistroWizardScreen(
                     role: widget.expectedRole,
-                    onCompletado: () async {
-                      await PhoneAuthRepository().assignInitialRole(
-                        widget.expectedRole,
-                      );
-                      _refrescarPerfil(user.uid);
-                    },
+                    onCompletado: () =>
+                        PhoneAuthRepository().assignInitialRole(
+                          widget.expectedRole,
+                        ),
                   );
                 }
                 final isVerified =

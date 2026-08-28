@@ -53,6 +53,11 @@ Future<void> main() async {
                 ),
               );
             },
+            // Sin envioId (sprint extra: verificación de cuenta) — vuelve
+            // a la ruta base, donde `AuthGate` ya lee `isVerified` en
+            // tiempo real vía `EsperandoVerificacionScreen`.
+            onCuentaVerificada: () => navigatorKey.currentState
+                ?.popUntil((route) => route.isFirst),
           );
           unawaited(service.initialize());
           ref.onDispose(service.dispose);

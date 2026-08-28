@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Debe coincidir exactamente con el `channelId` que usa la Cloud Function
@@ -17,6 +18,11 @@ const String kOfertasChannelId = 'ofertas_alta_prioridad';
 /// A diferencia de [kOfertasChannelId], es informativo, no urgente: sin
 /// `fullScreenIntent` ni `category: call`.
 const String kActualizacionesEnvioChannelId = 'actualizaciones_envio';
+
+/// Avisos sobre la cuenta misma, no sobre un envío puntual (sprint extra:
+/// verificación de cuenta) — canal aparte porque "Actualizaciones de tu
+/// envío" describe mal un aviso de "tu cuenta fue verificada".
+const String kActualizacionesCuentaChannelId = 'actualizaciones_cuenta';
 
 /// Núcleo de notificaciones push (Sprint 3.2): canal de alta importancia,
 /// registro del token FCM en `users/{uid}.fcmToken`, y despliegue de la
@@ -38,6 +44,7 @@ class FcmService {
     FirebaseFirestore? firestore,
     FlutterLocalNotificationsPlugin? localNotifications,
     this.onEnvioNotificationTap,
+    this.onCuentaVerificada,
   }) : _messaging = messaging ?? FirebaseMessaging.instance,
        _firestore = firestore ?? FirebaseFirestore.instance,
        _localNotifications =
@@ -59,6 +66,12 @@ class FcmService {
   /// (`getInitialMessage`).
   final void Function(String envioId, String? tipo)? onEnvioNotificationTap;
 
+  /// Se llama al tocar el aviso de "tu cuenta fue verificada" (sprint
+  /// extra) — no tiene `envioId`, así que no encaja en
+  /// [onEnvioNotificationTap]; cada app lo inyecta igual, vía override de
+  /// `fcmServiceProvider`.
+  final VoidCallback? onCuentaVerificada;
+
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
   StreamSubscription<RemoteMessage>? _openedAppSubscription;
@@ -76,10 +89,7 @@ class FcmService {
         final payload = response.payload;
         if (payload == null) return;
         final data = jsonDecode(payload) as Map<String, dynamic>;
-        final envioId = data['envioId'] as String?;
-        if (envioId != null) {
-          onEnvioNotificationTap?.call(envioId, data['tipo'] as String?);
-        }
+        _despacharTap(data['envioId'] as String?, data['tipo'] as String?);
       },
     );
     await _crearCanales();
@@ -109,9 +119,24 @@ class FcmService {
   }
 
   void _alTocarNotificacion(RemoteMessage message) {
-    final envioId = message.data['envioId'] as String?;
+    _despacharTap(
+      message.data['envioId'] as String?,
+      message.data['tipo'] as String?,
+    );
+  }
+
+  /// Único punto de decisión entre los dos callbacks — usado por los 3
+  /// caminos de tap (foreground, background, app cerrada). "tipo" manda:
+  /// un aviso de cuenta verificada no tiene envioId, así que se revisa
+  /// primero para no depender de que [onEnvioNotificationTap] descarte un
+  /// envioId ausente en silencio.
+  void _despacharTap(String? envioId, String? tipo) {
+    if (tipo == 'cuenta_verificada') {
+      onCuentaVerificada?.call();
+      return;
+    }
     if (envioId != null) {
-      onEnvioNotificationTap?.call(envioId, message.data['tipo'] as String?);
+      onEnvioNotificationTap?.call(envioId, tipo);
     }
   }
 
@@ -133,12 +158,20 @@ class FcmService {
           'o vence sin que nadie lo tome.',
       importance: Importance.high,
     );
+    const canalCuenta = AndroidNotificationChannel(
+      kActualizacionesCuentaChannelId,
+      'Actualizaciones de tu cuenta',
+      description: 'Avisos sobre el estado de tu cuenta, como la '
+          'verificación de tu identidad.',
+      importance: Importance.high,
+    );
     final plugin = _localNotifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
     await plugin?.createNotificationChannel(canalOfertas);
     await plugin?.createNotificationChannel(canalActualizaciones);
+    await plugin?.createNotificationChannel(canalCuenta);
   }
 
   Future<void> _mostrarNotificacionLocal(RemoteMessage message) async {
@@ -149,6 +182,11 @@ class FcmService {
     // sea, en vez de asumir siempre el de ofertas.
     final channelId = message.notification?.android?.channelId ?? kOfertasChannelId;
     final esOfertaUrgente = channelId == kOfertasChannelId;
+    final nombreCanal = switch (channelId) {
+      kOfertasChannelId => 'Ofertas cercanas',
+      kActualizacionesCuentaChannelId => 'Actualizaciones de tu cuenta',
+      _ => 'Actualizaciones de tu envío',
+    };
     await _localNotifications.show(
       id: notification.hashCode,
       title: notification.title,
@@ -163,7 +201,7 @@ class FcmService {
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channelId,
-          esOfertaUrgente ? 'Ofertas cercanas' : 'Actualizaciones de tu envío',
+          nombreCanal,
           importance: Importance.high,
           priority: Priority.high,
           category: esOfertaUrgente ? AndroidNotificationCategory.call : null,

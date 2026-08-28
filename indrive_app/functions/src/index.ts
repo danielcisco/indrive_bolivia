@@ -335,28 +335,63 @@ async function enviarNotificacionAUsuario(
   uid: string,
   title: string,
   body: string,
-  envioId: string,
+  // Opcional (sprint extra, verificación de cuenta): no todo aviso es
+  // sobre un envío puntual - el de "cuenta verificada" no tiene uno.
+  envioId?: string,
   // Viaja en el payload junto a envioId para que el cliente (Sprint 14)
   // pueda decidir a qué pantalla navegar segun el tipo de aviso, no
   // siempre la misma - ver FcmService.onEnvioNotificationTap.
-  tipo?: string
+  tipo?: string,
+  channelId = "actualizaciones_envio"
 ): Promise<void> {
   const userSnap = await admin.firestore().collection("users").doc(uid).get();
   const token = userSnap.data()?.fcmToken as string | undefined;
   if (!token) return;
 
+  const data: Record<string, string> = {};
+  if (envioId) data.envioId = envioId;
+  if (tipo) data.tipo = tipo;
+
   await admin.messaging().send({
     token,
     notification: { title, body },
-    data: tipo ? { envioId, tipo } : { envioId },
+    data,
     android: {
       priority: "high",
-      notification: {
-        channelId: "actualizaciones_envio",
-      },
+      notification: { channelId },
     },
   });
 }
+
+/**
+ * Avisa al Cliente/Repartidor cuando un admin aprueba su KYC (sprint
+ * extra) - antes la única forma de enterarse era abrir la app y ver que
+ * `EsperandoVerificacionScreen` ya no bloqueaba (ese stream sobre
+ * `users/{uid}` sigue siendo lo que decide el estado real; esto solo
+ * avisa aunque la app esté cerrada). Canal aparte de
+ * "actualizaciones_envio": esto no es sobre un envío puntual.
+ */
+export const notificarCuentaVerificada = onDocumentUpdated(
+  "users/{uid}",
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+
+    const fueVerificado =
+      before.isVerified !== true && after.isVerified === true;
+    if (!fueVerificado) return;
+
+    await enviarNotificacionAUsuario(
+      event.params.uid,
+      "¡Tu cuenta fue verificada!",
+      "Ya podés usar la app sin restricciones.",
+      undefined,
+      "cuenta_verificada",
+      "actualizaciones_cuenta"
+    );
+  }
+);
 
 /**
  * Avisa al Cliente cuando un repartidor toma su envio directo (sin
