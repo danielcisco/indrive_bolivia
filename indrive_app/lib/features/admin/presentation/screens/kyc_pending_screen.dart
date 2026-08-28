@@ -53,7 +53,8 @@ class _KycPendingScreenState extends ConsumerState<KycPendingScreen> {
     return estado.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => const SupportErrorView(
-        mensaje: 'No pudimos cargar las cuentas pendientes de KYC. '
+        mensaje:
+            'No pudimos cargar las cuentas pendientes de KYC. '
             'Revisá tu conexión y volvé a intentar.',
         app: 'Admin',
         motivo: 'no puedo ver la lista de KYC pendiente',
@@ -75,133 +76,151 @@ class _KycPendingScreenState extends ConsumerState<KycPendingScreen> {
           );
         }
 
-        return ListView.builder(
-          itemCount: usuarios.length,
-          itemBuilder: (context, index) {
-            final usuario = usuarios[index];
-            final aprobando = _aprobando.contains(usuario.uid);
-            final identificador = (usuario.nombre?.isNotEmpty ?? false)
-                ? '${usuario.nombre} ${usuario.apellido ?? ''}'
-                      '${usuario.nick != null ? ' (@${usuario.nick})' : ''}'
-                : (usuario.phoneNumber ?? usuario.uid);
+        // Scrollbar siempre visible (sprint extra) — cada tarjeta trae
+        // bastante texto y varias filas de fotos, así que en una cuenta
+        // repartidor la lista completa suele pasar de largo la pantalla;
+        // sin esto no había ninguna señal de que hubiera más para revisar
+        // más abajo.
+        return Scrollbar(
+          thumbVisibility: true,
+          child: ListView.builder(
+            itemCount: usuarios.length,
+            itemBuilder: (context, index) {
+              final usuario = usuarios[index];
+              final aprobando = _aprobando.contains(usuario.uid);
+              final identificador = (usuario.nombre?.isNotEmpty ?? false)
+                  ? '${usuario.nombre} ${usuario.apellido ?? ''}'
+                        '${usuario.nick != null ? ' (@${usuario.nick})' : ''}'
+                  : (usuario.phoneNumber ?? usuario.uid);
 
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Chip(
-                          label: Text(
-                            usuario.role == 'cliente' ? 'Cliente' : 'Repartidor',
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Chip(
+                            label: Text(
+                              usuario.role == 'cliente'
+                                  ? 'Cliente'
+                                  : 'Repartidor',
+                            ),
+                            visualDensity: VisualDensity.compact,
                           ),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            identificador,
-                            style: Theme.of(context).textTheme.titleMedium,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              identificador,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      _filaDato('Teléfono', usuario.phoneNumber ?? '—'),
+                      _filaDato(
+                        'Registrado',
+                        _formatearFecha(usuario.createdAt),
+                      ),
+                      _filaDato(
+                        'Fecha de nacimiento',
+                        _formatearFecha(usuario.fechaNacimiento),
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Documento de identidad',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      _filaFotos(context, {
+                        'Foto personal': usuario.fotoPersonalUrl,
+                        'Cédula': usuario.cedulaUrl,
+                      }),
+                      if (usuario.role == 'repartidor') ...[
+                        const SizedBox(height: 12),
+                        const Divider(height: 1),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Licencia de conducir',
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
+                        const SizedBox(height: 8),
+                        _filaDato(
+                          'Número de licencia',
+                          usuario.numeroLicencia ?? '—',
+                        ),
+                        _filaDato(
+                          'Vencimiento',
+                          _formatearFecha(usuario.fechaExpiracionLicencia),
+                        ),
+                        const SizedBox(height: 8),
+                        _filaFotos(context, {
+                          'Licencia (frente)': usuario.licenciaFrenteUrl,
+                          'Licencia (dorso)': usuario.licenciaDorsoUrl,
+                          'Selfie con licencia': usuario.selfieLicenciaUrl,
+                        }),
+                        const SizedBox(height: 12),
+                        const Divider(height: 1),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Vehículo',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        _filaDato(
+                          'Tipo',
+                          usuario.tipoVehiculo == 'auto'
+                              ? 'Automóvil'
+                              : usuario.tipoVehiculo == 'moto'
+                              ? 'Motocicleta'
+                              : '—',
+                        ),
+                        _filaDato('Marca', usuario.marcaVehiculo ?? '—'),
+                        _filaDato('Modelo', usuario.modeloVehiculo ?? '—'),
+                        _filaDato('Color', usuario.colorVehiculo ?? '—'),
+                        _filaDato('Placa', usuario.placaVehiculo ?? '—'),
+                        _filaDato(
+                          'Año',
+                          usuario.anioVehiculo?.toString() ?? '—',
+                        ),
+                        const SizedBox(height: 8),
+                        _filaFotos(context, {
+                          'Vehículo': usuario.fotoVehiculoUrl,
+                          'Tarjeta de circulación':
+                              usuario.tarjetaCirculacionUrl,
+                          'SOAT': usuario.soatUrl,
+                        }),
                       ],
-                    ),
-                    const SizedBox(height: 4),
-                    _filaDato('Teléfono', usuario.phoneNumber ?? '—'),
-                    _filaDato('Registrado', _formatearFecha(usuario.createdAt)),
-                    _filaDato(
-                      'Fecha de nacimiento',
-                      _formatearFecha(usuario.fechaNacimiento),
-                    ),
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Documento de identidad',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    _filaFotos(context, {
-                      'Foto personal': usuario.fotoPersonalUrl,
-                      'Cédula': usuario.cedulaUrl,
-                    }),
-                    if (usuario.role == 'repartidor') ...[
                       const SizedBox(height: 12),
-                      const Divider(height: 1),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Licencia de conducir',
-                        style: Theme.of(context).textTheme.titleSmall,
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton.icon(
+                          onPressed: aprobando
+                              ? null
+                              : () => _aprobar(usuario.uid),
+                          icon: aprobando
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.check_outlined),
+                          label: Text(aprobando ? 'Aprobando...' : 'Aprobar'),
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      _filaDato(
-                        'Número de licencia',
-                        usuario.numeroLicencia ?? '—',
-                      ),
-                      _filaDato(
-                        'Vencimiento',
-                        _formatearFecha(usuario.fechaExpiracionLicencia),
-                      ),
-                      const SizedBox(height: 8),
-                      _filaFotos(context, {
-                        'Licencia (frente)': usuario.licenciaFrenteUrl,
-                        'Licencia (dorso)': usuario.licenciaDorsoUrl,
-                        'Selfie con licencia': usuario.selfieLicenciaUrl,
-                      }),
-                      const SizedBox(height: 12),
-                      const Divider(height: 1),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Vehículo',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      _filaDato(
-                        'Tipo',
-                        usuario.tipoVehiculo == 'auto'
-                            ? 'Automóvil'
-                            : usuario.tipoVehiculo == 'moto'
-                            ? 'Motocicleta'
-                            : '—',
-                      ),
-                      _filaDato('Marca', usuario.marcaVehiculo ?? '—'),
-                      _filaDato('Modelo', usuario.modeloVehiculo ?? '—'),
-                      _filaDato('Color', usuario.colorVehiculo ?? '—'),
-                      _filaDato('Placa', usuario.placaVehiculo ?? '—'),
-                      _filaDato(
-                        'Año',
-                        usuario.anioVehiculo?.toString() ?? '—',
-                      ),
-                      const SizedBox(height: 8),
-                      _filaFotos(context, {
-                        'Vehículo': usuario.fotoVehiculoUrl,
-                        'Tarjeta de circulación': usuario.tarjetaCirculacionUrl,
-                        'SOAT': usuario.soatUrl,
-                      }),
                     ],
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton.icon(
-                        onPressed: aprobando ? null : () => _aprobar(usuario.uid),
-                        icon: aprobando
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.check_outlined),
-                        label: Text(aprobando ? 'Aprobando...' : 'Aprobar'),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );

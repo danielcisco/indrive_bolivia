@@ -44,7 +44,8 @@ class EnvioDetalleScreen extends ConsumerWidget {
         mostrarErrorConSoporte(
           context,
           ref,
-          mensaje: 'Esa propuesta ya no está disponible — puede que otro '
+          mensaje:
+              'Esa propuesta ya no está disponible — puede que otro '
               'repartidor haya sido asignado justo antes. Probá con otra.',
           app: 'Cliente',
           motivo: 'no puedo aceptar una propuesta de mi envío $envioId',
@@ -170,7 +171,8 @@ class EnvioDetalleScreen extends ConsumerWidget {
       body: envioAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => const SupportErrorView(
-          mensaje: 'No pudimos cargar este envío. Revisá tu conexión y '
+          mensaje:
+              'No pudimos cargar este envío. Revisá tu conexión y '
               'volvé a intentar.',
           app: 'Cliente',
           motivo: 'no puedo ver el detalle de un envío',
@@ -188,104 +190,114 @@ class EnvioDetalleScreen extends ConsumerWidget {
               // abajo en vez de scrollear. En vertical, donde ya entraba
               // sin problema, esto no cambia nada.
               Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                    Text(
-                      envio.descripcion,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text('Categoría: ${envio.categoria.etiqueta}'),
-                    const SizedBox(height: 4),
-                    EstadoEnvioChip(status: envio.status),
-                    // Arriba de todo lo demás, antes del mapa (sprint
-                    // extra): quedaba enterrado a mitad de una pantalla
-                    // larga con mapa incluido — el cliente tenía que
-                    // deslizar para encontrarlo justo en el momento en
-                    // que el repartidor se lo está pidiendo.
-                    if (envio.status == EnvioStatus.asignado ||
-                        envio.status == EnvioStatus.enCurso) ...[
-                      const SizedBox(height: 12),
-                      _CodigoEntregaCard(envioId: envioId),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      'Monto inicial: ${envio.montoOfertadoInicial.format()}',
-                    ),
-                    if (envio.fotoPaqueteUrl != null) ...[
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          envio.fotoPaqueteUrl!,
-                          height: 160,
+                child: Scrollbar(
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          envio.descripcion,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                      ),
-                    ],
-                    if (envio.status == EnvioStatus.pendienteOfertas) ...[
-                      const SizedBox(height: 8),
-                      CountdownTimer(expiraEn: envio.expiraEn),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: () => _cancelarEnvio(context, ref),
-                        icon: const Icon(Icons.cancel_outlined),
-                        label: const Text('Cancelar envío'),
-                      ),
-                    ],
-                    if (envio.repartidorAsignadoId != null) ...[
-                      const SizedBox(height: 12),
-                      _RepartidorAsignadoCard(
-                        repartidorId: envio.repartidorAsignadoId!,
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    EnvioMapPreview(envio: envio),
-                    if (envio.status == EnvioStatus.entregado) ...[
-                      const SizedBox(height: 12),
-                      Text(switch (envio.metodoPago) {
-                        null => 'Método de pago no registrado.',
-                        MetodoPago.efectivo => 'Pago: efectivo.',
-                        MetodoPago.qr when envio.pagoVerificado =>
-                          'Pago QR verificado ✓',
-                        MetodoPago.qr => 'Pago QR: verificación pendiente.',
-                      }),
-                      const SizedBox(height: 8),
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final calificacionAsync = ref.watch(
-                            miCalificacionProvider(envioId),
-                          );
-                          final repartidorId = envio.repartidorAsignadoId;
-                          if (repartidorId == null) {
-                            return const SizedBox.shrink();
-                          }
-                          return calificacionAsync.when(
-                            loading: () => const SizedBox.shrink(),
-                            error: (error, _) => const SizedBox.shrink(),
-                            data: (calificacion) => calificacion != null
-                                ? const Text('Ya calificaste este envío.')
-                                : OutlinedButton.icon(
-                                    onPressed: () =>
-                                        _calificar(context, ref, repartidorId),
-                                    icon: const Icon(Icons.star_outline),
-                                    label: const Text('Calificar al repartidor'),
-                                  ),
-                          );
-                        },
-                      ),
-                    ],
-                    ],
+                        Text('Categoría: ${envio.categoria.etiqueta}'),
+                        const SizedBox(height: 4),
+                        EstadoEnvioChip(status: envio.status),
+                        // Arriba de todo lo demás, antes del mapa (sprint
+                        // extra): quedaba enterrado a mitad de una pantalla
+                        // larga con mapa incluido — el cliente tenía que
+                        // deslizar para encontrarlo justo en el momento en
+                        // que el repartidor se lo está pidiendo.
+                        if (envio.status == EnvioStatus.asignado ||
+                            envio.status == EnvioStatus.enCurso) ...[
+                          const SizedBox(height: 12),
+                          _CodigoEntregaCard(envioId: envioId),
+                        ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Monto inicial: ${envio.montoOfertadoInicial.format()}',
+                        ),
+                        if (envio.fotoPaqueteUrl != null) ...[
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              envio.fotoPaqueteUrl!,
+                              height: 160,
+                            ),
+                          ),
+                        ],
+                        if (envio.status == EnvioStatus.pendienteOfertas) ...[
+                          const SizedBox(height: 8),
+                          CountdownTimer(expiraEn: envio.expiraEn),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: () => _cancelarEnvio(context, ref),
+                            icon: const Icon(Icons.cancel_outlined),
+                            label: const Text('Cancelar envío'),
+                          ),
+                        ],
+                        if (envio.repartidorAsignadoId != null) ...[
+                          const SizedBox(height: 12),
+                          _RepartidorAsignadoCard(
+                            repartidorId: envio.repartidorAsignadoId!,
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        EnvioMapPreview(envio: envio),
+                        if (envio.status == EnvioStatus.entregado) ...[
+                          const SizedBox(height: 12),
+                          Text(switch (envio.metodoPago) {
+                            null => 'Método de pago no registrado.',
+                            MetodoPago.efectivo => 'Pago: efectivo.',
+                            MetodoPago.qr when envio.pagoVerificado =>
+                              'Pago QR verificado ✓',
+                            MetodoPago.qr => 'Pago QR: verificación pendiente.',
+                          }),
+                          const SizedBox(height: 8),
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final calificacionAsync = ref.watch(
+                                miCalificacionProvider(envioId),
+                              );
+                              final repartidorId = envio.repartidorAsignadoId;
+                              if (repartidorId == null) {
+                                return const SizedBox.shrink();
+                              }
+                              return calificacionAsync.when(
+                                loading: () => const SizedBox.shrink(),
+                                error: (error, _) => const SizedBox.shrink(),
+                                data: (calificacion) => calificacion != null
+                                    ? const Text('Ya calificaste este envío.')
+                                    : OutlinedButton.icon(
+                                        onPressed: () => _calificar(
+                                          context,
+                                          ref,
+                                          repartidorId,
+                                        ),
+                                        icon: const Icon(Icons.star_outline),
+                                        label: const Text(
+                                          'Calificar al repartidor',
+                                        ),
+                                      ),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),
               const Divider(height: 1),
               Expanded(
                 child: ofertasAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, _) => const SupportErrorView(
-                    mensaje: 'No pudimos cargar las propuestas de este '
+                    mensaje:
+                        'No pudimos cargar las propuestas de este '
                         'envío. Revisá tu conexión y volvé a intentar.',
                     app: 'Cliente',
                     motivo: 'no puedo ver las propuestas de mi envío',
@@ -431,12 +443,11 @@ class _CodigoEntregaCard extends ConsumerWidget {
                       Text(
                         'Dáselo al repartidor solo cuando recibas el '
                         'paquete.',
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onPrimaryContainer,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                        ),
                       ),
                     ],
                   ),
@@ -478,7 +489,9 @@ class _RepartidorAsignadoCard extends ConsumerWidget {
           child: ListTile(
             leading: AvatarCirculo(avatarId: perfil.avatarId),
             title: const Text('Tu repartidor'),
-            subtitle: Text('${perfil.nombre} ${perfil.apellido} (@${perfil.nick})'),
+            subtitle: Text(
+              '${perfil.nombre} ${perfil.apellido} (@${perfil.nick})',
+            ),
           ),
         );
       },

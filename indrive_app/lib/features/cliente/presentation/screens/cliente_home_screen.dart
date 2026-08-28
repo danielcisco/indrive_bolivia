@@ -4,110 +4,65 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/widgets/battery_optimization_prompt.dart';
 import '../../../../shared/widgets/envio_activo_card.dart';
-import '../../../../shared/widgets/estado_verificacion_screen.dart';
-import '../../../../shared/widgets/mis_calificaciones_screen.dart';
-import '../../../../shared/widgets/session_status_view.dart';
-import '../../../../shared/widgets/user_profile_header.dart';
+import '../widgets/cliente_home_drawer.dart';
 import 'envio_detalle_screen.dart';
 import 'mis_envios_screen.dart';
 
+/// Home de Cliente (sprint extra: menú hamburguesa) — la identidad, las
+/// calificaciones, la verificación, seguridad y la cuenta se movieron al
+/// `ClienteHomeDrawer`; acá solo queda lo que importa ver de entrada: el
+/// envío activo (si hay uno) y la acción principal.
 class ClienteHomeScreen extends ConsumerWidget {
   const ClienteHomeScreen({super.key});
-
-  // Mismo patrón que AdminHomeScreen._abrirSesion (Sprint 9): rol/estado
-  // de verificación detrás de un ícono de cuenta, no suelto en el body —
-  // un cliente común no necesita ver "Rol: cliente" impreso todo el
-  // tiempo en su pantalla principal (Sprint 16).
-  void _abrirSesion(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        content: const SessionStatusView(
-          appLabel: 'App Cliente — Villazón, Potosí',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final envioActivo = ref.watch(miEnvioActivoProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('inDrive Entregas — Cliente'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle_outlined),
-            tooltip: 'Cuenta',
-            onPressed: () => _abrirSesion(context),
-          ),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(56),
-          child: UserProfileHeader(mostrarRating: true),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const BatteryOptimizationPrompt(),
-            envioActivo.when(
-              loading: () => const SizedBox.shrink(),
-              error: (error, _) => const SizedBox.shrink(),
-              data: (envio) {
-                if (envio == null) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: EnvioActivoCard(
-                    envio: envio,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => EnvioDetalleScreen(envioId: envio.id),
+      appBar: AppBar(title: const Text('inDrive Entregas — Cliente')),
+      drawer: const ClienteHomeDrawer(),
+      // Scrollbar siempre visible (sprint extra) — con la card de envío
+      // activo + el aviso de batería, en un celular chico el contenido
+      // puede pasar del alto disponible; antes no había ninguna señal de
+      // que hubiera algo más para ver deslizando.
+      body: Scrollbar(
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const BatteryOptimizationPrompt(),
+              envioActivo.when(
+                loading: () => const SizedBox.shrink(),
+                error: (error, _) => const SizedBox.shrink(),
+                data: (envio) {
+                  if (envio == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: EnvioActivoCard(
+                      envio: envio,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => EnvioDetalleScreen(envioId: envio.id),
+                        ),
                       ),
                     ),
+                  );
+                },
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MisEnviosScreen()),
                   ),
-                );
-              },
-            ),
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MisCalificacionesScreen(),
+                  icon: const Icon(Icons.local_shipping_outlined),
+                  label: const Text('Mis envíos'),
                 ),
               ),
-              icon: const Icon(Icons.star_outline),
-              label: const Text('Mis calificaciones'),
-            ),
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const EstadoVerificacionScreen(role: 'cliente'),
-                ),
-              ),
-              icon: const Icon(Icons.verified_outlined),
-              label: const Text('Mi verificación'),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const MisEnviosScreen()),
-                ),
-                icon: const Icon(Icons.local_shipping_outlined),
-                label: const Text('Mis envíos'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

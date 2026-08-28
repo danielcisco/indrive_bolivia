@@ -5,36 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/widgets/battery_optimization_prompt.dart';
 import '../../../../shared/widgets/envio_activo_card.dart';
-import '../../../../shared/widgets/estado_verificacion_screen.dart';
-import '../../../../shared/widgets/mis_calificaciones_screen.dart';
-import '../../../../shared/widgets/session_status_view.dart';
-import '../../../../shared/widgets/user_profile_header.dart';
+import '../widgets/repartidor_home_drawer.dart';
 import 'entrega_en_curso_screen.dart';
 import 'mis_entregas_screen.dart';
 import 'radar_screen.dart';
 import 'subir_cedula_screen.dart';
 
+/// Home de Repartidor (sprint extra: menú hamburguesa) — la identidad,
+/// calificaciones, verificación, seguridad y cuenta se movieron al
+/// `RepartidorHomeDrawer`; acá queda lo que se mira apenas se abre la
+/// app: entrega activa, disponibilidad, aviso de KYC pendiente, y las 2
+/// acciones principales (Radar / Mis entregas).
 class RepartidorHomeScreen extends ConsumerWidget {
   const RepartidorHomeScreen({super.key});
-
-  // Mismo patrón que AdminHomeScreen._abrirSesion (Sprint 16): rol/estado
-  // de verificación detrás de un ícono de cuenta, no suelto en el body.
-  void _abrirSesion(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        content: const SessionStatusView(
-          appLabel: 'App Repartidor — Villazón, Potosí',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,118 +25,91 @@ class RepartidorHomeScreen extends ConsumerWidget {
     final entregaActiva = ref.watch(miEntregaActivaProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('inDrive Entregas — Repartidor'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle_outlined),
-            tooltip: 'Cuenta',
-            onPressed: () => _abrirSesion(context),
-          ),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(56),
-          child: UserProfileHeader(mostrarRating: true),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const BatteryOptimizationPrompt(),
-            entregaActiva.when(
-              loading: () => const SizedBox.shrink(),
-              error: (error, _) => const SizedBox.shrink(),
-              data: (envio) {
-                if (envio == null) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: EnvioActivoCard(
-                    envio: envio,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            EntregaEnCursoScreen(envioId: envio.id),
+      appBar: AppBar(title: const Text('inDrive Entregas — Repartidor')),
+      drawer: const RepartidorHomeDrawer(),
+      body: Scrollbar(
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const BatteryOptimizationPrompt(),
+              entregaActiva.when(
+                loading: () => const SizedBox.shrink(),
+                error: (error, _) => const SizedBox.shrink(),
+                data: (envio) {
+                  if (envio == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: EnvioActivoCard(
+                      envio: envio,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              EntregaEnCursoScreen(envioId: envio.id),
+                        ),
                       ),
                     ),
+                  );
+                },
+              ),
+              const _DisponibilidadSwitch(),
+              // Diferido de KYC (seguimiento del Sprint 5.1): aviso solo
+              // mientras no está verificado y todavía no subió ninguna
+              // foto — una vez subida desaparece, aunque el admin todavía
+              // no la haya revisado.
+              estadoKyc.when(
+                loading: () => const SizedBox.shrink(),
+                error: (error, _) => const SizedBox.shrink(),
+                data: (estado) {
+                  if (estado.isVerified || estado.cedulaUrl != null) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.tonalIcon(
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const SubirCedulaScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.badge_outlined),
+                        label: const Text('Subir foto de tu Cédula'),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const RadarScreen()),
                   ),
-                );
-              },
-            ),
-            const _DisponibilidadSwitch(),
-            // Diferido de KYC (seguimiento del Sprint 5.1): aviso solo
-            // mientras no está verificado y todavía no subió ninguna
-            // foto — una vez subida desaparece, aunque el admin todavía
-            // no la haya revisado.
-            estadoKyc.when(
-              loading: () => const SizedBox.shrink(),
-              error: (error, _) => const SizedBox.shrink(),
-              data: (estado) {
-                if (estado.isVerified || estado.cedulaUrl != null) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.tonalIcon(
-                      onPressed: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const SubirCedulaScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.badge_outlined),
-                      label: const Text('Subir foto de tu Cédula'),
+                  icon: const Icon(Icons.radar),
+                  label: const Text('Radar de ofertas'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const MisEntregasScreen(),
                     ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MisCalificacionesScreen(),
+                  icon: const Icon(Icons.local_shipping_outlined),
+                  label: const Text('Mis entregas'),
                 ),
               ),
-              icon: const Icon(Icons.star_outline),
-              label: const Text('Mis calificaciones'),
-            ),
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const EstadoVerificacionScreen(role: 'repartidor'),
-                ),
-              ),
-              icon: const Icon(Icons.verified_outlined),
-              label: const Text('Mi verificación'),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const RadarScreen()),
-                ),
-                icon: const Icon(Icons.radar),
-                label: const Text('Radar de ofertas'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const MisEntregasScreen()),
-                ),
-                icon: const Icon(Icons.local_shipping_outlined),
-                label: const Text('Mis entregas'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

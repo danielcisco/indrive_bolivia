@@ -458,6 +458,51 @@ export const notificarOfertaAceptada = onDocumentUpdated(
 );
 
 /**
+ * Avisa al Cliente y al Repartidor cuando el Admin verifica un pago QR
+ * (sprint extra). La entrega en si NO espera esta verificacion -- ya
+ * termino antes, en el momento en que el repartidor confirma la entrega
+ * (marcarEntregado); bloquearla hasta que un admin revise el comprobante
+ * dejaria al repartidor esperando a alguien que puede no estar online.
+ * Esto es solo la confirmacion post-hoc de que el comprobante era
+ * legitimo, asi que a ambos les interesa enterarse: al Cliente como
+ * respaldo de que su pago quedo registrado, al Repartidor como
+ * confirmacion de que el cobro fue aceptado.
+ */
+export const notificarPagoVerificado = onDocumentUpdated(
+  "envios/{envioId}",
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+
+    const fueVerificado =
+      before.pagoVerificado !== true && after.pagoVerificado === true;
+    if (!fueVerificado) return;
+
+    const clienteId = after.clienteId as string | undefined;
+    const repartidorId = after.repartidorAsignadoId as string | undefined;
+    const descripcion = (after.descripcion as string | undefined) ?? "tu envío";
+
+    if (clienteId) {
+      await enviarNotificacionAUsuario(
+        clienteId,
+        "Pago QR verificado",
+        `Un administrador confirmó tu pago de "${descripcion}".`,
+        event.params.envioId
+      );
+    }
+    if (repartidorId) {
+      await enviarNotificacionAUsuario(
+        repartidorId,
+        "Pago QR verificado",
+        `Un administrador confirmó el cobro de "${descripcion}".`,
+        event.params.envioId
+      );
+    }
+  }
+);
+
+/**
  * Avisa al Cliente cuando el repartidor confirma la recogida del paquete
  * (Sprint 8.2/8.3) - la transicion asignado -> en_curso ya existia desde
  * antes ("Iniciar viaje"), esto solo le suma el aviso; no hay un

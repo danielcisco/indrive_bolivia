@@ -158,7 +158,8 @@ class _EnvioRepartidorDetalleScreenState
       body: envioAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => const SupportErrorView(
-          mensaje: 'No pudimos cargar este envío. Revisá tu conexión y '
+          mensaje:
+              'No pudimos cargar este envío. Revisá tu conexión y '
               'volvé a intentar.',
           app: 'Repartidor',
           motivo: 'no puedo ver el detalle de un envío',
@@ -167,72 +168,79 @@ class _EnvioRepartidorDetalleScreenState
           if (envio == null) {
             return const Center(child: Text('Este envío ya no existe.'));
           }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  envio.descripcion,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text('Categoría: ${envio.categoria.etiqueta}'),
-                const SizedBox(height: 8),
-                Text(
-                  'Oferta inicial: ${envio.montoOfertadoInicial.format()}',
-                ),
-                if (envio.fotoPaqueteUrl != null) ...[
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(envio.fotoPaqueteUrl!, height: 160),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                CountdownTimer(expiraEn: envio.expiraEn),
-                const SizedBox(height: 12),
-                _ClienteCard(clienteId: envio.clienteId),
-                const SizedBox(height: 12),
-                EnvioMapPreview(envio: envio),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _procesando ? null : _confirmarYAceptarDirecto,
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: const Text('Aceptar directo'),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text('O envía una contraoferta:'),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _montoController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(labelText: 'Tu monto (Bs.)'),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _procesando
-                        ? null
-                        : () => _enviarContraoferta(envio),
-                    icon: const Icon(Icons.reply_outlined),
-                    label: const Text('Enviar contraoferta'),
-                  ),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 16),
+          return Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    envio.descripcion,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
+                  const SizedBox(height: 8),
+                  Text('Categoría: ${envio.categoria.etiqueta}'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Oferta inicial: ${envio.montoOfertadoInicial.format()}',
+                  ),
+                  if (envio.fotoPaqueteUrl != null) ...[
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(envio.fotoPaqueteUrl!, height: 160),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  CountdownTimer(expiraEn: envio.expiraEn),
+                  const SizedBox(height: 12),
+                  _ClienteCard(clienteId: envio.clienteId),
+                  const SizedBox(height: 12),
+                  EnvioMapPreview(envio: envio),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _procesando ? null : _confirmarYAceptarDirecto,
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Aceptar directo'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('O envía una contraoferta:'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _montoController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Tu monto (Bs.)',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _procesando
+                          ? null
+                          : () => _enviarContraoferta(envio),
+                      icon: const Icon(Icons.reply_outlined),
+                      label: const Text('Enviar contraoferta'),
+                    ),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           );
         },
@@ -260,7 +268,9 @@ class _ClienteCard extends ConsumerWidget {
           child: ListTile(
             leading: AvatarCirculo(avatarId: perfil.avatarId),
             title: const Text('Cliente'),
-            subtitle: Text('${perfil.nombre} ${perfil.apellido} (@${perfil.nick})'),
+            subtitle: Text(
+              '${perfil.nombre} ${perfil.apellido} (@${perfil.nick})',
+            ),
           ),
         );
       },

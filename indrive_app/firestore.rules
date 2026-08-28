@@ -287,6 +287,22 @@ service cloud.firestore {
       }
     }
 
+    // Regla aparte para consultas de collection group (sprint extra, bug
+    // real reportado: "Mis calificaciones" nunca cargaba). La regla
+    // anidada de más arriba (match /envios/{envioId} { match
+    // /calificaciones/{autorId} {...} }) solo cubre lecturas directas de
+    // un envío puntual o de su subcolección — Firestore NO la extiende
+    // automáticamente a un `collectionGroup('calificaciones')` sobre
+    // TODOS los envíos, que es justo lo que usa
+    // UsersRepository.streamMisCalificaciones. Sin esta regla aparte con
+    // wildcard recursivo, esa consulta siempre devolvía
+    // PERMISSION_DENIED para cualquier usuario real (el diagnóstico
+    // anterior con el Admin SDK no lo detectó porque el Admin SDK
+    // bypassa las Rules por completo).
+    match /{path=**}/calificaciones/{autorId} {
+      allow read: if isSignedIn();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

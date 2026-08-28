@@ -55,7 +55,13 @@ class RegistroWizardScreen extends ConsumerStatefulWidget {
 
 class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
   late final List<_Paso> _pasos = widget.role == 'repartidor'
-      ? [_Paso.personal, _Paso.documento, _Paso.licencia, _Paso.vehiculo, _Paso.soat]
+      ? [
+          _Paso.personal,
+          _Paso.documento,
+          _Paso.licencia,
+          _Paso.vehiculo,
+          _Paso.soat,
+        ]
       : [_Paso.personal, _Paso.documento];
 
   int _indice = 0;
@@ -169,8 +175,9 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
           _Campo(
             builder: () =>
                 _campoTexto(etiquetaCampo: 'Nick', controller: _nickController),
-            validar: () =>
-                _nickController.text.trim().isEmpty ? 'Completa tu nick.' : null,
+            validar: () => _nickController.text.trim().isEmpty
+                ? 'Completa tu nick.'
+                : null,
           ),
           _Campo(
             builder: () => _campoFecha(
@@ -339,8 +346,9 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
               controller: _placaController,
               capitalizacion: TextCapitalization.characters,
             ),
-            validar: () =>
-                _placaController.text.trim().isEmpty ? 'Completa la placa.' : null,
+            validar: () => _placaController.text.trim().isEmpty
+                ? 'Completa la placa.'
+                : null,
           ),
           _Campo(
             builder: () => _campoTexto(
@@ -361,9 +369,8 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
               foto: _fotoVehiculo,
               onCambiar: (f) => setState(() => _fotoVehiculo = f),
             ),
-            validar: () => _fotoVehiculo == null
-                ? 'Sacá una foto de tu vehículo.'
-                : null,
+            validar: () =>
+                _fotoVehiculo == null ? 'Sacá una foto de tu vehículo.' : null,
           ),
           _Campo(
             builder: () => _campoFoto(
@@ -557,7 +564,8 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
       debugPrint('RegistroWizardScreen._finalizar falló: $error\n$stackTrace');
       if (mounted) {
         setState(
-          () => _error = 'No pudimos guardar tu registro. Revisá tu '
+          () => _error =
+              'No pudimos guardar tu registro. Revisá tu '
               'conexión y volvé a intentar.',
         );
       }
@@ -593,10 +601,25 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
             minHeight: 4,
           ),
           Expanded(
-            child: SingleChildScrollView(
-              key: ValueKey('$_indice-$_indiceCampo'),
-              padding: const EdgeInsets.all(24),
-              child: campos[_indiceCampo].builder(),
+            // Transición suave entre campos (sprint extra: "más fluido")
+            // — antes el cambio de campo era un corte seco.
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.04, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: SingleChildScrollView(
+                key: ValueKey('$_indice-$_indiceCampo'),
+                padding: const EdgeInsets.all(24),
+                child: campos[_indiceCampo].builder(),
+              ),
             ),
           ),
           if (_error != null)
@@ -768,10 +791,7 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
                   icon: const Icon(Icons.add_a_photo_outlined),
                   label: const Text('Tomar foto'),
                 )
-              : PreviewFotoTomada(
-                  foto: foto,
-                  onRepetir: () => onCambiar(null),
-                ),
+              : PreviewFotoTomada(foto: foto, onRepetir: () => onCambiar(null)),
         ),
       ],
     );

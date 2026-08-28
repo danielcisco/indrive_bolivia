@@ -146,7 +146,8 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
       body: envioAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => const SupportErrorView(
-          mensaje: 'No pudimos cargar esta entrega. Revisá tu conexión y '
+          mensaje:
+              'No pudimos cargar esta entrega. Revisá tu conexión y '
               'volvé a intentar.',
           app: 'Repartidor',
           motivo: 'no puedo ver una entrega en curso',
@@ -155,41 +156,44 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
           if (envio == null) {
             return const Center(child: Text('Este envío ya no existe.'));
           }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  envio.descripcion,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                EstadoEnvioChip(status: envio.status),
-                const SizedBox(height: 12),
-                EnvioMapPreview(envio: envio),
-                const SizedBox(height: 24),
-                if (envio.status == EnvioStatus.asignado)
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _procesando ? null : _iniciarViaje,
-                      icon: const Icon(Icons.play_arrow_outlined),
-                      label: Text(
-                        _procesando ? 'Confirmando...' : 'Confirmar recogida',
+          return Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    envio.descripcion,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  EstadoEnvioChip(status: envio.status),
+                  const SizedBox(height: 12),
+                  EnvioMapPreview(envio: envio),
+                  const SizedBox(height: 24),
+                  if (envio.status == EnvioStatus.asignado)
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _procesando ? null : _iniciarViaje,
+                        icon: const Icon(Icons.play_arrow_outlined),
+                        label: Text(
+                          _procesando ? 'Confirmando...' : 'Confirmar recogida',
+                        ),
+                      ),
+                    )
+                  else if (envio.status == EnvioStatus.enCurso)
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _irAConfirmarEntrega,
+                        icon: const Icon(Icons.check_circle_outline),
+                        label: const Text('Marcar como entregado'),
                       ),
                     ),
-                  )
-                else if (envio.status == EnvioStatus.enCurso)
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _irAConfirmarEntrega,
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: const Text('Marcar como entregado'),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
           );
         },

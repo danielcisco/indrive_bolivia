@@ -118,9 +118,7 @@ class UsersRepository {
   /// Rules: la regla de `users/{uid}` ya permite al dueño escribir campos
   /// nuevos (solo `role`/`isVerified` son inmutables para él).
   Future<void> guardarCedulaUrl(String uid, String url) {
-    return _users.doc(uid).set({
-      'cedulaUrl': url,
-    }, SetOptions(merge: true));
+    return _users.doc(uid).set({'cedulaUrl': url}, SetOptions(merge: true));
   }
 
   /// Fetch puntual — decide si `RepartidorHomeScreen` todavía tiene que
@@ -155,6 +153,33 @@ class UsersRepository {
       'fechaNacimiento': Timestamp.fromDate(fechaNacimiento),
       'fotoPersonalUrl': fotoPersonalUrl,
     }, SetOptions(merge: true));
+  }
+
+  /// Contacto de confianza para el botón de seguridad (sprint extra) —
+  /// escritura directa a `users/{uid}` (no vía `_guardarPerfil`: un
+  /// teléfono de emergencia no es un dato público, no debe aparecer en
+  /// `perfiles_publicos/{uid}`, que cualquier usuario autenticado puede
+  /// leer).
+  Future<void> guardarContactoEmergencia(
+    String uid, {
+    required String nombre,
+    required String telefono,
+  }) {
+    return _users.doc(uid).set({
+      'contactoEmergenciaNombre': nombre,
+      'contactoEmergenciaTelefono': telefono,
+    }, SetOptions(merge: true));
+  }
+
+  Future<({String? nombre, String? telefono})> obtenerContactoEmergencia(
+    String uid,
+  ) async {
+    final snapshot = await _users.doc(uid).get();
+    final data = snapshot.data();
+    return (
+      nombre: data?['contactoEmergenciaNombre'] as String?,
+      telefono: data?['contactoEmergenciaTelefono'] as String?,
+    );
   }
 
   /// Foto de un documento de Repartidor (licencia o vehículo, Sprint 20)
@@ -300,9 +325,10 @@ class UsersRepository {
   /// puede tocar `isActive` directamente (ver `firestore.rules`).
   Future<void> establecerEstadoCuenta(String uid, {required bool activar}) {
     return conReintentoDeToken(
-      () => _functions
-          .httpsCallable('establecerEstadoCuenta')
-          .call({'uid': uid, 'activar': activar}),
+      () => _functions.httpsCallable('establecerEstadoCuenta').call({
+        'uid': uid,
+        'activar': activar,
+      }),
     );
   }
 
