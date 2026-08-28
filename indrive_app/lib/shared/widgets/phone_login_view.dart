@@ -11,10 +11,22 @@ import '../../core/auth/phone_auth_repository.dart';
 import '../data/providers.dart';
 import 'soporte_whatsapp.dart';
 
-/// Único código de país que opera esta app (Villazón, Potosí, Bolivia) —
-/// fijo, no seleccionable, para no pedirle al usuario que lo escriba cada
-/// vez ni arrastrar un selector de países que no hace falta.
-const _prefijoBolivia = '+591';
+/// Países que operan esta app (Sprint 17): Villazón es una ciudad de
+/// frontera pegada a La Quiaca, Argentina — separadas por ~2km, así que
+/// hay demanda real de números argentinos también, no solo bolivianos.
+/// `smsRegionConfig.allowlistOnly` en el proyecto de Firebase Auth ya
+/// permite ambos países (antes solo BO).
+class _Pais {
+  const _Pais({required this.bandera, required this.prefijo, required this.nombre});
+  final String bandera;
+  final String prefijo;
+  final String nombre;
+}
+
+const _paises = [
+  _Pais(bandera: '🇧🇴', prefijo: '+591', nombre: 'Bolivia'),
+  _Pais(bandera: '🇦🇷', prefijo: '+54', nombre: 'Argentina'),
+];
 
 /// UI de 3 pasos (teléfono -> código SMS -> nombre/nick solo si es
 /// registro nuevo) reutilizada por Cliente y Repartidor: la única
@@ -37,6 +49,7 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
   final _apellidoController = TextEditingController();
   final _nickController = TextEditingController();
 
+  _Pais _pais = _paises.first;
   String? _verificationId;
   bool _esRegistroNuevo = false;
   bool _isSubmitting = false;
@@ -93,7 +106,7 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
       _errorMessage = null;
     });
     await _repository.sendVerificationCode(
-      phoneNumber: '$_prefijoBolivia${_phoneController.text.trim()}',
+      phoneNumber: '${_pais.prefijo}${_phoneController.text.trim()}',
       onCodeSent: (verificationId) {
         if (!mounted) return;
         setState(() {
@@ -252,15 +265,47 @@ class _PhoneLoginViewState extends ConsumerState<PhoneLoginView> {
               ),
             ),
           ] else if (!awaitingCode) ...[
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Teléfono',
-                hintText: '71234567',
-                prefixText: '$_prefijoBolivia ',
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 56,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<_Pais>(
+                      value: _pais,
+                      onChanged: (pais) {
+                        if (pais != null) setState(() => _pais = pais);
+                      },
+                      items: [
+                        for (final pais in _paises)
+                          DropdownMenuItem(
+                            value: pais,
+                            child: Text('${pais.bandera}  ${pais.prefijo}'),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      labelText: 'Teléfono',
+                      hintText: '71234567',
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             SizedBox(
