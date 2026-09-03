@@ -82,6 +82,7 @@ class _ConfirmarEntregaScreenState
           final resultado = await mostrarCalificacionDialog(
             context,
             tituloParaQuien: 'el cliente',
+            calificadoRol: CalificadoRol.cliente,
           );
           if (resultado != null) {
             // Try/catch propio: la entrega ya se confirmó arriba, así que

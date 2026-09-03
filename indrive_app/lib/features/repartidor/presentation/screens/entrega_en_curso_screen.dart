@@ -29,6 +29,14 @@ class EntregaEnCursoScreen extends ConsumerStatefulWidget {
 class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
   bool _procesando = false;
 
+  /// `static` a propósito (no una preferencia persistida): "Ahora no"
+  /// deja de insistir mientras la app siga abierta, incluso entre
+  /// entregas distintas, pero vuelve a preguntar en el próximo arranque —
+  /// mismo criterio de sesión que `AppLockGate`/`BatteryOptimizationPrompt`,
+  /// a pedido del usuario.
+  static bool _ubicacionDescartadaEnEstaSesion = false;
+  static bool _bateriaViajeDescartadaEnEstaSesion = false;
+
   /// Bug real (Sprint 15): nada en la app pedía nunca el permiso de
   /// ubicación "todo el tiempo" antes de arrancar el tracking — solo se
   /// pedía "mientras se usa la app" (una sola vez, desde Radar/el picker
@@ -45,6 +53,7 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
       permiso = await Geolocator.requestPermission();
     }
     if (permiso == LocationPermission.always) return true;
+    if (_ubicacionDescartadaEnEstaSesion) return true;
     if (!mounted) return true;
     final continuar = await showDialog<bool>(
       context: context,
@@ -58,7 +67,10 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () {
+              _ubicacionDescartadaEnEstaSesion = true;
+              Navigator.of(context).pop(true);
+            },
             child: const Text('Ahora no'),
           ),
           FilledButton(
@@ -76,6 +88,7 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
 
   Future<bool> _confirmarOnboardingBateria() async {
     if (await BatteryOptimization.estaExcluida()) return true;
+    if (_bateriaViajeDescartadaEnEstaSesion) return true;
     if (!mounted) return true;
     final continuar = await showDialog<bool>(
       context: context,
@@ -88,7 +101,10 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () {
+              _bateriaViajeDescartadaEnEstaSesion = true;
+              Navigator.of(context).pop(true);
+            },
             child: const Text('Ahora no'),
           ),
           FilledButton(
@@ -140,6 +156,10 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
   @override
   Widget build(BuildContext context) {
     final envioAsync = ref.watch(envioStreamProvider(widget.envioId));
+    // Mismo dato que `envioAsync.when(data: ...)` usa abajo — acá afuera
+    // para poder armar el botón anclado del `bottomNavigationBar`, que
+    // vive a nivel Scaffold y no dentro del `body`.
+    final envio = envioAsync.value;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Entrega')),
@@ -179,33 +199,40 @@ class _EntregaEnCursoScreenState extends ConsumerState<EntregaEnCursoScreen> {
                   ],
                   const SizedBox(height: 12),
                   EnvioMapPreview(envio: envio),
-                  const SizedBox(height: 24),
-                  if (envio.status == EnvioStatus.asignado)
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _procesando ? null : _iniciarViaje,
-                        icon: const Icon(Icons.play_arrow_outlined),
-                        label: Text(
-                          _procesando ? 'Confirmando...' : 'Confirmar recogida',
-                        ),
-                      ),
-                    )
-                  else if (envio.status == EnvioStatus.enCurso)
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _irAConfirmarEntrega,
-                        icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('Marcar como entregado'),
-                      ),
-                    ),
                 ],
               ),
             ),
           );
         },
       ),
+      // Anclado abajo (mismo patrón que crear_envio_screen.dart): un solo
+      // botón al final de un SingleChildScrollView se pierde de vista
+      // apenas la descripción/mapa ocupan algo de alto.
+      bottomNavigationBar: switch (envio?.status) {
+        EnvioStatus.asignado => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton.icon(
+              onPressed: _procesando ? null : _iniciarViaje,
+              icon: const Icon(Icons.play_arrow_outlined),
+              label: Text(
+                _procesando ? 'Confirmando...' : 'Confirmar recogida',
+              ),
+            ),
+          ),
+        ),
+        EnvioStatus.enCurso => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton.icon(
+              onPressed: _irAConfirmarEntrega,
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Marcar como entregado'),
+            ),
+          ),
+        ),
+        _ => null,
+      },
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/notifications/fcm_service.dart';
 import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode_provider.dart';
 import 'features/cliente/presentation/screens/cliente_home_screen.dart';
 import 'features/cliente/presentation/screens/cliente_login_screen.dart';
 import 'features/cliente/presentation/screens/envio_detalle_screen.dart';
@@ -67,7 +68,7 @@ class ClienteApp extends ConsumerWidget {
       title: 'inDrive Entregas — Cliente',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(themeModeProvider),
       home: AuthGate(
         expectedRole: 'cliente',
         requierePerfilCompleto: true,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/selector_tema.dart';
 import '../../../../shared/widgets/session_status_view.dart';
 import '../../../../shared/widgets/user_profile_header.dart';
+import 'actividad_screen.dart';
 import 'gestion_usuarios_screen.dart';
 import 'kyc_pending_screen.dart';
 import 'live_map_screen.dart';
@@ -26,12 +28,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     KycPendingScreen(),
     PagosPendientesScreen(),
     GestionUsuariosScreen(),
+    ActividadScreen(),
   ];
   static const _titulos = [
     'Mapa en vivo',
     'Verificación KYC',
     'Pagos QR',
     'Usuarios',
+    'Actividad',
   ];
 
   void _abrirSesion(BuildContext context) {
@@ -42,6 +46,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           appLabel: 'Panel de Administración — Villazón, Potosí',
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              mostrarSelectorTema(context);
+            },
+            child: const Text('Tema'),
+          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cerrar'),
@@ -97,6 +108,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 icon: Icon(Icons.people_outline),
                 selectedIcon: Icon(Icons.people),
                 label: Text('Usuarios'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.bolt_outlined),
+                selectedIcon: Icon(Icons.bolt),
+                label: Text('Actividad'),
               ),
             ],
           ),

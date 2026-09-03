@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/notifications/fcm_service.dart';
 import 'core/observability/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode_provider.dart';
 import 'core/tracking/background_location_service.dart';
 import 'features/repartidor/presentation/screens/envio_repartidor_detalle_screen.dart';
 import 'features/repartidor/presentation/screens/mis_entregas_screen.dart';
@@ -84,7 +85,7 @@ class RepartidorApp extends ConsumerWidget {
       title: 'inDrive Entregas — Repartidor',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(themeModeProvider),
       home: AuthGate(
         expectedRole: 'repartidor',
         requierePerfilCompleto: true,

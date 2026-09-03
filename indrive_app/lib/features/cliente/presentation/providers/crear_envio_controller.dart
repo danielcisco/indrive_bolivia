@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/observability/performance_service.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/value_objects/money.dart';
@@ -70,29 +71,31 @@ class CrearEnvioController extends AsyncNotifier<void> {
       }
 
       try {
-        String? fotoPaqueteUrl;
-        if (foto != null) {
-          fotoPaqueteUrl = await repository.subirFotoPaquete(
-            envioId: id,
-            clienteId: uid,
-            archivo: foto,
-          );
-        }
-        await repository
-            .crearEnvioConId(
-              id,
+        await PerformanceService.medir('crear_envio', () async {
+          String? fotoPaqueteUrl;
+          if (foto != null) {
+            fotoPaqueteUrl = await repository.subirFotoPaquete(
+              envioId: id,
               clienteId: uid,
-              descripcion: descripcion,
-              origen: origen,
-              destino: destino,
-              montoOfertadoInicial: montoOfertadoInicial,
-              categoria: categoria,
-              fotoPaqueteUrl: fotoPaqueteUrl,
-              esFragil: esFragil,
-            )
-            .timeout(const Duration(seconds: 10));
-        idCreado = id;
-        ref.invalidate(misEnviosControllerProvider);
+              archivo: foto,
+            );
+          }
+          await repository
+              .crearEnvioConId(
+                id,
+                clienteId: uid,
+                descripcion: descripcion,
+                origen: origen,
+                destino: destino,
+                montoOfertadoInicial: montoOfertadoInicial,
+                categoria: categoria,
+                fotoPaqueteUrl: fotoPaqueteUrl,
+                esFragil: esFragil,
+              )
+              .timeout(const Duration(seconds: 10));
+          idCreado = id;
+          ref.invalidate(misEnviosControllerProvider);
+        });
       } on TimeoutException {
         await queue.enqueue(type: 'crear_envio', payload: payload);
       }

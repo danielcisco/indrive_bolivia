@@ -137,6 +137,25 @@ service cloud.firestore {
         request.resource.data.ofertaAceptadaId == resource.data.ofertaAceptadaId &&
         envioCamposFijosSinCambio();
 
+      // El cliente dueño sube o baja su propia oferta mientras sigue
+      // pendiente y nadie la tomó (sprint de rediseño) — a propósito NO
+      // usa envioCamposFijosSinCambio(), que fija justo el campo que
+      // esta acción necesita cambiar; todo lo demás queda fijo a mano acá.
+      allow update: if isSignedIn() &&
+        resource.data.clienteId == request.auth.uid &&
+        resource.data.status == 'pendiente_ofertas' &&
+        resource.data.repartidorAsignadoId == null &&
+        request.resource.data.status == resource.data.status &&
+        request.resource.data.clienteId == resource.data.clienteId &&
+        request.resource.data.descripcion == resource.data.descripcion &&
+        request.resource.data.origen == resource.data.origen &&
+        request.resource.data.origenGeohash == resource.data.origenGeohash &&
+        request.resource.data.destino == resource.data.destino &&
+        request.resource.data.repartidorAsignadoId == resource.data.repartidorAsignadoId &&
+        request.resource.data.ofertaAceptadaId == resource.data.ofertaAceptadaId &&
+        request.resource.data.montoOfertadoInicialCentavos is int &&
+        request.resource.data.montoOfertadoInicialCentavos > 0;
+
       // Un repartidor verificado toma un envío pendiente. La transacción
       // atómica del cliente (EnviosRepository.aceptarEnvioDirecto) más esta
       // misma precondición evaluada sobre los datos leídos en la

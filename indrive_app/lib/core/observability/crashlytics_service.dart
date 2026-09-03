@@ -18,4 +18,27 @@ abstract final class CrashlyticsService {
       return true;
     };
   }
+
+  /// Deja constancia de una transición de estado de negocio (sprint de
+  /// observabilidad) — [envioId] y [extra] quedan como custom keys, así
+  /// que no solo aparecen en el breadcrumb de este evento sino pegados a
+  /// CUALQUIER crash posterior en la misma sesión, sin tener que
+  /// reconstruir el contexto a mano.
+  static void logEvento(
+    String evento, {
+    String? envioId,
+    Map<String, String> extra = const {},
+  }) {
+    if (kIsWeb) return;
+    if (envioId != null) {
+      FirebaseCrashlytics.instance.setCustomKey('envio_id', envioId);
+    }
+    for (final entrada in extra.entries) {
+      FirebaseCrashlytics.instance.setCustomKey(entrada.key, entrada.value);
+    }
+    final detalle = extra.entries.map((e) => '${e.key}=${e.value}').join(' ');
+    FirebaseCrashlytics.instance.log(
+      detalle.isEmpty ? evento : '$evento $detalle',
+    );
+  }
 }

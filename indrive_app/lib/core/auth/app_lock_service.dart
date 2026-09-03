@@ -29,6 +29,16 @@ class AppLockService {
   static const _keySalt = 'app_lock_pin_salt';
   static const _keyBiometriaHabilitada = 'app_lock_biometria_habilitada';
   static const _keySetupOfrecido = 'app_lock_setup_ofrecido';
+  static const _keyUltimoDesbloqueo = 'app_lock_ultimo_desbloqueo_en';
+
+  /// Repartidor corre un Foreground Service de GPS + mapa en vivo todo el
+  /// tiempo que Home está abierto — mucho más pesado que Cliente, así que
+  /// Android mata el proceso completo mucho más seguido al pasar a
+  /// segundo plano (el foreground service protege su propio isolate, no
+  /// el engine de la UI). Sin este período de gracia, cada vez que eso
+  /// pasa es un arranque en frío real y no hay forma de que un flag
+  /// solo-en-memoria lo distinga de "cerré la app de verdad".
+  static const graciaTrasReinicio = Duration(minutes: 5);
 
   /// Si hay un PIN configurado, el bloqueo está activo — no hay un flag
   /// "activado" aparte que pueda desincronizarse del PIN mismo.
@@ -59,6 +69,24 @@ class AppLockService {
     return _hashear(pin, salt) == hashGuardado;
   }
 
+  /// Se llama cada vez que el usuario prueba su identidad con éxito (PIN,
+  /// huella, o al configurar el PIN por primera vez) — el período de
+  /// gracia se mide desde acá.
+  Future<void> registrarDesbloqueoExitoso() {
+    return _storage.write(
+      key: _keyUltimoDesbloqueo,
+      value: DateTime.now().toIso8601String(),
+    );
+  }
+
+  Future<bool> desbloqueadoRecientemente() async {
+    final valor = await _storage.read(key: _keyUltimoDesbloqueo);
+    if (valor == null) return false;
+    final fecha = DateTime.tryParse(valor);
+    return fecha != null &&
+        DateTime.now().difference(fecha) < graciaTrasReinicio;
+  }
+
   /// Se llama al cerrar sesión — un PIN es un secreto local de ESTA
   /// cuenta en ESTE dispositivo, no debería sobrevivir a un cambio de
   /// cuenta (ej. el celular se presta a otra persona con otro número).
@@ -67,6 +95,7 @@ class AppLockService {
     await _storage.delete(key: _keySalt);
     await _storage.delete(key: _keyBiometriaHabilitada);
     await _storage.delete(key: _keySetupOfrecido);
+    await _storage.delete(key: _keyUltimoDesbloqueo);
   }
 
   Future<bool> biometriaHabilitada() async {

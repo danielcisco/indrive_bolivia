@@ -5,19 +5,27 @@ import 'package:flutter/material.dart';
 /// Centralizado aquí para que un cambio de marca no requiera tocar cada
 /// entry point por separado.
 ///
-/// Pulido de UI (Sprint 12): identidad propia en vez del azul Material
-/// genérico — un teal profundo (movimiento, confianza) + un ámbar cálido
-/// como acento (energía, urgencia de entrega), con Manrope como tipografía
-/// única en todos los pesos (bundleada localmente como fuente variable:
-/// depender de fonts.gstatic.com en tiempo de ejecución sería mala idea
-/// para la conectividad real de la frontera). `ColorScheme.fromSeed` con
+/// Pulido de UI (sprint de rediseño): identidad inspirada en Starbucks —
+/// un verde profundo (confianza, movimiento) + un dorado cálido como
+/// acento, con Manrope como tipografía única en todos los pesos
+/// (bundleada localmente como fuente variable: depender de
+/// fonts.gstatic.com en tiempo de ejecución sería mala idea para la
+/// conectividad real de la frontera). `ColorScheme.fromSeed` con
 /// `secondaryKey` deriva un sistema tonal completo (ambos brillos, buen
 /// contraste) a partir de esos dos colores en vez de fijar cada rol a
-/// mano.
+/// mano. `surface`/`surfaceContainerHigh` se pisan a mano con la crema
+/// cálida de la maqueta — el algoritmo de Material, dejado solo, deriva
+/// un gris con tinte verdoso en vez de esa crema, porque no conoce la
+/// intención "fondo cálido tipo papel" detrás del seed.
 abstract final class AppTheme {
-  static const Color _brandTeal = Color(0xFF0F6E6B);
-  static const Color _brandAmber = Color(0xFFF2A93B);
+  static const Color _brandTeal = Color(0xFF00704A);
+  static const Color _brandAmber = Color(0xFFC6A664);
   static const String _fontFamily = 'Manrope';
+
+  static const Color _cremaClara = Color(0xFFF2EEE4);
+  static const Color _cremaClaraSuave = Color(0xFFFBFAF6);
+  static const Color _cremaOscura = Color(0xFF17211D);
+  static const Color _cremaOscuraSuave = Color(0xFF1E2A25);
 
   static ThemeData get light => _construir(Brightness.light);
 
@@ -37,11 +45,14 @@ abstract final class AppTheme {
       seedColor: _brandAmber,
       brightness: brightness,
     );
+    final esOscuro = brightness == Brightness.dark;
     final colorScheme = baseTeal.copyWith(
       secondary: baseAmbar.primary,
       onSecondary: baseAmbar.onPrimary,
       secondaryContainer: baseAmbar.primaryContainer,
       onSecondaryContainer: baseAmbar.onPrimaryContainer,
+      surface: esOscuro ? _cremaOscura : _cremaClara,
+      surfaceContainerHigh: esOscuro ? _cremaOscuraSuave : _cremaClaraSuave,
     );
     final textTheme = _construirTextTheme(colorScheme);
 

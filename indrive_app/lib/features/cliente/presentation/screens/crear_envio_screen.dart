@@ -11,6 +11,7 @@ import '../../../../core/location/current_location.dart';
 import '../../../../core/location/places_service.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/precio_sugerido.dart';
+import '../../../../shared/domain/tiempo_estimado.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/map_picker_screen.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
@@ -41,21 +42,32 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
   /// Recalculada en cada build (función pura, sin costo real) una vez
   /// que hay origen y destino — mismo criterio que el resto de esta
   /// pantalla de no cachear derivados que son baratos de recalcular.
-  SugerenciaPrecio? get _sugerencia {
+  double? get _distanciaMetros {
     final origen = _origen;
     final destino = _destino;
     if (origen == null || destino == null) return null;
-    final distanciaMetros = Geolocator.distanceBetween(
+    return Geolocator.distanceBetween(
       origen.latitude,
       origen.longitude,
       destino.latitude,
       destino.longitude,
     );
+  }
+
+  SugerenciaPrecio? get _sugerencia {
+    final distanciaMetros = _distanciaMetros;
+    if (distanciaMetros == null) return null;
     return calcularPrecioSugerido(
       distanciaMetros: distanciaMetros,
       categoria: _categoria,
       esFragil: _esFragil,
     );
+  }
+
+  TiempoEstimado? get _tiempoEstimado {
+    final distanciaMetros = _distanciaMetros;
+    if (distanciaMetros == null) return null;
+    return calcularTiempoEstimado(distanciaMetros: distanciaMetros);
   }
 
   @override
@@ -202,6 +214,7 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(crearEnvioControllerProvider);
+    final tiempo = _tiempoEstimado;
     ref.listen(crearEnvioControllerProvider, (previous, next) {
       if (next.hasError) {
         mostrarErrorConSoporte(
@@ -286,7 +299,7 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Precio sugerido',
+                          'Precio y tiempo sugeridos',
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: 4),
@@ -307,7 +320,10 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                                     .toStringAsFixed(2),
                               ),
                               icon: const Icon(Icons.two_wheeler, size: 18),
-                              label: Text('Moto: ${sugerencia.moto.format()}'),
+                              label: Text(
+                                'Moto: ${sugerencia.moto.format()}'
+                                '${tiempo != null ? ' · ~${formatearDuracion(tiempo.moto)}' : ''}',
+                              ),
                             ),
                             OutlinedButton.icon(
                               onPressed: () => setState(
@@ -319,7 +335,10 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                                 Icons.directions_car,
                                 size: 18,
                               ),
-                              label: Text('Auto: ${sugerencia.auto.format()}'),
+                              label: Text(
+                                'Auto: ${sugerencia.auto.format()}'
+                                '${tiempo != null ? ' · ~${formatearDuracion(tiempo.auto)}' : ''}',
+                              ),
                             ),
                           ],
                         ),
@@ -372,18 +391,20 @@ class _CrearEnvioScreenState extends ConsumerState<CrearEnvioScreen> {
                 icon: const Icon(Icons.camera_alt),
                 label: Text(_foto == null ? 'Tomar foto' : 'Repetir foto'),
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: estado.isLoading ? null : _enviar,
-                  icon: const Icon(Icons.send_outlined),
-                  label: Text(
-                    estado.isLoading ? 'Enviando...' : 'Publicar envío',
-                  ),
-                ),
-              ),
             ],
+          ),
+        ),
+      ),
+      // Anclado abajo: con categoría, frágil, 2 pickers de mapa, sugerencia
+      // de precio y 2 campos de texto arriba, el botón quedaba fuera de
+      // vista hasta deslizar todo el formulario.
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: FilledButton.icon(
+            onPressed: estado.isLoading ? null : _enviar,
+            icon: const Icon(Icons.send_outlined),
+            label: Text(estado.isLoading ? 'Enviando...' : 'Publicar envío'),
           ),
         ),
       ),

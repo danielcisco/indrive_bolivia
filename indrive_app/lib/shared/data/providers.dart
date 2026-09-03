@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/notifications/fcm_service.dart';
 import '../../core/offline/offline_action_queue.dart';
+import '../../core/onboarding/onboarding_service.dart';
 import '../domain/entities/calificacion.dart';
 import '../domain/entities/envio.dart';
 import '../domain/entities/perfil_publico.dart';
@@ -36,6 +37,13 @@ final authUidProvider = StreamProvider<String?>((ref) {
 /// Instancia única del servicio de notificaciones — se inicializa apenas
 /// algo lo lee por primera vez (`RepartidorApp` lo hace en su build), igual
 /// que `offlineActionQueueProvider` arranca su propio ciclo de vida solo.
+/// Si ya se mostró el onboarding de permisos + acuerdos (una sola vez,
+/// por dispositivo) — consultado por `AuthGate` en cada apertura de la
+/// app.
+final onboardingCompletadoProvider = FutureProvider<bool>((ref) {
+  return OnboardingService().completado();
+});
+
 final fcmServiceProvider = Provider<FcmService>((ref) {
   final service = FcmService();
   unawaited(service.initialize());
@@ -133,6 +141,17 @@ final enviosEnCursoStreamProvider =
       return ref
           .watch(enviosRepositoryProvider)
           .streamEnviosEnCurso()
+          .map((snapshot) => snapshot.docs.map(Envio.fromFirestore).toList());
+    });
+
+/// Envíos `pendiente_ofertas` en tiempo real, para la pantalla de
+/// Actividad del panel Admin. Ver
+/// `EnviosRepository.streamEnviosPendientesOfertas`.
+final enviosPendientesOfertasStreamProvider =
+    StreamProvider<List<Envio>>((ref) {
+      return ref
+          .watch(enviosRepositoryProvider)
+          .streamEnviosPendientesOfertas()
           .map((snapshot) => snapshot.docs.map(Envio.fromFirestore).toList());
     });
 

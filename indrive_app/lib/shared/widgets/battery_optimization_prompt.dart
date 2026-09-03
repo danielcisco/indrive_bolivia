@@ -15,7 +15,8 @@ import '../../core/tracking/battery_optimization.dart';
 /// Widget invisible: se cuelga una sola vez en el árbol de Home (no se
 /// reconstruye en cada rebuild de Home gracias a que Flutter preserva el
 /// State mientras el widget siga en la misma posición) y dispara el
-/// diálogo apenas monta, si la app todavía no está excluida.
+/// diálogo apenas monta, si la app todavía no está excluida y no se
+/// descartó ya en esta misma sesión.
 class BatteryOptimizationPrompt extends StatefulWidget {
   const BatteryOptimizationPrompt({super.key});
 
@@ -26,6 +27,12 @@ class BatteryOptimizationPrompt extends StatefulWidget {
 
 class _BatteryOptimizationPromptState
     extends State<BatteryOptimizationPrompt> {
+  /// `static` a propósito (no una preferencia persistida): "Ahora no"
+  /// deja de insistir mientras la app siga abierta, pero vuelve a
+  /// preguntar en el próximo arranque — mismo criterio de sesión que
+  /// `AppLockGate` para el bloqueo por PIN/huella, a pedido del usuario.
+  static bool _yaDescartadoEnEstaSesion = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +42,7 @@ class _BatteryOptimizationPromptState
   }
 
   Future<void> _confirmar() async {
+    if (_yaDescartadoEnEstaSesion) return;
     if (await BatteryOptimization.estaExcluida()) return;
     if (!mounted) return;
     await showDialog<void>(
@@ -48,7 +56,10 @@ class _BatteryOptimizationPromptState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              _yaDescartadoEnEstaSesion = true;
+              Navigator.of(context).pop();
+            },
             child: const Text('Ahora no'),
           ),
           FilledButton(

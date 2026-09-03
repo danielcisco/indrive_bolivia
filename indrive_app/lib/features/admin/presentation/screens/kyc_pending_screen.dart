@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/data/providers.dart';
+import '../../../../shared/widgets/red_network_image.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../../../../shared/widgets/visor_foto_screen.dart';
 import '../../domain/usuario_kyc_pendiente.dart';
@@ -341,34 +342,39 @@ class _ListaKyc extends StatelessWidget {
           for (final entrada in disponibles)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => mostrarFotoCompleta(
-                  context,
-                  entrada.value!,
-                  titulo: entrada.key,
-                ),
-                child: Column(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        entrada.value!,
+              child: Semantics(
+                button: true,
+                label: 'Ver foto: ${entrada.key}',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => mostrarFotoCompleta(
+                    context,
+                    entrada.value!,
+                    titulo: entrada.key,
+                  ),
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: RedNetworkImage(
+                          entrada.value!,
+                          width: 88,
+                          height: 88,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      SizedBox(
                         width: 88,
-                        height: 88,
-                        fit: BoxFit.cover,
+                        child: Text(
+                          entrada.key,
+                          style: Theme.of(context).textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    SizedBox(
-                      width: 88,
-                      child: Text(
-                        entrada.key,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -7,6 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/auth/token_retry.dart';
+import '../../core/observability/crashlytics_service.dart';
+import '../../core/observability/performance_service.dart';
 import '../domain/entities/calificacion.dart';
 import '../domain/entities/envio.dart';
 import '../domain/entities/oferta.dart';
@@ -57,7 +59,7 @@ class EnviosRepository {
     required CategoriaPaquete categoria,
     String? fotoPaqueteUrl,
     bool esFragil = false,
-  }) {
+  }) async {
     final origenGeohash = _geoHasher.encode(
       origen.longitude,
       origen.latitude,
@@ -83,7 +85,12 @@ class EnviosRepository {
       'codigoEntrega': codigoEntrega,
       'clienteId': clienteId,
     });
-    return batch.commit();
+    await batch.commit();
+    CrashlyticsService.logEvento(
+      'envio_creado',
+      envioId: id,
+      extra: {'categoria': categoria.name, 'esFragil': esFragil.toString()},
+    );
   }
 
   /// El código de entrega de [envioId] — solo lo puede leer el cliente
@@ -196,6 +203,19 @@ class EnviosRepository {
         .snapshots();
   }
 
+  /// Envíos `pendiente_ofertas` en tiempo real y acotado por `.limit()` —
+  /// mismo criterio que [streamEnviosEnCurso], para la pantalla de
+  /// Actividad del panel Admin (clientes con un envío recién publicado,
+  /// esperando ofertas).
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamEnviosPendientesOfertas({
+    int limit = 100,
+  }) {
+    return _envios
+        .where('status', isEqualTo: EnvioStatus.pendienteOfertas.toFirestore())
+        .limit(limit)
+        .snapshots();
+  }
+
   /// Envíos pendientes cuyo `origenGeohash` cae dentro del rango de
   /// [prefix] (radar del Repartidor) — paginado. `RadarController` decide
   /// qué tan largo hacer `prefix` (sondeo adaptativo: celda más chica o
@@ -266,12 +286,17 @@ class EnviosRepository {
   Future<void> rechazarOferta({
     required String envioId,
     required String ofertaId,
-  }) {
-    return _envios
+  }) async {
+    await _envios
         .doc(envioId)
         .collection('ofertas')
         .doc(ofertaId)
         .update({'status': OfertaStatus.rechazada.toFirestore()});
+    CrashlyticsService.logEvento(
+      'oferta_rechazada',
+      envioId: envioId,
+      extra: {'ofertaId': ofertaId},
+    );
   }
 
   /// Envía una contraoferta. Rechaza localmente si el envío ya venció más
@@ -294,16 +319,41 @@ class EnviosRepository {
         .doc(envio.id)
         .collection('ofertas')
         .add(Oferta.createData(repartidorId: repartidorId, monto: monto));
+    CrashlyticsService.logEvento(
+      'oferta_enviada',
+      envioId: envio.id,
+      extra: {'repartidorId': repartidorId, 'monto': monto.bob.toStringAsFixed(2)},
+    );
   }
 
   /// El cliente dueño cancela mientras el envío siga sin asignar. Sin
   /// transacción: a diferencia de aceptar un envío, acá no hay una
   /// condición de carrera real que prevenir (nadie más escribe `status`
   /// al mismo tiempo que el propio dueño cancelando el suyo).
-  Future<void> cancelarEnvio(String envioId) {
-    return _envios.doc(envioId).update({
+  Future<void> cancelarEnvio(String envioId) async {
+    await _envios.doc(envioId).update({
       'status': EnvioStatus.cancelado.toFirestore(),
     });
+    CrashlyticsService.logEvento('envio_cancelado', envioId: envioId);
+  }
+
+  /// El cliente dueño sube o baja su propia oferta mientras nadie la tomó
+  /// (sprint de rediseño) — solo el monto cambia, el resto del envío
+  /// queda igual. Regla aparte en `firestore.rules` (no usa
+  /// `envioCamposFijosSinCambio()`, que justamente fija este campo para
+  /// las demás transiciones).
+  Future<void> ajustarTarifa({
+    required String envioId,
+    required Money nuevoMonto,
+  }) async {
+    await _envios.doc(envioId).update({
+      'montoOfertadoInicialCentavos': nuevoMonto.centavos,
+    });
+    CrashlyticsService.logEvento(
+      'tarifa_ajustada',
+      envioId: envioId,
+      extra: {'monto': nuevoMonto.bob.toStringAsFixed(2)},
+    );
   }
 
   /// Un repartidor toma directamente un envío pendiente. Transacción
@@ -314,9 +364,9 @@ class EnviosRepository {
   Future<void> aceptarEnvioDirecto({
     required String envioId,
     required String repartidorId,
-  }) {
+  }) async {
     final ref = _envios.doc(envioId);
-    return _firestore.runTransaction((transaction) async {
+    await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(ref);
       final data = snapshot.data();
       if (data == null) {
@@ -332,6 +382,11 @@ class EnviosRepository {
         'repartidorAsignadoId': repartidorId,
       });
     });
+    CrashlyticsService.logEvento(
+      'envio_asignado_directo',
+      envioId: envioId,
+      extra: {'repartidorId': repartidorId},
+    );
   }
 
   /// El cliente elige una propuesta específica entre las recibidas.
@@ -343,40 +398,47 @@ class EnviosRepository {
     required String envioId,
     required String ofertaId,
     required String repartidorId,
-  }) {
+  }) async {
     final envioRef = _envios.doc(envioId);
     final ofertaRef = envioRef.collection('ofertas').doc(ofertaId);
-    return _firestore.runTransaction((transaction) async {
-      final envioSnap = await transaction.get(envioRef);
-      final ofertaSnap = await transaction.get(ofertaRef);
-      final envioData = envioSnap.data();
-      final ofertaData = ofertaSnap.data();
-      if (envioData == null || ofertaData == null) {
-        throw StateError('El envío $envioId o la oferta $ofertaId no existen.');
-      }
+    await PerformanceService.medir('aceptar_oferta', () {
+      return _firestore.runTransaction((transaction) async {
+        final envioSnap = await transaction.get(envioRef);
+        final ofertaSnap = await transaction.get(ofertaRef);
+        final envioData = envioSnap.data();
+        final ofertaData = ofertaSnap.data();
+        if (envioData == null || ofertaData == null) {
+          throw StateError('El envío $envioId o la oferta $ofertaId no existen.');
+        }
 
-      final status = EnvioStatus.fromFirestore(envioData['status'] as String);
-      final yaAsignado = envioData['repartidorAsignadoId'] != null;
-      if (status != EnvioStatus.pendienteOfertas || yaAsignado) {
-        throw StateError('El envío $envioId ya fue asignado.');
-      }
+        final status = EnvioStatus.fromFirestore(envioData['status'] as String);
+        final yaAsignado = envioData['repartidorAsignadoId'] != null;
+        if (status != EnvioStatus.pendienteOfertas || yaAsignado) {
+          throw StateError('El envío $envioId ya fue asignado.');
+        }
 
-      final ofertaStatus = OfertaStatus.fromFirestore(
-        ofertaData['status'] as String,
-      );
-      if (ofertaStatus != OfertaStatus.pendiente) {
-        throw StateError('La oferta $ofertaId ya no está pendiente.');
-      }
+        final ofertaStatus = OfertaStatus.fromFirestore(
+          ofertaData['status'] as String,
+        );
+        if (ofertaStatus != OfertaStatus.pendiente) {
+          throw StateError('La oferta $ofertaId ya no está pendiente.');
+        }
 
-      transaction.update(envioRef, {
-        'status': EnvioStatus.asignado.toFirestore(),
-        'repartidorAsignadoId': repartidorId,
-        'ofertaAceptadaId': ofertaId,
-      });
-      transaction.update(ofertaRef, {
-        'status': OfertaStatus.aceptada.toFirestore(),
+        transaction.update(envioRef, {
+          'status': EnvioStatus.asignado.toFirestore(),
+          'repartidorAsignadoId': repartidorId,
+          'ofertaAceptadaId': ofertaId,
+        });
+        transaction.update(ofertaRef, {
+          'status': OfertaStatus.aceptada.toFirestore(),
+        });
       });
     });
+    CrashlyticsService.logEvento(
+      'oferta_aceptada',
+      envioId: envioId,
+      extra: {'ofertaId': ofertaId, 'repartidorId': repartidorId},
+    );
   }
 
   /// Entregas del repartidor [repartidorId], paginado — [status] opcional
@@ -406,10 +468,11 @@ class EnviosRepository {
   /// Service de tracking (ver `lib/core/tracking/`). No hace falta pasar
   /// el uid del repartidor: la Firestore Rule valida que quien escribe sea
   /// `repartidorAsignadoId`, el cliente no necesita repetirlo.
-  Future<void> iniciarViaje(String envioId) {
-    return _envios.doc(envioId).update({
+  Future<void> iniciarViaje(String envioId) async {
+    await _envios.doc(envioId).update({
       'status': EnvioStatus.enCurso.toFirestore(),
     });
+    CrashlyticsService.logEvento('viaje_iniciado', envioId: envioId);
   }
 
   /// El repartidor asignado marca la entrega como completada — detiene el
@@ -426,13 +489,18 @@ class EnviosRepository {
     required MetodoPago metodoPago,
     required String codigoIngresado,
     String? comprobanteUrl,
-  }) {
-    return _envios.doc(envioId).update({
+  }) async {
+    await _envios.doc(envioId).update({
       'status': EnvioStatus.entregado.toFirestore(),
       'metodoPago': metodoPago.toFirestore(),
       'codigoIngresado': codigoIngresado,
       'comprobanteUrl': ?comprobanteUrl,
     });
+    CrashlyticsService.logEvento(
+      'envio_entregado',
+      envioId: envioId,
+      extra: {'metodoPago': metodoPago.name},
+    );
   }
 
   /// Sube la foto del comprobante QR a Storage y devuelve su URL de
@@ -466,14 +534,15 @@ class EnviosRepository {
   /// Un Admin marca como verificado el comprobante QR de un envío ya
   /// entregado — único campo que el rol admin puede tocar sobre `envios`
   /// (ver `firestore.rules`).
-  Future<void> verificarPago(String envioId) {
-    return conReintentoDeToken(
+  Future<void> verificarPago(String envioId) async {
+    await conReintentoDeToken(
       () => _envios.doc(envioId).update({
         'pagoVerificado': true,
         // Sprint extra: historial de pagos QR en Admin.
         'fechaVerificacionPago': FieldValue.serverTimestamp(),
       }),
     );
+    CrashlyticsService.logEvento('pago_verificado', envioId: envioId);
   }
 
   /// Envíos entregados con pago QR, en tiempo real (sprint extra:

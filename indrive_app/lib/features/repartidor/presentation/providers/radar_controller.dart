@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/location/current_location.dart';
+import '../../../../core/observability/performance_service.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 
@@ -127,39 +128,44 @@ class RadarController extends AsyncNotifier<RadarState> {
     state = await AsyncValue.guard(() => _siguientePagina(current));
   }
 
-  Future<RadarState> _buscar() async {
-    final posicion = await obtenerUbicacionActual();
-    final geohashCompleto = _geoHasher.encode(
-      posicion.longitude,
-      posicion.latitude,
-      precision: 9,
-    );
-
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    await ref
-        .read(usersRepositoryProvider)
-        .actualizarUltimaUbicacion(uid, geohashCompleto);
-
-    final repository = ref.read(enviosRepositoryProvider);
-    for (final prefijo in prefijosParaSondeoAdaptativo(geohashCompleto)) {
-      final snapshot = await repository.buscarEnviosCercanos(
-        prefijo,
-        limit: _pageSize,
+  /// Único punto de convergencia entre el refresco manual ([refrescar]) y
+  /// el sondeo automático cada 20s ([_actualizarSilenciosamente]) — la
+  /// traza de Performance acá cubre ambos casos sin duplicarla.
+  Future<RadarState> _buscar() {
+    return PerformanceService.medir('actualizar_radar', () async {
+      final posicion = await obtenerUbicacionActual();
+      final geohashCompleto = _geoHasher.encode(
+        posicion.longitude,
+        posicion.latitude,
+        precision: 9,
       );
-      final alcanzoMinimo = snapshot.docs.length >= _minimoResultadosDeseados;
-      final esUltimoIntento = prefijo.length == _precisionMinima;
-      if (alcanzoMinimo || esUltimoIntento) {
-        final envios = snapshot.docs.map(Envio.fromFirestore).toList();
-        return RadarState(
-          envios: envios,
-          hasMore: envios.length == _pageSize,
-          isLoadingMore: false,
-          lastDocument: snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
-          prefijoUsado: prefijo,
+
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      await ref
+          .read(usersRepositoryProvider)
+          .actualizarUltimaUbicacion(uid, geohashCompleto);
+
+      final repository = ref.read(enviosRepositoryProvider);
+      for (final prefijo in prefijosParaSondeoAdaptativo(geohashCompleto)) {
+        final snapshot = await repository.buscarEnviosCercanos(
+          prefijo,
+          limit: _pageSize,
         );
+        final alcanzoMinimo = snapshot.docs.length >= _minimoResultadosDeseados;
+        final esUltimoIntento = prefijo.length == _precisionMinima;
+        if (alcanzoMinimo || esUltimoIntento) {
+          final envios = snapshot.docs.map(Envio.fromFirestore).toList();
+          return RadarState(
+            envios: envios,
+            hasMore: envios.length == _pageSize,
+            isLoadingMore: false,
+            lastDocument: snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+            prefijoUsado: prefijo,
+          );
+        }
       }
-    }
-    return const RadarState.initial();
+      return const RadarState.initial();
+    });
   }
 
   Future<RadarState> _siguientePagina(RadarState current) async {

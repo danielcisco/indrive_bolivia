@@ -309,6 +309,15 @@ export const actualizarRatingPromedio = onDocumentCreated(
     if (!paraId || typeof estrellas !== "number") return;
 
     const userRef = admin.firestore().collection("users").doc(paraId);
+    // Espejo en perfiles_publicos (sprint de rediseño): users/{uid} solo
+    // lo puede leer el dueño o Admin, pero la contraparte de un envío
+    // (cliente↔repartidor) necesita ver esta calificación en la tarjeta
+    // de identidad — perfiles_publicos/{uid} es la única colección de
+    // perfil abierta a cualquier usuario autenticado.
+    const perfilPublicoRef = admin
+      .firestore()
+      .collection("perfiles_publicos")
+      .doc(paraId);
     await admin.firestore().runTransaction(async (transaction) => {
       const userSnap = await transaction.get(userRef);
       const totalPrevio = (userSnap.data()?.totalCalificaciones as number) ?? 0;
@@ -316,13 +325,22 @@ export const actualizarRatingPromedio = onDocumentCreated(
 
       const total = totalPrevio + 1;
       const suma = sumaPrevia + estrellas;
+      const promedio = suma / total;
 
       transaction.set(
         userRef,
         {
           totalCalificaciones: total,
           sumaEstrellas: suma,
-          ratingPromedio: suma / total,
+          ratingPromedio: promedio,
+        },
+        { merge: true }
+      );
+      transaction.set(
+        perfilPublicoRef,
+        {
+          totalCalificaciones: total,
+          ratingPromedio: promedio,
         },
         { merge: true }
       );
@@ -562,6 +580,43 @@ export const notificarNuevaContraoferta = onDocumentCreated(
       "Recibiste una contraoferta",
       `Un repartidor te ofreció Bs. ${montoBob} por tu envío.`,
       event.params.envioId
+    );
+  }
+);
+
+/**
+ * El cliente rechaza una propuesta puntual (`EnviosRepository.rechazarOferta`)
+ * — antes el repartidor no se enteraba hasta volver a abrir la app y ver
+ * que su oferta ya no estaba pendiente.
+ */
+export const notificarOfertaRechazada = onDocumentUpdated(
+  "envios/{envioId}/ofertas/{ofertaId}",
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+
+    const fueRechazada =
+      before.status !== "rechazada" && after.status === "rechazada";
+    if (!fueRechazada) return;
+
+    const repartidorId = after.repartidorId as string | undefined;
+    if (!repartidorId) return;
+
+    const envioSnap = await admin
+      .firestore()
+      .collection("envios")
+      .doc(event.params.envioId)
+      .get();
+    const descripcion =
+      (envioSnap.data()?.descripcion as string | undefined) ?? "un envío";
+
+    await enviarNotificacionAUsuario(
+      repartidorId,
+      "Propuesta rechazada",
+      `El cliente rechazó tu propuesta para "${descripcion}".`,
+      event.params.envioId,
+      "oferta_rechazada"
     );
   }
 );

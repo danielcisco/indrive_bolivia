@@ -18,6 +18,7 @@ class RadarScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Actualizar',
             onPressed: () =>
                 ref.read(radarControllerProvider.notifier).refrescar(),
           ),

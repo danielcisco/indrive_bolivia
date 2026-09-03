@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/auth/cerrar_sesion.dart';
 import '../data/providers.dart';
+import '../theme/colores_semanticos.dart';
 import 'pantalla_instrucciones_foto.dart';
 import 'soporte_whatsapp.dart';
 
@@ -119,10 +120,10 @@ class _EsperandoVerificacionScreenState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (isVerified) ...[
-                  const Icon(
+                  Icon(
                     Icons.check_circle_outline,
                     size: 64,
-                    color: Colors.green,
+                    color: ColoresSemanticos.exito(context).$1,
                   ),
                   const SizedBox(height: 16),
                   const Text(

@@ -15,12 +15,13 @@ import 'radar_screen.dart';
 import 'subir_cedula_screen.dart';
 
 /// Home de Repartidor (sprint extra: menú hamburguesa + mapa) — la
-/// identidad, calificaciones, verificación, seguridad y cuenta se
+/// identidad, calificaciones, verificación, seguridad, tema y cuenta se
 /// movieron al `RepartidorHomeDrawer`; el mapa de envíos pendientes
 /// aprovecha el espacio que dejaron esos botones. Debajo del mapa queda
 /// lo que se necesita ver siempre: entrega activa, disponibilidad, aviso
-/// de KYC pendiente, y las 2 acciones principales (Radar en lista / Mis
-/// entregas).
+/// de KYC pendiente. Radar y Mis entregas viven en la barra de
+/// navegación inferior en vez de botones sueltos en el body (sprint de
+/// rediseño).
 class RepartidorHomeScreen extends ConsumerWidget {
   const RepartidorHomeScreen({super.key});
 
@@ -92,35 +93,39 @@ class RepartidorHomeScreen extends ConsumerWidget {
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const RadarScreen(),
-                        ),
-                      ),
-                      icon: const Icon(Icons.radar),
-                      label: const Text('Radar en lista'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const MisEntregasScreen(),
-                        ),
-                      ),
-                      icon: const Icon(Icons.local_shipping_outlined),
-                      label: const Text('Mis entregas'),
-                    ),
-                  ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        onTap: (index) {
+          switch (index) {
+            case 1:
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RadarScreen()),
+              );
+            case 2:
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MisEntregasScreen()),
+              );
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.radar),
+            label: 'Radar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping_outlined),
+            label: 'Mis entregas',
           ),
         ],
       ),

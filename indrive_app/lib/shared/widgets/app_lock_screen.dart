@@ -27,9 +27,17 @@ class _AppLockScreenState extends State<AppLockScreen> {
   bool _cargando = true;
   bool _tienePin = false;
   bool _biometriaDisponible = false;
+  bool _biometriaHabilitada = false;
   bool _pidiendoConfirmacion = false;
   String? _error;
   bool _autenticando = false;
+
+  /// Qué se muestra en la pantalla de desbloqueo: huella primero (con un
+  /// link chico para pasar a PIN) si está habilitada, o PIN directo si
+  /// no — nunca las dos a la vista al mismo tiempo (antes el campo de
+  /// PIN quedaba enfocado mientras el diálogo de huella se disparaba
+  /// solo, y se sentía como que pedía ambas cosas juntas).
+  bool _mostrarPin = true;
 
   @override
   void initState() {
@@ -47,13 +55,18 @@ class _AppLockScreenState extends State<AppLockScreen> {
   Future<void> _inicializar() async {
     final tienePin = await _service.tienePinConfigurado();
     final biometriaDisponible = await _service.biometriaDisponibleEnDispositivo();
+    final biometriaHabilitada = tienePin && await _service.biometriaHabilitada();
     if (!mounted) return;
     setState(() {
       _tienePin = tienePin;
       _biometriaDisponible = biometriaDisponible;
+      _biometriaHabilitada = biometriaHabilitada;
+      // Huella habilitada: se muestra primero (mostrarPin=false). Sin
+      // huella: directo al campo de PIN, igual que antes.
+      _mostrarPin = !biometriaHabilitada;
       _cargando = false;
     });
-    if (tienePin) await _intentarBiometriaAutomatica();
+    if (biometriaHabilitada) await _intentarBiometriaAutomatica();
   }
 
   Future<void> _intentarBiometriaAutomatica() async {
@@ -63,7 +76,10 @@ class _AppLockScreenState extends State<AppLockScreen> {
     final ok = await _service.autenticarConBiometria();
     if (!mounted) return;
     setState(() => _autenticando = false);
-    if (ok) widget.onDesbloqueado();
+    if (ok) {
+      await _service.registrarDesbloqueoExitoso();
+      widget.onDesbloqueado();
+    }
   }
 
   Future<void> _confirmarPin() async {
@@ -74,6 +90,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
     }
     final ok = await _service.verificarPin(pin);
     if (ok) {
+      await _service.registrarDesbloqueoExitoso();
       widget.onDesbloqueado();
     } else {
       setState(() {
@@ -129,6 +146,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
       );
       if (habilitar == true) await _service.habilitarBiometria(true);
     }
+    await _service.registrarDesbloqueoExitoso();
     widget.onDesbloqueado();
   }
 
@@ -161,6 +179,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
   }
 
   List<Widget> _contenidoDesbloqueo() {
+    if (!_mostrarPin) return _contenidoDesbloqueoHuella();
     return [
       const Icon(Icons.lock_outline, size: 64),
       const SizedBox(height: 16),
@@ -194,11 +213,50 @@ class _AppLockScreenState extends State<AppLockScreen> {
         onPressed: _autenticando ? null : _confirmarPin,
         child: const Text('Desbloquear'),
       ),
-      const SizedBox(height: 8),
-      TextButton.icon(
+      if (_biometriaHabilitada) ...[
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () => setState(() => _mostrarPin = false),
+          icon: const Icon(Icons.fingerprint),
+          label: const Text('Usar huella en su lugar'),
+        ),
+      ],
+      const SizedBox(height: 24),
+      TextButton(
+        onPressed: cerrarSesionYBorrarBloqueo,
+        child: const Text('¿Olvidaste tu PIN? Cerrar sesión'),
+      ),
+    ];
+  }
+
+  /// Huella como única acción visible — el PIN sigue siendo el respaldo
+  /// técnico (por si el sensor falla), pero queda detrás de "Usar PIN en
+  /// su lugar" en vez de mostrarse a la par del diálogo de huella.
+  List<Widget> _contenidoDesbloqueoHuella() {
+    return [
+      Icon(
+        Icons.fingerprint,
+        size: 88,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      const SizedBox(height: 16),
+      Text(
+        _autenticando ? 'Verificando...' : 'Confirmá tu huella',
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
+      const SizedBox(height: 24),
+      FilledButton.icon(
         onPressed: _autenticando ? null : _intentarBiometriaAutomatica,
         icon: const Icon(Icons.fingerprint),
         label: Text(_autenticando ? 'Verificando...' : 'Usar huella'),
+      ),
+      const SizedBox(height: 8),
+      TextButton(
+        onPressed: _autenticando
+            ? null
+            : () => setState(() => _mostrarPin = true),
+        child: const Text('Usar PIN en su lugar'),
       ),
       const SizedBox(height: 24),
       TextButton(

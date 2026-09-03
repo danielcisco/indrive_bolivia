@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/providers.dart';
+import '../domain/entities/calificacion.dart';
 import '../providers/mis_calificaciones_controller.dart';
+import 'avatar_circulo.dart';
 import 'soporte_whatsapp.dart';
 
 /// Calificaciones que recibió el usuario autenticado (sprint extra, Grupo
 /// B) — compartida por Cliente y Repartidor, mismo criterio que
 /// `MapPickerScreen`: una pantalla completa puede vivir en `shared/widgets/`
 /// cuando no tiene nada específico de un rol.
+///
+/// Cada fila muestra quién calificó (sprint de rediseño) — antes solo se
+/// veían estrellas + comentario + fecha, sin decir de quién era la
+/// calificación.
 class MisCalificacionesScreen extends ConsumerWidget {
   const MisCalificacionesScreen({super.key});
 
@@ -39,36 +46,89 @@ class MisCalificacionesScreen extends ConsumerWidget {
             );
           }
           return ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: calificaciones.length,
-            itemBuilder: (context, index) {
-              final calificacion = calificaciones[index];
-              return ListTile(
-                title: Row(
-                  children: List.generate(
-                    5,
-                    (i) => Icon(
-                      i < calificacion.estrellas
-                          ? Icons.star
-                          : Icons.star_border,
-                      color: Colors.amber,
-                      size: 18,
-                    ),
-                  ),
-                ),
-                subtitle: calificacion.comentario != null
-                    ? Text(calificacion.comentario!)
-                    : null,
-                trailing: calificacion.createdAt != null
-                    ? Text(
-                        '${calificacion.createdAt!.toDate().day}/'
-                        '${calificacion.createdAt!.toDate().month}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      )
-                    : null,
-              );
-            },
+            itemBuilder: (context, index) =>
+                _CalificacionCard(calificacion: calificaciones[index]),
           );
         },
+      ),
+    );
+  }
+}
+
+class _CalificacionCard extends ConsumerWidget {
+  const _CalificacionCard({required this.calificacion});
+
+  final Calificacion calificacion;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final perfilAsync = ref.watch(perfilPublicoProvider(calificacion.autorId));
+    final nombre = perfilAsync.when(
+      loading: () => 'Cargando...',
+      error: (error, _) => 'Usuario',
+      data: (perfil) => perfil == null ? 'Usuario' : perfil.nombre,
+    );
+    final avatarId = perfilAsync.value?.avatarId;
+    final fecha = calificacion.createdAt;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                AvatarCirculo(avatarId: avatarId),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    nombre,
+                    style: Theme.of(context).textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(
+                        5,
+                        (i) => Icon(
+                          i < calificacion.estrellas
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: Theme.of(context).colorScheme.secondary,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    if (fecha != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '${fecha.toDate().day}/${fecha.toDate().month}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+            if (calificacion.comentario != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                '"${calificacion.comentario}"',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

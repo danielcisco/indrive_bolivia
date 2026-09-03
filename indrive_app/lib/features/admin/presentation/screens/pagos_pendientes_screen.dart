@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
+import '../../../../shared/theme/colores_semanticos.dart';
 import '../../../../shared/widgets/envio_historial_card.dart' show formatearFechaCorta;
+import '../../../../shared/widgets/red_network_image.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/pagos_pendientes_controller.dart';
 
@@ -148,7 +150,7 @@ class _ListaPendientes extends StatelessWidget {
                 if (comprobanteUrl != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
+                    child: RedNetworkImage(
                       comprobanteUrl,
                       height: 220,
                       fit: BoxFit.contain,
@@ -211,7 +213,10 @@ class _ListaHistorial extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: ListTile(
-            leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+            leading: Icon(
+              Icons.check_circle_outline,
+              color: ColoresSemanticos.exito(context).$1,
+            ),
             title: Text(envio.descripcion),
             subtitle: Text(envio.montoOfertadoInicial.format()),
             trailing: Text(

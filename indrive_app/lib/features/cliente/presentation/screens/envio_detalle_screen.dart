@@ -5,14 +5,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/entities/oferta.dart';
+import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/avatar_circulo.dart';
 import '../../../../shared/widgets/calificacion_dialog.dart';
+import '../../../../shared/widgets/calificacion_resumen.dart';
 import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
 import '../../../../shared/widgets/estado_envio_chip.dart';
+import '../../../../shared/widgets/red_network_image.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_envios_controller.dart';
 import '../providers/ofertas_controller.dart';
+
+IconData _iconoCategoria(CategoriaPaquete categoria) => switch (categoria) {
+  CategoriaPaquete.documentos => Icons.description_outlined,
+  CategoriaPaquete.paqueteChico => Icons.inventory_2_outlined,
+  CategoriaPaquete.paqueteMediano => Icons.local_shipping_outlined,
+  CategoriaPaquete.encomiendaMercado => Icons.shopping_bag_outlined,
+};
 
 class EnvioDetalleScreen extends ConsumerWidget {
   const EnvioDetalleScreen({super.key, required this.envioId});
@@ -119,6 +129,69 @@ class EnvioDetalleScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _ajustarTarifa(
+    BuildContext context,
+    WidgetRef ref,
+    Envio envio,
+  ) async {
+    final controller = TextEditingController(
+      text: envio.montoOfertadoInicial.bob.toStringAsFixed(2),
+    );
+    final nuevoMonto = await showDialog<Money>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Ajustar tarifa'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(labelText: 'Nuevo monto (Bs.)'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              try {
+                Navigator.of(
+                  dialogContext,
+                ).pop(Money.parseBobString(controller.text));
+              } on FormatException {
+                // Se queda en el diálogo — el campo no valida en vivo,
+                // pero un monto inválido simplemente no cierra nada.
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (nuevoMonto == null) return;
+    try {
+      await ref
+          .read(enviosRepositoryProvider)
+          .ajustarTarifa(envioId: envioId, nuevoMonto: nuevoMonto);
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Tarifa actualizada.')));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        mostrarErrorConSoporte(
+          context,
+          ref,
+          mensaje: 'No pudimos actualizar la tarifa. Probá de nuevo.',
+          app: 'Cliente',
+          motivo: 'no puedo ajustar la tarifa de mi envío $envioId',
+        );
+      }
+    }
+  }
+
   Future<void> _calificar(
     BuildContext context,
     WidgetRef ref,
@@ -127,6 +200,7 @@ class EnvioDetalleScreen extends ConsumerWidget {
     final resultado = await mostrarCalificacionDialog(
       context,
       tituloParaQuien: 'el repartidor',
+      calificadoRol: CalificadoRol.repartidor,
     );
     if (resultado == null) return;
     try {
@@ -182,114 +256,180 @@ class EnvioDetalleScreen extends ConsumerWidget {
             return const Center(child: Text('Este envío ya no existe.'));
           }
           final puedeElegir = envio.status == EnvioStatus.pendienteOfertas;
-          return Column(
-            children: [
-              // SingleChildScrollView (no solo Padding): en horizontal, el
-              // alto disponible se achica mucho y este bloque (foto +
-              // mapa + varias cards) no entraba más — desbordaba por
-              // abajo en vez de scrollear. En vertical, donde ya entraba
-              // sin problema, esto no cambia nada.
-              Flexible(
-                child: Scrollbar(
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          envio.descripcion,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Text('Categoría: ${envio.categoria.etiqueta}'),
-                        const SizedBox(height: 4),
-                        EstadoEnvioChip(status: envio.status),
-                        // Arriba de todo lo demás, antes del mapa (sprint
-                        // extra): quedaba enterrado a mitad de una pantalla
-                        // larga con mapa incluido — el cliente tenía que
-                        // deslizar para encontrarlo justo en el momento en
-                        // que el repartidor se lo está pidiendo.
-                        if (envio.status == EnvioStatus.asignado ||
-                            envio.status == EnvioStatus.enCurso) ...[
-                          const SizedBox(height: 12),
-                          _CodigoEntregaCard(envioId: envioId),
-                        ],
-                        const SizedBox(height: 4),
-                        Text(
-                          'Monto inicial: ${envio.montoOfertadoInicial.format()}',
-                        ),
-                        if (envio.fotoPaqueteUrl != null) ...[
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              envio.fotoPaqueteUrl!,
-                              height: 160,
+          // Con repartidor ya asignado (o el envío cancelado/expirado/
+          // entregado) no puede llegar ninguna propuesta nueva — reservarle
+          // media pantalla a esa sección solo deja un hueco vacío debajo de
+          // la info que sí importa en ese momento (código de entrega,
+          // repartidor, mapa). Solo mientras sigue pendiente de ofertas se
+          // divide la pantalla entre info + lista de propuestas.
+          final mostrarOfertas = envio.status == EnvioStatus.pendienteOfertas;
+
+          // SingleChildScrollView (no solo Padding): en horizontal, el
+          // alto disponible se achica mucho y este bloque (foto + mapa +
+          // varias cards) no entraba más — desbordaba por abajo en vez de
+          // scrollear. En vertical, donde ya entraba sin problema, esto no
+          // cambia nada.
+          final infoContent = Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    envio.descripcion,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        _iconoCategoria(envio.categoria),
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        envio.categoria.etiqueta,
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      EstadoEnvioChip(status: envio.status),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'OFERTA',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  letterSpacing: 1,
+                                ),
+                          ),
+                          Text(
+                            envio.montoOfertadoInicial.format(),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                           ),
                         ],
-                        if (envio.status == EnvioStatus.pendienteOfertas) ...[
-                          const SizedBox(height: 8),
-                          CountdownTimer(expiraEn: envio.expiraEn),
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
+                      ),
+                    ],
+                  ),
+                  // Arriba de todo lo demás, antes del mapa (sprint
+                  // extra): quedaba enterrado a mitad de una pantalla
+                  // larga con mapa incluido — el cliente tenía que
+                  // deslizar para encontrarlo justo en el momento en
+                  // que el repartidor se lo está pidiendo.
+                  if (envio.status == EnvioStatus.asignado ||
+                      envio.status == EnvioStatus.enCurso) ...[
+                    const SizedBox(height: 12),
+                    _CodigoEntregaCard(envioId: envioId),
+                  ],
+                  if (envio.fotoPaqueteUrl != null) ...[
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: RedNetworkImage(
+                        envio.fotoPaqueteUrl!,
+                        height: 160,
+                      ),
+                    ),
+                  ],
+                  if (envio.status == EnvioStatus.pendienteOfertas) ...[
+                    const SizedBox(height: 8),
+                    CountdownTimer(expiraEn: envio.expiraEn),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                _ajustarTarifa(context, ref, envio),
+                            icon: const Icon(Icons.tune),
+                            label: const Text('Ajustar tarifa'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
                             onPressed: () => _cancelarEnvio(context, ref),
                             icon: const Icon(Icons.cancel_outlined),
                             label: const Text('Cancelar envío'),
                           ),
-                        ],
-                        if (envio.repartidorAsignadoId != null) ...[
-                          const SizedBox(height: 12),
-                          _RepartidorAsignadoCard(
-                            repartidorId: envio.repartidorAsignadoId!,
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        EnvioMapPreview(envio: envio),
-                        if (envio.status == EnvioStatus.entregado) ...[
-                          const SizedBox(height: 12),
-                          Text(switch (envio.metodoPago) {
-                            null => 'Método de pago no registrado.',
-                            MetodoPago.efectivo => 'Pago: efectivo.',
-                            MetodoPago.qr when envio.pagoVerificado =>
-                              'Pago QR verificado ✓',
-                            MetodoPago.qr => 'Pago QR: verificación pendiente.',
-                          }),
-                          const SizedBox(height: 8),
-                          Consumer(
-                            builder: (context, ref, _) {
-                              final calificacionAsync = ref.watch(
-                                miCalificacionProvider(envioId),
-                              );
-                              final repartidorId = envio.repartidorAsignadoId;
-                              if (repartidorId == null) {
-                                return const SizedBox.shrink();
-                              }
-                              return calificacionAsync.when(
-                                loading: () => const SizedBox.shrink(),
-                                error: (error, _) => const SizedBox.shrink(),
-                                data: (calificacion) => calificacion != null
-                                    ? const Text('Ya calificaste este envío.')
-                                    : OutlinedButton.icon(
-                                        onPressed: () => _calificar(
-                                          context,
-                                          ref,
-                                          repartidorId,
-                                        ),
-                                        icon: const Icon(Icons.star_outline),
-                                        label: const Text(
-                                          'Calificar al repartidor',
-                                        ),
-                                      ),
-                              );
-                            },
-                          ),
-                        ],
+                        ),
                       ],
                     ),
-                  ),
-                ),
+                  ],
+                  if (envio.repartidorAsignadoId != null) ...[
+                    const SizedBox(height: 12),
+                    _RepartidorAsignadoCard(
+                      repartidorId: envio.repartidorAsignadoId!,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  EnvioMapPreview(envio: envio),
+                  if (envio.status == EnvioStatus.entregado) ...[
+                    const SizedBox(height: 12),
+                    Text(switch (envio.metodoPago) {
+                      null => 'Método de pago no registrado.',
+                      MetodoPago.efectivo => 'Pago: efectivo.',
+                      MetodoPago.qr when envio.pagoVerificado =>
+                        'Pago QR verificado ✓',
+                      MetodoPago.qr => 'Pago QR: verificación pendiente.',
+                    }),
+                    const SizedBox(height: 8),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final calificacionAsync = ref.watch(
+                          miCalificacionProvider(envioId),
+                        );
+                        final repartidorId = envio.repartidorAsignadoId;
+                        if (repartidorId == null) {
+                          return const SizedBox.shrink();
+                        }
+                        return calificacionAsync.when(
+                          loading: () => const SizedBox.shrink(),
+                          error: (error, _) => const SizedBox.shrink(),
+                          data: (calificacion) => calificacion != null
+                              ? const Text('Ya calificaste este envío.')
+                              : OutlinedButton.icon(
+                                  onPressed: () =>
+                                      _calificar(context, ref, repartidorId),
+                                  icon: const Icon(Icons.star_outline),
+                                  label: const Text('Calificar al repartidor'),
+                                ),
+                        );
+                      },
+                    ),
+                  ],
+                ],
               ),
+            ),
+          );
+
+          if (!mostrarOfertas) return infoContent;
+
+          return Column(
+            children: [
+              Flexible(child: infoContent),
               const Divider(height: 1),
               Expanded(
                 child: ofertasAsync.when(
@@ -304,16 +444,7 @@ class EnvioDetalleScreen extends ConsumerWidget {
                   ),
                   data: (ofertas) {
                     if (ofertas.isEmpty) {
-                      return const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.inbox_outlined, size: 48),
-                            SizedBox(height: 8),
-                            Text('Todavía no hay propuestas.'),
-                          ],
-                        ),
-                      );
+                      return const _BuscandoPropuestas();
                     }
                     return ListView.builder(
                       itemCount: ofertas.length,
@@ -492,9 +623,56 @@ class _RepartidorAsignadoCard extends ConsumerWidget {
             subtitle: Text(
               '${perfil.nombre} ${perfil.apellido} (@${perfil.nick})',
             ),
+            trailing: CalificacionResumen(perfil: perfil),
           ),
         );
       },
+    );
+  }
+}
+
+/// Ícono con pulso suave mientras se esperan propuestas (sprint de
+/// rediseño) — antes era un ícono estático que no comunicaba que la
+/// búsqueda sigue activa en segundo plano.
+class _BuscandoPropuestas extends StatefulWidget {
+  const _BuscandoPropuestas();
+
+  @override
+  State<_BuscandoPropuestas> createState() => _BuscandoPropuestasState();
+}
+
+class _BuscandoPropuestasState extends State<_BuscandoPropuestas> {
+  bool _expandido = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TweenAnimationBuilder<double>(
+            key: ValueKey(_expandido),
+            tween: Tween(
+              begin: _expandido ? 0.85 : 1.0,
+              end: _expandido ? 1.0 : 0.85,
+            ),
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeInOut,
+            onEnd: () {
+              if (mounted) setState(() => _expandido = !_expandido);
+            },
+            builder: (context, scale, child) =>
+                Transform.scale(scale: scale, child: child),
+            child: Icon(
+              Icons.search,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text('Buscando propuestas...'),
+        ],
+      ),
     );
   }
 }

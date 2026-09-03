@@ -590,6 +590,7 @@ class _RegistroWizardScreenState extends ConsumerState<RegistroWizardScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Volver',
           onPressed: _procesando ? null : _retroceder,
         ),
         title: Text(_nombrePaso(paso)),

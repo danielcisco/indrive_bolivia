@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/cerrar_sesion.dart';
 import '../../core/auth/phone_auth_repository.dart';
+import '../data/providers.dart';
 import 'app_lock_gate.dart';
+import 'permisos_acceso_screen.dart';
 import 'registro_wizard_screen.dart';
 
 /// Builder de la pantalla de "verificación pendiente" — recibe
@@ -143,6 +145,23 @@ class _AuthGateState extends ConsumerState<AuthGate> {
                   return widget.verificacionPendienteBuilder!(
                     context,
                     () => setState(() {}),
+                  );
+                }
+                // Onboarding de permisos + acuerdos, una sola vez por
+                // dispositivo (sprint de rediseño) — antes de cada
+                // huella/PIN: es más lógico explicar permisos y pedir
+                // conformidad antes de configurar el bloqueo local.
+                final onboardingAsync = ref.watch(onboardingCompletadoProvider);
+                if (!onboardingAsync.hasValue) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (!onboardingAsync.value!) {
+                  return PermisosAccesoScreen(
+                    role: widget.expectedRole,
+                    onCompletado: () =>
+                        ref.invalidate(onboardingCompletadoProvider),
                   );
                 }
                 // Bloqueo local con huella/PIN (sprint extra) — solo acá,

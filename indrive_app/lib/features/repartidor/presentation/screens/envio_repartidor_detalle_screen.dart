@@ -6,11 +6,21 @@ import '../../../../shared/data/providers.dart';
 import '../../../../shared/domain/entities/envio.dart';
 import '../../../../shared/domain/value_objects/money.dart';
 import '../../../../shared/widgets/avatar_circulo.dart';
+import '../../../../shared/widgets/calificacion_resumen.dart';
 import '../../../../shared/widgets/countdown_timer.dart';
 import '../../../../shared/widgets/envio_map_preview.dart';
+import '../../../../shared/widgets/estado_envio_chip.dart';
+import '../../../../shared/widgets/red_network_image.dart';
 import '../../../../shared/widgets/soporte_whatsapp.dart';
 import '../providers/mis_entregas_controller.dart';
 import 'entrega_en_curso_screen.dart';
+
+IconData _iconoCategoria(CategoriaPaquete categoria) => switch (categoria) {
+  CategoriaPaquete.documentos => Icons.description_outlined,
+  CategoriaPaquete.paqueteChico => Icons.inventory_2_outlined,
+  CategoriaPaquete.paqueteMediano => Icons.local_shipping_outlined,
+  CategoriaPaquete.encomiendaMercado => Icons.shopping_bag_outlined,
+};
 
 /// Detalle de un envío desde el punto de vista del Repartidor: dos
 /// acciones que ya existían en `EnviosRepository` desde Sprint 2.1 sin
@@ -177,13 +187,60 @@ class _EnvioRepartidorDetalleScreenState
                 children: [
                   Text(
                     envio.descripcion,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text('Categoría: ${envio.categoria.etiqueta}'),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Oferta inicial: ${envio.montoOfertadoInicial.format()}',
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        _iconoCategoria(envio.categoria),
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        envio.categoria.etiqueta,
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      EstadoEnvioChip(status: envio.status),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'OFERTA',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  letterSpacing: 1,
+                                ),
+                          ),
+                          Text(
+                            envio.montoOfertadoInicial.format(),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                   if (envio.esFragil) ...[
                     const SizedBox(height: 8),
@@ -197,7 +254,7 @@ class _EnvioRepartidorDetalleScreenState
                     const SizedBox(height: 8),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(envio.fotoPaqueteUrl!, height: 160),
+                      child: RedNetworkImage(envio.fotoPaqueteUrl!, height: 160),
                     ),
                   ],
                   const SizedBox(height: 8),
@@ -279,6 +336,7 @@ class _ClienteCard extends ConsumerWidget {
             subtitle: Text(
               '${perfil.nombre} ${perfil.apellido} (@${perfil.nick})',
             ),
+            trailing: CalificacionResumen(perfil: perfil),
           ),
         );
       },

@@ -8,6 +8,7 @@ Carpeta con los documentos generados durante las sesiones de trabajo con Claude,
 - **[flujo-de-uso.md](flujo-de-uso.md)** — guía en texto plano del flujo de uso completo de las 3 apps (Cliente, Repartidor, Admin), paso a paso.
 - **[flujo-indrive-entregas.html](flujo-indrive-entregas.html)** — diagrama de flujo de actividad de las 3 apps + explicación de KYC + observaciones de UX (origen de varios pedidos posteriores, como el buscador de direcciones).
 - **[bitacora-indrive-villazon.html](bitacora-indrive-villazon.html)** — bitácora de una sesión anterior.
+- **[observabilidad.md](observabilidad.md)** — eventos de Crashlytics y trazas de Performance agregados en el sprint de observabilidad, qué mide cada uno y cómo revisarlos en Firebase Console.
 
 ## Planes (`planes/`)
 
